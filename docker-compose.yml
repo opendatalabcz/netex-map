@@ -1,0 +1,19 @@
+name: netex-map
+
+services:
+  postgis:
+    image: postgis/postgis:18-3.6-alpine
+    restart: always
+    container_name: ${DB_CONTAINER_NAME}
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_ADMIN_USERNAME}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
+    ports:
+      - ${DB_HOST_PORT}:5432
+    volumes:
+      - data-db:/var/lib/postgresql
+
+volumes:
+  data-db:
+    name: ${DB_VOLUME_NAME}
