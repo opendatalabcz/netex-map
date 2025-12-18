@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:8112/map
+    username: SuperUser
+    password: stronk-pazzward
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
