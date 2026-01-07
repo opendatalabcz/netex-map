@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.domain
+package cz.cvut.fit.gaierda1.domain.model
 
 @JvmInline
 value class PhysicalStopId(val value: String)
