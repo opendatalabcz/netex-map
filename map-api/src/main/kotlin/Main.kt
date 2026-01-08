@@ -9,8 +9,8 @@ import java.io.File
 class Application
 
 fun main(args: Array<String>) {
+    runApplication<Application>(*args)
+
     val xmlFile = File("src/data/city_lines/NX-PI-01_CZ_CISJR-JDF_LINE-1_20251022.xml")
     handleBusLineFile(xmlFile)
-
-    runApplication<Application>(*args)
 }
