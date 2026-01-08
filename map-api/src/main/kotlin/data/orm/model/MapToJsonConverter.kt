@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm
+package cz.cvut.fit.gaierda1.data.orm.model
 
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
@@ -14,5 +14,5 @@ class MapToJsonConverter : AttributeConverter<Map<String, String>, String> {
         objectMapper.writeValueAsString(attribute ?: emptyMap<String, String>())
 
     override fun convertToEntityAttribute(dbData: String?): Map<String, String> =
-        dbData?.let { objectMapper.readValue(it) } ?: emptyMap()
+        dbData?.let(objectMapper::readValue) ?: emptyMap()
 }

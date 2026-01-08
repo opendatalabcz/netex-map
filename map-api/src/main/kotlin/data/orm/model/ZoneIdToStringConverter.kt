@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm
+package cz.cvut.fit.gaierda1.data.orm.model
 
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter

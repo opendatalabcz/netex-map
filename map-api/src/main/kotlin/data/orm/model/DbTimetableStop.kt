@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm
+package cz.cvut.fit.gaierda1.data.orm.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -8,25 +8,16 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "line")
-class DbLine(
+@Table(name = "timetable_stop")
+class DbTimetableStop(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    val relationalId: Long,
+    var relationalId: Long?,
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     val externalId: String,
 
     @Column(nullable = false)
     val name: String,
-
-    @Column(nullable = false)
-    val shortName: String,
-
-    @Column(nullable = false)
-    val publicCode: String,
-
-    @Column(nullable = false)
-    val transportMode: String,
-){
+) {
 }

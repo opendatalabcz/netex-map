@@ -1,7 +1,6 @@
-package cz.cvut.fit.gaierda1.data.orm
+package cz.cvut.fit.gaierda1.data.orm.model
 
 import jakarta.persistence.Column
-import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -14,7 +13,7 @@ import org.locationtech.jts.geom.Point
 class DbPhysicalStop(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    val relationalId: Long,
+    var relationalId: Long?,
 
     @Column(nullable = false)
     val externalId: String,
@@ -22,11 +21,10 @@ class DbPhysicalStop(
     @Column(nullable = false)
     val name: String,
 
-    @Column(columnDefinition = "geometry(Point,4326)", nullable = false)
+    @Column(columnDefinition = "geography(Point,4326)", nullable = false)
     val position: Point,
 
     @Column(columnDefinition = "jsonb", nullable = false)
-    @Convert(converter = MapToJsonConverter::class)
-    val tags: Map<String, String> = emptyMap()
+    val tags: Map<String, String>
 ) {
 }

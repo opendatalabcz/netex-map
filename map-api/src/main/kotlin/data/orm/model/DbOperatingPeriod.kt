@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm
+package cz.cvut.fit.gaierda1.data.orm.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -14,10 +14,10 @@ import java.time.ZoneId
 class DbOperatingPeriod(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    val relationalId: Long,
+    var relationalId: Long?,
 
     @Column(nullable = false)
-    val timeZone: ZoneId,
+    val timezone: ZoneId,
 
     @Column(nullable = false)
     val fromDate: LocalDateTime,

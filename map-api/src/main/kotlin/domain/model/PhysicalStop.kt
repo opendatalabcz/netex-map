@@ -7,6 +7,6 @@ data class PhysicalStop(
     val stopId: PhysicalStopId,
     val name: String,
     val position: Point,
-    val tags: Map<String, String> = emptyMap(),
+    val tags: Map<String, String>,
 ){
 }
