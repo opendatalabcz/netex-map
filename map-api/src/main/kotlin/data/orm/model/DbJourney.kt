@@ -7,6 +7,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
@@ -35,8 +37,12 @@ class DbJourney(
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "journey")
     val schedule: List<DbScheduledStop>,
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "operating_period_id", nullable = false)
-    val operatingPeriod: DbOperatingPeriod,
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "journey_operating_period",
+        joinColumns = [JoinColumn(name = "journey_id")],
+        inverseJoinColumns = [JoinColumn(name = "operating_period_id")]
+    )
+    val operatingPeriods: List<DbOperatingPeriod>,
 ) {
 }

@@ -27,7 +27,7 @@ class JourneyMapper(
         lineVersion = lineVersionMapper.toDomain(journey.lineVersion),
         journeyPatternId = JourneyPatternId(journey.journeyPatternId),
         schedule = journey.schedule.map { scheduledStopToDomain(it) },
-        operatingPeriod = operatingPeriodToDomain(journey.operatingPeriod),
+        operatingPeriods = journey.operatingPeriods.map(::operatingPeriodToDomain),
         route = journey.route?.let(routeMapper::toDomain)
     )
 
@@ -64,7 +64,7 @@ class JourneyMapper(
             lineVersion = dbLineVersion,
             route = journey.route?.let(routeMapper::toDb),
             schedule = schedule,
-            operatingPeriod = operatingPeriodToDb(journey.operatingPeriod, dbLineVersion),
+            operatingPeriods = journey.operatingPeriods.map { operatingPeriodToDb(it, dbLineVersion) },
         )
         schedule.addAll(journey.schedule.mapIndexed { index, scheduledStop -> scheduledStopToDb(scheduledStop, dbJourney, index) })
 
