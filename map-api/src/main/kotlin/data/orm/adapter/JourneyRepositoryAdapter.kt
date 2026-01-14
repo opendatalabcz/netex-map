@@ -19,9 +19,9 @@ class JourneyRepositoryAdapter(
     override fun save(journey: Journey) {
         val dbJourney = journeyMapper.toDb(journey)
         journeyJpaRepository.save(dbJourney)
-        dbJourney.schedule.forEach {
-            it.id.journeyId = dbJourney.relationalId
-            scheduledStopJpaRepository.save(it)
+        for (scheduledStop in dbJourney.schedule) {
+            scheduledStop.id.journeyId = dbJourney.relationalId
+            scheduledStopJpaRepository.save(scheduledStop)
         }
     }
 

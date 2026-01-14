@@ -17,9 +17,9 @@ class RouteRepositoryAdapter(
     override fun save(route: Route) {
         val dbRoute = routeMapper.toDb(route)
         routeJpaRepository.save(dbRoute)
-        dbRoute.routeStops.forEach {
-            it.id.routeId = dbRoute.relationalId
-            routeStopJpaRepository.save(it)
+        for (routeStop in dbRoute.routeStops) {
+            routeStop.id.routeId = dbRoute.relationalId
+            routeStopJpaRepository.save(routeStop)
         }
     }
 
