@@ -25,8 +25,6 @@ class NetexFileIndexer {
         val compositeFrame = rootFrame.value as? CompositeFrame ?: error("Unexpected frame type: ${rootFrame.value::class}")
         val childFrames = compositeFrame.frames.commonFrame.map { it.value }
 
-        childFrames.forEach { frame -> println(frame::class) }
-
         val serviceFrame = childFrames.filterIsInstance<ServiceFrame>().singleOrThrow("service frame")
         val siteFrame = childFrames.filterIsInstance<SiteFrame>().singleOrThrow("site frame")
         val timetableFrame = childFrames.filterIsInstance<TimetableFrame>().singleOrThrow("timetable frame")
@@ -77,8 +75,8 @@ class NetexFileIndexer {
 
     private fun indexUicOperatingPeriods(serviceCalendarFrame: ServiceCalendarFrame): Map<String, UicOperatingPeriod> {
         val uicOperatingPeriodRegistry = mutableMapOf<String, UicOperatingPeriod>()
-        for (operatingPeriod in serviceCalendarFrame.operatingPeriods.operatingPeriodOrUicOperatingPeriod) {
-            val uicOperatingPeriod = operatingPeriod as? UicOperatingPeriod ?: error("Unexpected operating period type: ${operatingPeriod::class}")
+        for (operatingPeriod in serviceCalendarFrame.serviceCalendar.operatingPeriods.operatingPeriodRefOrOperatingPeriodOrUicOperatingPeriod) {
+            val uicOperatingPeriod = operatingPeriod.value as? UicOperatingPeriod ?: error("Unexpected operating period type: ${operatingPeriod::class}")
             uicOperatingPeriodRegistry[uicOperatingPeriod.id] = uicOperatingPeriod
         }
         return uicOperatingPeriodRegistry
@@ -86,7 +84,7 @@ class NetexFileIndexer {
 
     private fun indexDayTypeAssignments(serviceCalendarFrame: ServiceCalendarFrame): Map<String, DayTypeAssignment> {
         val dayTypeAssignmentRegistryByDayTypeId = mutableMapOf<String, DayTypeAssignment>()
-        for (dayTypeAssignment in serviceCalendarFrame.dayTypeAssignments.dayTypeAssignment) {
+        for (dayTypeAssignment in serviceCalendarFrame.serviceCalendar.dayTypeAssignments.dayTypeAssignment) {
             dayTypeAssignmentRegistryByDayTypeId[dayTypeAssignment.dayTypeRef.value.ref] = dayTypeAssignment
         }
         return dayTypeAssignmentRegistryByDayTypeId
