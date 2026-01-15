@@ -34,7 +34,6 @@ class NetexTimetableParser(
 
         val lineVersions = lineVersionsMap.values.toList()
         return TimetableParserPort.TimetableParseResult(
-            lines = lineVersions.map { it.line },
             lineVersions = lineVersions,
             timetableStops = timetableStopsMap.values.toList(),
             journeys = journeysMap.values.toList(),
