@@ -1,7 +1,7 @@
 package cz.cvut.fit.gaierda1
 
 import cz.cvut.fit.gaierda1.data.filesystem.TimetableDirectorySource
-import cz.cvut.fit.gaierda1.data.netex.domain.NetexTimetableParser
+import cz.cvut.fit.gaierda1.data.netex.domain.TimetableDomainParser
 import cz.cvut.fit.gaierda1.domain.usecase.ImportTimetablesUseCase
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
 
     val xmlFilesFolder = File("src/data/public_scheduled_transport")
     val timetableSource = TimetableDirectorySource(xmlFilesFolder)
-    val timetableParser = appContext.getBean(NetexTimetableParser::class.java)
+    val timetableParser = appContext.getBean(TimetableDomainParser::class.java)
     val importTimetableUseCase = appContext.getBean(ImportTimetablesUseCase::class.java)
     println("${LocalDateTime.now()}: Begin importing timetables")
     importTimetableUseCase.importTimetables(timetableSource, timetableParser)

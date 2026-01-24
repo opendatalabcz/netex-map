@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import java.time.ZoneId
 
 @Component
-class OperatingPeriodsAssembler {
+class OperatingPeriodsDomainAssembler {
     fun assembleOperatingPeriods(registry: NetexFileRegistry): Map<String, OperatingPeriod> {
         val operatingPeriods = mutableMapOf<String, OperatingPeriod>()
         for (operatingPeriod in registry.uicOperatingPeriodRegistry.values) {

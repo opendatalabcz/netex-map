@@ -1,11 +1,8 @@
 package cz.cvut.fit.gaierda1.data.orm.adapter
 
-import cz.cvut.fit.gaierda1.data.orm.model.DbLine
 import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
-import cz.cvut.fit.gaierda1.data.orm.repository.LineJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.domain.model.DateRange
-import cz.cvut.fit.gaierda1.domain.model.Line
 import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
@@ -15,18 +12,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class LineVersionRepositoryAdapter(
-    private val lineJpaRepository: LineJpaRepository,
     private val lineVersionJpaRepository: LineVersionJpaRepository,
 ): LineVersionRepository {
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-    fun toDomain(line: DbLine): Line = Line(
-        lineId = LineId(line.externalId),
-        publicCode = line.publicCode,
-    )
-
     fun toDomain(lineVersion: DbLineVersion): LineVersion = LineVersion(
-        line = toDomain(lineVersion.line),
+        lineId = LineId(lineVersion.externalId),
+        publicCode = lineVersion.publicCode,
         name = lineVersion.name,
         shortName = lineVersion.shortName,
         transportMode = lineVersion.transportMode,
@@ -38,15 +30,10 @@ class LineVersionRepositoryAdapter(
         ),
     )
 
-    fun toDb(line: Line, relationalId: Long?): DbLine = DbLine(
+    fun toDb(lineVersion: LineVersion, relationalId: Long?): DbLineVersion = DbLineVersion(
         relationalId = relationalId,
-        externalId = line.lineId.value,
-        publicCode = line.publicCode,
-    )
-
-    fun toDb(lineVersion: LineVersion, relationalId: Long?, line: DbLine): DbLineVersion = DbLineVersion(
-        relationalId = relationalId,
-        line = line,
+        externalId = lineVersion.lineId.value,
+        publicCode = lineVersion.publicCode,
         name = lineVersion.name,
         shortName = lineVersion.shortName,
         transportMode = lineVersion.transportMode,
@@ -56,20 +43,9 @@ class LineVersionRepositoryAdapter(
         timezone = lineVersion.validIn.timezone,
     )
 
-    fun findSaveMapping(line: Line): DbLine {
-        val optionalSaved = lineJpaRepository.findByExternalId(line.lineId.value)
-        if (optionalSaved.isPresent) {
-            val saved = optionalSaved.get()
-            if (line.publicCode == saved.publicCode) return saved
-            else logDifference("public code", saved.publicCode, line.publicCode, saved)
-        }
-        val mapped = toDb(line, optionalSaved.map { it.relationalId }.orElse(null))
-        return lineJpaRepository.save(mapped)
-    }
-
     fun findSaveMapping(lineVersion: LineVersion): DbLineVersion {
         val optionalSaved = lineVersionJpaRepository.findByLineIdAndValidRange(
-            lineExternalId = lineVersion.line.lineId.value,
+            lineExternalId = lineVersion.lineId.value,
             validFrom = lineVersion.validIn.from,
             validTo = lineVersion.validIn.to,
             timezone = lineVersion.validIn.timezone
@@ -93,13 +69,13 @@ class LineVersionRepositoryAdapter(
                 differ = true
                 logDifference("detour", saved.isDetour, lineVersion.isDetour, saved)
             }
-            if (lineVersion.line.publicCode != saved.line.publicCode) {
+            if (lineVersion.publicCode != saved.publicCode) {
                 differ = true
-                // the difference will be logged in the findSaveMapping of the line
+                logDifference("public code", saved.publicCode, lineVersion.publicCode, saved)
             }
             if (!differ) return saved
         }
-        val mapped = toDb(lineVersion, optionalSaved.map { it.relationalId }.orElse(null), findSaveMapping(lineVersion.line))
+        val mapped = toDb(lineVersion, optionalSaved.map { it.relationalId }.orElse(null))
         return lineVersionJpaRepository.save(mapped)
     }
 
@@ -118,20 +94,10 @@ class LineVersionRepositoryAdapter(
             .orElse(null)
     }
 
-    private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbLine) {
-        log.warn(
-            "Line {}: {} changed from {} to {}",
-            context.externalId,
-            fieldName,
-            old,
-            new
-        )
-    }
-
     private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbLineVersion) {
         log.warn(
             "Line version {} {}-{}({}): {} changed from {} to {}",
-            context.line.externalId,
+            context.externalId,
             context.validFrom,
             context.validTo,
             context.timezone,

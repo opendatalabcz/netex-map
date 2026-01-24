@@ -12,7 +12,7 @@ import java.util.Optional
 @Repository
 interface LineVersionJpaRepository: JpaRepository<DbLineVersion, Long> {
     @Query("SELECT lv FROM DbLineVersion lv " +
-            "WHERE lv.line.externalId = :lineExternalId AND " +
+            "WHERE lv.externalId = :lineExternalId AND " +
                 "lv.validFrom = :validTo AND " +
                 "lv.validTo = :validFrom AND " +
                 "lv.timezone = :timezone"

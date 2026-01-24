@@ -13,7 +13,7 @@ import java.util.Optional
 interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
     @Query("SELECT j FROM DbJourney j " +
             "WHERE j.externalId = :externalId AND " +
-                "j.lineVersion.line.externalId = :lineExternalId AND " +
+                "j.lineVersion.externalId = :lineExternalId AND " +
                 "j.lineVersion.validFrom = :validTo AND " +
                 "j.lineVersion.validTo = :validFrom AND " +
                 "j.lineVersion.timezone = :timezone"

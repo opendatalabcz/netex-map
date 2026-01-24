@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component
 import java.io.InputStream
 
 @Component
-class NetexTimetableParser(
+class TimetableDomainParser(
     private val netexFileIndexer: NetexFileIndexer,
-    private val lineVersionAssembler: LineVersionAssembler,
-    private val operatingPeriodsAssembler: OperatingPeriodsAssembler,
-    private val journeyAssembler: JourneyAssembler,
+    private val lineVersionDomainAssembler: LineVersionDomainAssembler,
+    private val operatingPeriodsDomainAssembler: OperatingPeriodsDomainAssembler,
+    private val journeyDomainAssembler: JourneyDomainAssembler,
 ): TimetableParserPort {
     override fun parseTimetable(contentStream: InputStream): TimetableParserPort.TimetableParseResult {
         val jaxbContext: JAXBContext = JAXBContext.newInstance(PublicationDeliveryStructure::class.java)
@@ -27,9 +27,9 @@ class NetexTimetableParser(
         }
         val registry = netexFileIndexer.createRegistry(publicationDelivery)
 
-        val lineVersionsMap = lineVersionAssembler.assembleLineVersion(registry)
-        val operatingPeriodsMap = operatingPeriodsAssembler.assembleOperatingPeriods(registry)
-        val journeysMap = journeyAssembler.assembleJourneys(registry, lineVersionsMap, operatingPeriodsMap)
+        val lineVersionsMap = lineVersionDomainAssembler.assembleLineVersions(registry)
+        val operatingPeriodsMap = operatingPeriodsDomainAssembler.assembleOperatingPeriods(registry)
+        val journeysMap = journeyDomainAssembler.assembleJourneys(registry, lineVersionsMap, operatingPeriodsMap)
 
         val lineVersions = lineVersionsMap.values.toList()
         return TimetableParserPort.TimetableParseResult(

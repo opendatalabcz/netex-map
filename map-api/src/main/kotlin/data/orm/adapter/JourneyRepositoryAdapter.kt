@@ -102,7 +102,7 @@ class JourneyRepositoryAdapter(
     fun findSaveMapping(journey: Journey): DbJourney {
         val optionalSaved = journeyJpaRepository.findByExternalIdAndLineIdAndValidRange(
             externalId = journey.journeyId.value,
-            lineExternalId = journey.lineVersion.line.lineId.value,
+            lineExternalId = journey.lineVersion.lineId.value,
             validFrom = journey.lineVersion.validIn.from,
             validTo = journey.lineVersion.validIn.to,
             timezone = journey.lineVersion.validIn.timezone,
@@ -235,7 +235,7 @@ class JourneyRepositoryAdapter(
         log.warn(
             "Journey {} for line version {} {}-{}({}): {} changed from {} to {}",
             context.externalId,
-            context.lineVersion.line.externalId,
+            context.lineVersion.externalId,
             context.lineVersion.validFrom,
             context.lineVersion.validTo,
             context.lineVersion.timezone,

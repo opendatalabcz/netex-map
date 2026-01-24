@@ -14,7 +14,7 @@ import org.rutebanken.netex.model.StopPointInJourneyPattern
 import org.springframework.stereotype.Component
 
 @Component
-class JourneyAssembler {
+class JourneyDomainAssembler {
     fun assembleJourneys(
         registry: NetexFileRegistry,
         lineVersions: Map<LineId, LineVersion>,
