@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm.adapter
+package cz.cvut.fit.gaierda1.data.orm.adapter.pedantic
 
 infix fun <T, R> Iterable<T>.zipWithFill(other: Iterable<R>): List<Pair<T?, R?>> {
     val list = mutableListOf<Pair<T?, R?>>()

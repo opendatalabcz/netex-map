@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm.adapter
+package cz.cvut.fit.gaierda1.data.orm.adapter.pedantic
 
 import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
@@ -6,12 +6,14 @@ import cz.cvut.fit.gaierda1.domain.model.DateRange
 import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
-import org.springframework.stereotype.Component
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-@Component
-class LineVersionRepositoryAdapter(
+class LineVersionRepositoryPedanticAdapter(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
 ): LineVersionRepository {
+    private val log: Logger = LoggerFactory.getLogger(javaClass)
+
     fun toDomain(lineVersion: DbLineVersion): LineVersion = LineVersion(
         lineId = LineId(lineVersion.externalId),
         publicCode = lineVersion.publicCode,
@@ -47,7 +49,29 @@ class LineVersionRepositoryAdapter(
             timezone = lineVersion.validIn.timezone
         )
         if (optionalSaved.isPresent) {
-            return optionalSaved.get()
+            val saved = optionalSaved.get()
+            var differ = false
+            if (lineVersion.name != saved.name) {
+                differ = true
+                logDifference("name", saved.name, lineVersion.name, saved)
+            }
+            if (lineVersion.shortName != saved.shortName) {
+                differ = true
+                logDifference("short name", saved.shortName, lineVersion.shortName, saved)
+            }
+            if (lineVersion.transportMode != saved.transportMode) {
+                differ = true
+                logDifference("transport mode", saved.transportMode, lineVersion.transportMode, saved)
+            }
+            if (lineVersion.isDetour != saved.isDetour) {
+                differ = true
+                logDifference("detour", saved.isDetour, lineVersion.isDetour, saved)
+            }
+            if (lineVersion.publicCode != saved.publicCode) {
+                differ = true
+                logDifference("public code", saved.publicCode, lineVersion.publicCode, saved)
+            }
+            if (!differ) return saved
         }
         val mapped = toDb(lineVersion, optionalSaved.map { it.relationalId }.orElse(null))
         return lineVersionJpaRepository.save(mapped)
@@ -66,5 +90,18 @@ class LineVersionRepositoryAdapter(
                 timezone = validRange.timezone,
             ).map(::toDomain)
             .orElse(null)
+    }
+
+    private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbLineVersion) {
+        log.warn(
+            "Line version {} {} - {}({}): {} changed from {} to {}",
+            context.externalId,
+            context.validFrom,
+            context.validTo,
+            context.timezone,
+            fieldName,
+            old,
+            new
+        )
     }
 }
