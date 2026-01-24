@@ -1,5 +1,6 @@
 package cz.cvut.fit.gaierda1.data.orm.model
 
+import jakarta.persistence.Column
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -22,5 +23,8 @@ class DbRouteStop(
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "physical_stop_id", nullable = false)
     val physicalStop: DbPhysicalStop,
+
+    @Column(nullable = false)
+    val pointSequenceIndex: Int,
 ) {
 }

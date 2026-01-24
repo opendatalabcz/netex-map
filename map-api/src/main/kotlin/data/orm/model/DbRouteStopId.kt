@@ -5,6 +5,6 @@ import jakarta.persistence.Embeddable
 @Embeddable
 data class DbRouteStopId(
     var routeId: Long?,
-    val pointSequenceIndex: Int,
+    val stopOrder: Int,
 ) {
 }

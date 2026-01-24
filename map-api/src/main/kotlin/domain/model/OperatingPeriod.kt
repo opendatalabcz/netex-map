@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 data class OperatingPeriod(
-    val timeZone: ZoneId,
+    val timezone: ZoneId,
     val fromDate: LocalDateTime,
     val toDate: LocalDateTime,
     val validDays: List<Boolean>,

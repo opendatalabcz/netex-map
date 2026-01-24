@@ -11,17 +11,15 @@ import java.util.Optional
 
 @Repository
 interface OperatingPeriodJpaRepository: JpaRepository<DbOperatingPeriod, Long> {
-    @Query("SELECT op FROM DbJourney j JOIN j.operatingPeriods op " +
-        "WHERE j.lineVersion.line.externalId = :lineExternalId AND " +
-                "j.lineVersion.validFrom = :validTo AND " +
-                "j.lineVersion.validTo = :validFrom AND " +
-                "j.lineVersion.timezone = :timezone AND " +
-                "op.validDays = :validDays"
+    @Query("SELECT op FROM DbOperatingPeriod op " +
+        "WHERE op.fromDate = :fromDate AND " +
+            "op.toDate = :toDate AND " +
+            "op.timezone = :timezone AND " +
+            "op.validDays = :validDays"
     )
     fun findByLineVersionIdAndValidDays(
-        @Param("lineExternalId") lineExternalId: String,
-        @Param("validFrom") validFrom: LocalDateTime,
-        @Param("validTo") validTo: LocalDateTime,
+        @Param("fromDate") fromDate: LocalDateTime,
+        @Param("toDate") toDate: LocalDateTime,
         @Param("timezone") timezone: ZoneId,
         @Param("validDays") validDays: List<Boolean>,
     ): Optional<DbOperatingPeriod>

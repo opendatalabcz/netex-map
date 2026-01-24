@@ -18,6 +18,7 @@ fun main(args: Array<String>) {
     val timetableSource = TimetableDirectorySource(xmlFilesFolder)
     val timetableParser = appContext.getBean(NetexTimetableParser::class.java)
     val importTimetableUseCase = appContext.getBean(ImportTimetablesUseCase::class.java)
+    println("${LocalDateTime.now()}: Begin importing timetables")
     importTimetableUseCase.importTimetables(timetableSource, timetableParser)
-    println("${LocalDateTime.now()} Done importing timetables")
+    println("${LocalDateTime.now()}: Done importing timetables")
 }

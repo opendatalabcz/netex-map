@@ -11,7 +11,7 @@ class OperatingPeriodsAssembler {
         for (operatingPeriod in registry.uicOperatingPeriodRegistry.values) {
             val operatingPeriodId = operatingPeriod.id
             operatingPeriods[operatingPeriodId] = OperatingPeriod(
-                timeZone = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone),
+                timezone = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone),
                 fromDate = operatingPeriod.fromDate,
                 toDate = operatingPeriod.toDate,
                 validDays = operatingPeriod.validDayBits.map { it == '1' },
