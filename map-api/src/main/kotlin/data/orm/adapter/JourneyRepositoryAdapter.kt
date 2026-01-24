@@ -27,7 +27,6 @@ class JourneyRepositoryAdapter(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
     private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
-    private val timetableStopRepositoryAdapter: TimetableStopRepositoryAdapter,
     private val lineVersionRepositoryAdapter: LineVersionRepositoryAdapter,
     private val routeRepositoryAdapter: RouteRepositoryAdapter,
 ): JourneyRepository {
@@ -43,7 +42,7 @@ class JourneyRepositoryAdapter(
     )
 
     fun toDomain(scheduledStop: DbScheduledStop): ScheduledStop = ScheduledStop(
-        timetableStop = timetableStopRepositoryAdapter.toDomain(scheduledStop.timetableStop),
+        name = scheduledStop.name,
         arrival = scheduledStop.arrival,
         departure = scheduledStop.departure,
     )
@@ -76,7 +75,7 @@ class JourneyRepositoryAdapter(
         order: Int,
     ): DbScheduledStop = DbScheduledStop(
         id = DbScheduledStopId(journey.relationalId, order),
-        timetableStop = timetableStopRepositoryAdapter.findSaveMapping(scheduledStop.timetableStop),
+        name = scheduledStop.name,
         journey = journey,
         arrival = scheduledStop.arrival,
         departure = scheduledStop.departure,
@@ -144,12 +143,9 @@ class JourneyRepositoryAdapter(
         if (journey.schedule.size != sortedSavedStops.size) logDifference("number of scheduled stops", sortedSavedStops.size, journey.schedule.size, savedJourney)
         for ((new, old) in journey.schedule.zipWithFill(sortedSavedStops)) {
             if (new != null && old != null) {
-                if (new.timetableStop.stopId.value != old.timetableStop.externalId) {
+                if (new.name != old.name) {
                     stopsDiffer = true
-                    logDifference("timetable stop id", old.timetableStop.externalId, new.timetableStop.stopId.value, savedJourney, old)
-                } else if (new.timetableStop.name != old.timetableStop.name) {
-                    stopsDiffer = true
-                    // the difference will be logged in the findSaveMapping of the timetableStop
+                    logDifference("name", old.name, new.name, savedJourney, old)
                 }
                 if (new.arrival?.toNanoOfDay() != old.arrival?.toNanoOfDay()) {
                     stopsDiffer = true

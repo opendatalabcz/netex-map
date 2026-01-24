@@ -1,5 +1,6 @@
-package cz.cvut.fit.gaierda1.data.netex.assembler
+package cz.cvut.fit.gaierda1.data.netex.domain
 
+import cz.cvut.fit.gaierda1.data.netex.NetexFileRegistry
 import cz.cvut.fit.gaierda1.domain.model.Journey
 import cz.cvut.fit.gaierda1.domain.model.JourneyId
 import cz.cvut.fit.gaierda1.domain.model.JourneyPatternId
@@ -7,8 +8,7 @@ import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
-import cz.cvut.fit.gaierda1.domain.model.TimetableStop
-import cz.cvut.fit.gaierda1.domain.model.TimetableStopId
+import org.rutebanken.netex.model.ScheduledStopPoint
 import org.rutebanken.netex.model.ServiceJourney
 import org.rutebanken.netex.model.StopPointInJourneyPattern
 import org.springframework.stereotype.Component
@@ -18,7 +18,6 @@ class JourneyAssembler {
     fun assembleJourneys(
         registry: NetexFileRegistry,
         lineVersions: Map<LineId, LineVersion>,
-        timetableStops: Map<TimetableStopId, TimetableStop>,
         operatingPeriods: Map<String, OperatingPeriod>,
     ): Map<JourneyId, Journey> {
         val journeys = mutableMapOf<JourneyId, Journey>()
@@ -36,7 +35,11 @@ class JourneyAssembler {
                 journeyId = journeyId,
                 lineVersion = lineVersion,
                 journeyPatternId = journeyPatternId,
-                schedule = assembleScheduledStops(journey, patternRegistryValue.stopPointInJourneyPatternRegistry, timetableStops),
+                schedule = assembleScheduledStops(
+                    journey,
+                    patternRegistryValue.stopPointInJourneyPatternRegistry,
+                    registry.scheduledStopPointRegistry,
+                ),
                 operatingPeriods = linkOperatingPeriods(journey, registry, operatingPeriods),
                 route = null,
             )
@@ -47,25 +50,25 @@ class JourneyAssembler {
     private fun assembleScheduledStops(
         journey: ServiceJourney,
         stopPointInJourneyPatternRegistry: Map<String, StopPointInJourneyPattern>,
-        timetableStops: Map<TimetableStopId, TimetableStop>,
+        scheduledStopPointRegistry: Map<String, ScheduledStopPoint>,
     ): List<ScheduledStop> {
         return journey.passingTimes.timetabledPassingTime.map { timetabledPassingTime ->
             val stopPointInJourneyPatternId = timetabledPassingTime.pointInJourneyPatternRef.value.ref
             val stopPointInJourneyPattern = stopPointInJourneyPatternRegistry[stopPointInJourneyPatternId]
             checkNotNull(stopPointInJourneyPattern) { "Stop point in journey pattern $stopPointInJourneyPatternId not found" }
 
-            val timetableStopId = TimetableStopId(stopPointInJourneyPattern.scheduledStopPointRef.value.ref)
-            val timetableStop = timetableStops[timetableStopId]
-            checkNotNull(timetableStop) { "Timetable stop $timetableStopId not found" }
+            val scheduledStopPointId = stopPointInJourneyPattern.scheduledStopPointRef.value.ref
+            val scheduledStopPoint = scheduledStopPointRegistry[scheduledStopPointId]
+            checkNotNull(scheduledStopPoint) { "Scheduled stop point $scheduledStopPointId not found" }
 
             return@map ScheduledStop(
-                timetableStop = timetableStop,
+                name = scheduledStopPoint.name.value,
                 arrival = timetabledPassingTime.arrivalTime,
                 departure = timetabledPassingTime.departureTime,
             )
         }
     }
-    
+
     private fun linkOperatingPeriods(
         journey: ServiceJourney,
         registry: NetexFileRegistry,

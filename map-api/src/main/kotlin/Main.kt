@@ -1,7 +1,7 @@
 package cz.cvut.fit.gaierda1
 
 import cz.cvut.fit.gaierda1.data.filesystem.TimetableDirectorySource
-import cz.cvut.fit.gaierda1.data.netex.assembler.NetexTimetableParser
+import cz.cvut.fit.gaierda1.data.netex.domain.NetexTimetableParser
 import cz.cvut.fit.gaierda1.domain.usecase.ImportTimetablesUseCase
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

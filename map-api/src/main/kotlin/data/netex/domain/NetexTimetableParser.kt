@@ -1,5 +1,6 @@
-package cz.cvut.fit.gaierda1.data.netex.assembler
+package cz.cvut.fit.gaierda1.data.netex.domain
 
+import cz.cvut.fit.gaierda1.data.netex.NetexFileIndexer
 import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
 import jakarta.xml.bind.JAXBContext
 import jakarta.xml.bind.JAXBElement
@@ -12,7 +13,6 @@ import java.io.InputStream
 class NetexTimetableParser(
     private val netexFileIndexer: NetexFileIndexer,
     private val lineVersionAssembler: LineVersionAssembler,
-    private val timetableStopAssembler: TimetableStopAssembler,
     private val operatingPeriodsAssembler: OperatingPeriodsAssembler,
     private val journeyAssembler: JourneyAssembler,
 ): TimetableParserPort {
@@ -28,14 +28,12 @@ class NetexTimetableParser(
         val registry = netexFileIndexer.createRegistry(publicationDelivery)
 
         val lineVersionsMap = lineVersionAssembler.assembleLineVersion(registry)
-        val timetableStopsMap = timetableStopAssembler.assembleTimetableStops(registry)
         val operatingPeriodsMap = operatingPeriodsAssembler.assembleOperatingPeriods(registry)
-        val journeysMap = journeyAssembler.assembleJourneys(registry, lineVersionsMap, timetableStopsMap, operatingPeriodsMap)
+        val journeysMap = journeyAssembler.assembleJourneys(registry, lineVersionsMap, operatingPeriodsMap)
 
         val lineVersions = lineVersionsMap.values.toList()
         return TimetableParserPort.TimetableParseResult(
             lineVersions = lineVersions,
-            timetableStops = timetableStopsMap.values.toList(),
             journeys = journeysMap.values.toList(),
         )
     }

@@ -4,11 +4,9 @@ import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
-import cz.cvut.fit.gaierda1.domain.repository.TimetableStopRepository
 
 class ImportTimetablesUseCase(
     private val lineVersionRepository: LineVersionRepository,
-    private val timetableStopRepository: TimetableStopRepository,
     private val journeyRepository: JourneyRepository,
 ) {
     fun importTimetables(
@@ -18,7 +16,6 @@ class ImportTimetablesUseCase(
         timetableSource.provideInput { entryContentStream ->
             val result = timetableParser.parseTimetable(entryContentStream)
             result.lineVersions.forEach(lineVersionRepository::save)
-            result.timetableStops.forEach(timetableStopRepository::save)
             result.journeys.forEach(journeyRepository::save)
         }
     }

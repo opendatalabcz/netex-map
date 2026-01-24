@@ -1,5 +1,7 @@
-package cz.cvut.fit.gaierda1.data.netex.assembler
+package cz.cvut.fit.gaierda1.data.netex
 
+import cz.cvut.fit.gaierda1.data.netex.NetexFileRegistry
+import cz.cvut.fit.gaierda1.data.netex.ServiceJourneyPatternRegistryValue
 import org.rutebanken.netex.model.CompositeFrame
 import org.rutebanken.netex.model.DayTypeAssignment
 import org.rutebanken.netex.model.Line
@@ -59,7 +61,8 @@ class NetexFileIndexer {
                 val stopPointInJourneyPattern = pointInSequence as? StopPointInJourneyPattern ?: error("Unexpected point in sequence type: ${pointInSequence::class}")
                 stopPointInJourneyPatternRegistry[stopPointInJourneyPattern.id] = stopPointInJourneyPattern
             }
-            serviceJourneyPatternRegistry[serviceJourneyPattern.id] = ServiceJourneyPatternRegistryValue(serviceJourneyPattern, stopPointInJourneyPatternRegistry)
+            serviceJourneyPatternRegistry[serviceJourneyPattern.id] =
+                ServiceJourneyPatternRegistryValue(serviceJourneyPattern, stopPointInJourneyPatternRegistry)
         }
         return serviceJourneyPatternRegistry
     }

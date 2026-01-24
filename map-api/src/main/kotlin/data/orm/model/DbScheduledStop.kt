@@ -1,5 +1,6 @@
 package cz.cvut.fit.gaierda1.data.orm.model
 
+import jakarta.persistence.Column
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -15,9 +16,8 @@ class DbScheduledStop(
     @EmbeddedId
     val id: DbScheduledStopId,
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "timetable_stop_id", nullable = false)
-    val timetableStop: DbTimetableStop,
+    @Column(nullable = false)
+    val name: String,
 
     @MapsId("journeyId")
     @ManyToOne(fetch = FetchType.LAZY)
