@@ -96,7 +96,7 @@ class LineVersionRepositoryAdapter(
 
     private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbLineVersion) {
         log.warn(
-            "Line version {} {}-{}({}): {} changed from {} to {}",
+            "Line version {} {} - {}({}): {} changed from {} to {}",
             context.externalId,
             context.validFrom,
             context.validTo,

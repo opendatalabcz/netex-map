@@ -1,7 +1,7 @@
-package cz.cvut.fit.gaierda1.data.netex.domain
+package cz.cvut.fit.gaierda1.data.netex.data
 
 import cz.cvut.fit.gaierda1.data.netex.NetexFileIndexer
-import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
+import cz.cvut.fit.gaierda1.domain.port.TimetableParserDataPort
 import jakarta.xml.bind.JAXBContext
 import jakarta.xml.bind.JAXBElement
 import jakarta.xml.bind.Unmarshaller
@@ -10,13 +10,13 @@ import org.springframework.stereotype.Component
 import java.io.InputStream
 
 @Component
-class TimetableDomainParser(
+class TimetableDataParser(
     private val netexFileIndexer: NetexFileIndexer,
-    private val lineVersionDomainAssembler: LineVersionDomainAssembler,
-    private val operatingPeriodsDomainAssembler: OperatingPeriodsDomainAssembler,
-    private val journeyDomainAssembler: JourneyDomainAssembler,
-): TimetableParserPort {
-    override fun parseTimetable(contentStream: InputStream): TimetableParserPort.TimetableParseResult {
+    private val lineVersionDataAssembler: LineVersionDataAssembler,
+    private val operatingPeriodsDataAssembler: OperatingPeriodsDataAssembler,
+    private val journeyDataAssembler: JourneyDataAssembler,
+): TimetableParserDataPort {
+    override fun parseTimetable(contentStream: InputStream): TimetableParserDataPort.TimetableParseResult {
         val jaxbContext: JAXBContext = JAXBContext.newInstance(PublicationDeliveryStructure::class.java)
         val unmarshaller: Unmarshaller = jaxbContext.createUnmarshaller()
 
@@ -27,11 +27,11 @@ class TimetableDomainParser(
         }
         val registry = netexFileIndexer.createRegistry(publicationDelivery)
 
-        val lineVersionsMap = lineVersionDomainAssembler.assembleLineVersions(registry)
-        val operatingPeriodsMap = operatingPeriodsDomainAssembler.assembleOperatingPeriods(registry)
-        val journeysMap = journeyDomainAssembler.assembleJourneys(registry, lineVersionsMap, operatingPeriodsMap)
+        val lineVersionsMap = lineVersionDataAssembler.assembleLineVersions(registry)
+        val operatingPeriodsMap = operatingPeriodsDataAssembler.assembleOperatingPeriods(registry)
+        val journeysMap = journeyDataAssembler.assembleJourneys(registry, lineVersionsMap, operatingPeriodsMap)
 
-        return TimetableParserPort.TimetableParseResult(
+        return TimetableParserDataPort.TimetableParseResult(
             lineVersions = lineVersionsMap.values.toList(),
             journeys = journeysMap.values.toList(),
         )

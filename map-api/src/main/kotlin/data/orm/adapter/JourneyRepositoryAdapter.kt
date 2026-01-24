@@ -233,7 +233,7 @@ class JourneyRepositoryAdapter(
 
     private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbJourney) {
         log.warn(
-            "Journey {} for line version {} {}-{}({}): {} changed from {} to {}",
+            "Journey {} for line version {} {} - {}({}): {} changed from {} to {}",
             context.externalId,
             context.lineVersion.externalId,
             context.lineVersion.validFrom,

@@ -8,6 +8,7 @@ import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
+import org.rutebanken.netex.model.DayTypeAssignment
 import org.rutebanken.netex.model.ScheduledStopPoint
 import org.rutebanken.netex.model.ServiceJourney
 import org.rutebanken.netex.model.StopPointInJourneyPattern
@@ -40,7 +41,11 @@ class JourneyDomainAssembler {
                     patternRegistryValue.stopPointInJourneyPatternRegistry,
                     registry.scheduledStopPointRegistry,
                 ),
-                operatingPeriods = linkOperatingPeriods(journey, registry, operatingPeriods),
+                operatingPeriods = linkOperatingPeriods(
+                    journey,
+                    registry.dayTypeAssignmentRegistryByDayTypeId,
+                    operatingPeriods
+                ),
                 route = null,
             )
         }
@@ -71,12 +76,12 @@ class JourneyDomainAssembler {
 
     private fun linkOperatingPeriods(
         journey: ServiceJourney,
-        registry: NetexFileRegistry,
+        dayTypeAssignmentRegistryByDayTypeId: Map<String, DayTypeAssignment>,
         operatingPeriods: Map<String, OperatingPeriod>,
     ): List<OperatingPeriod> {
         return journey.dayTypes.dayTypeRef.map { dayTypeRef ->
             val dayTypeId = dayTypeRef.value.ref
-            val dayTypeAssignment = registry.dayTypeAssignmentRegistryByDayTypeId[dayTypeId]
+            val dayTypeAssignment = dayTypeAssignmentRegistryByDayTypeId[dayTypeId]
             checkNotNull(dayTypeAssignment) { "Day type assignment for $dayTypeId not found" }
 
             val operatingPeriodId = dayTypeAssignment.operatingPeriodRef.value.ref
