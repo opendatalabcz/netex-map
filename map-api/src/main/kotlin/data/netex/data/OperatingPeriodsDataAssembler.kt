@@ -21,15 +21,12 @@ class OperatingPeriodsDataAssembler(
                     toDate = operatingPeriod.toDate,
                     timezone = zoneId,
                     validDays = validDays,
-                ).also { if (it.isPresent) println("Operating period ${operatingPeriod.fromDate} - ${operatingPeriod.toDate}($zoneId) ${validDays.map { if (it) 1 else 0 }.joinToString("")} already exists") }
-                .orElseGet { operatingPeriodJpaRepository.save(
-                    DbOperatingPeriod(
+                ).orElseGet { DbOperatingPeriod(
                         relationalId = null,
                         timezone = zoneId,
                         fromDate = operatingPeriod.fromDate,
                         toDate = operatingPeriod.toDate,
                         validDays = validDays,
-                    )
                 ) }
         }
         return operatingPeriods

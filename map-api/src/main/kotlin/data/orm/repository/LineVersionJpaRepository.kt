@@ -13,8 +13,8 @@ import java.util.Optional
 interface LineVersionJpaRepository: JpaRepository<DbLineVersion, Long> {
     @Query("SELECT lv FROM DbLineVersion lv " +
             "WHERE lv.externalId = :lineExternalId AND " +
-                "lv.validFrom = :validTo AND " +
-                "lv.validTo = :validFrom AND " +
+                "lv.validFrom = :validFrom AND " +
+                "lv.validTo = :validTo AND " +
                 "lv.timezone = :timezone"
     )
     fun findByLineIdAndValidRange(

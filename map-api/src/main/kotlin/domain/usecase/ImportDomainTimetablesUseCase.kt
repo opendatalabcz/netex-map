@@ -5,7 +5,7 @@ import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
 
-class ImportTimetablesUseCase(
+class ImportDomainTimetablesUseCase(
     private val lineVersionRepository: LineVersionRepository,
     private val journeyRepository: JourneyRepository,
 ) {

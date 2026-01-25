@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:8112/map
+    url: jdbc:postgresql://localhost:8112/map?reWriteBatchedInserts=true
     username: SuperUser
     password: stronk-pazzward
   jpa:
@@ -8,3 +8,8 @@ spring:
       ddl-auto: create-drop
     show-sql: false
     open-in-view: false
+    properties:
+      hibernate:
+        generate_statistics: true
+        jdbc:
+          batch_size: 100

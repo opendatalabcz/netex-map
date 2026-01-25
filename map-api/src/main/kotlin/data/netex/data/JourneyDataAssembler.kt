@@ -7,7 +7,6 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbOperatingPeriod
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
-import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import org.rutebanken.netex.model.ScheduledStopPoint
 import org.rutebanken.netex.model.ServiceJourney
 import org.rutebanken.netex.model.StopPointInJourneyPattern
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Component
 @Component
 class JourneyDataAssembler(
     private val journeyJpaRepository: JourneyJpaRepository,
-    private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
 ) {
     fun assembleJourneys(
         registry: NetexFileRegistry,
@@ -40,8 +38,7 @@ class JourneyDataAssembler(
                     validFrom = lineVersion.validFrom,
                     validTo = lineVersion.validTo,
                     timezone = lineVersion.timezone,
-                ).also { if (it.isPresent) println("Journey ${journey.id} for line version ${lineVersion.externalId} ${lineVersion.validFrom}-${lineVersion.validTo}(${lineVersion.timezone}) already exists") }
-                .orElseGet { saveJourney(
+                ).orElseGet { assembleJourney(
                     journey = journey,
                     journeyPatternId = journeyPatternId,
                     lineVersion = lineVersion,
@@ -53,7 +50,7 @@ class JourneyDataAssembler(
         return journeys
     }
 
-    private fun saveJourney(
+    private fun assembleJourney(
         journey: ServiceJourney,
         journeyPatternId: String,
         lineVersion: DbLineVersion,
@@ -62,16 +59,14 @@ class JourneyDataAssembler(
         operatingPeriods: Map<String, DbOperatingPeriod>,
     ): DbJourney {
         val schedule = mutableListOf<DbScheduledStop>()
-        val savedJourney = journeyJpaRepository.save(
-            DbJourney(
-                relationalId = null,
-                externalId = journey.id,
-                lineVersion = lineVersion,
-                journeyPatternId = journeyPatternId,
-                schedule = schedule,
-                operatingPeriods = linkOperatingPeriods(journey, registry, operatingPeriods),
-                route = null,
-            )
+        val savedJourney = DbJourney(
+            relationalId = null,
+            externalId = journey.id,
+            lineVersion = lineVersion,
+            journeyPatternId = journeyPatternId,
+            schedule = schedule,
+            operatingPeriods = linkOperatingPeriods(journey, registry, operatingPeriods),
+            route = null,
         )
         schedule.addAll(assembleScheduledStops(
             serviceJourney = journey,
@@ -79,10 +74,6 @@ class JourneyDataAssembler(
             stopPointInJourneyPatternRegistry = stopPointInJourneyPatternRegistry,
             scheduledStopPointRegistry = registry.scheduledStopPointRegistry
         ))
-        for (scheduledStop in schedule) {
-            scheduledStop.id.journeyId = savedJourney.relationalId
-        }
-        scheduledStopJpaRepository.saveAll(schedule)
         return savedJourney
     }
     
@@ -105,7 +96,7 @@ class JourneyDataAssembler(
                 name = scheduledStopPoint.name.value,
                 arrival = timetabledPassingTime.arrivalTime,
                 departure = timetabledPassingTime.departureTime,
-                id = DbScheduledStopId(savedJourney.relationalId, index),
+                stopId = DbScheduledStopId(savedJourney.relationalId, index),
                 journey = savedJourney,
             )
         }

@@ -22,9 +22,7 @@ class LineVersionDataAssembler(
                     validFrom = validFrom,
                     validTo = validTo,
                     timezone = zoneId,
-                ).also { if (it.isPresent) println("Line version ${line.id} $validFrom-$validTo($zoneId) already exists") }
-                .orElseGet { lineVersionJpaRepository.save(
-                    DbLineVersion(
+                ).orElseGet { DbLineVersion(
                         relationalId = null,
                         externalId = line.id,
                         publicCode = line.publicCode,
@@ -35,7 +33,6 @@ class LineVersionDataAssembler(
                         validTo = validTo,
                         timezone = zoneId,
                         isDetour = line.keyList.keyValue.first { it.key == "JdfDetourTimetable" }?.value == "1",
-                    )
                 ) }
         }
         return lineVersions
