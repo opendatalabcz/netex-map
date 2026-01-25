@@ -44,7 +44,8 @@ class LineVersionRepositoryAdapter(
             lineExternalId = lineVersion.lineId.value,
             validFrom = lineVersion.validIn.from,
             validTo = lineVersion.validIn.to,
-            timezone = lineVersion.validIn.timezone
+            timezone = lineVersion.validIn.timezone,
+            isDetour = lineVersion.isDetour,
         )
         if (optionalSaved.isPresent) {
             return optionalSaved.get()
@@ -57,13 +58,14 @@ class LineVersionRepositoryAdapter(
         findSaveMapping(lineVersion)
     }
 
-    override fun findById(lineId: LineId, validRange: DateRange): LineVersion? {
+    override fun findById(lineId: LineId, validRange: DateRange, isDetour: Boolean): LineVersion? {
         return lineVersionJpaRepository
             .findByLineIdAndValidRange(
                 lineExternalId = lineId.value,
                 validFrom = validRange.from,
                 validTo = validRange.to,
                 timezone = validRange.timezone,
+                isDetour = isDetour,
             ).map(::toDomain)
             .orElse(null)
     }

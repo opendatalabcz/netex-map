@@ -11,13 +11,21 @@ import jakarta.persistence.JoinTable
 import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 
 @Entity
-@Table(name = "journey")
+@Table(
+    name = "journey",
+    uniqueConstraints = [
+        UniqueConstraint(columnNames = ["line_version_id", "external_id"])
+    ]
+)
 class DbJourney(
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "journey_seq_gen")
+    @SequenceGenerator(name = "journey_seq_gen", sequenceName = "journey_seq", allocationSize = 20)
     var relationalId: Long?,
 
     @Column(nullable = false)

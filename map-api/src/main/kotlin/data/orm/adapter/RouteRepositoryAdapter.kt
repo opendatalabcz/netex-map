@@ -21,7 +21,7 @@ class RouteRepositoryAdapter(
     fun toDomain(route: DbRoute): Route = Route(
         routeId = RouteId(route.externalId),
         pointSequence = geometryAdapter.toDomain(route.pointSequence),
-        routeStops = route.routeStops.sortedBy { it.id.stopOrder }.map(::toDomain),
+        routeStops = route.routeStops.sortedBy { it.stopId.stopOrder }.map(::toDomain),
     )
 
     fun toDomain(routeStop: DbRouteStop): RouteStop = RouteStop(
@@ -42,7 +42,7 @@ class RouteRepositoryAdapter(
     }
 
     fun toDb(routeStop: RouteStop, route: DbRoute, order: Int): DbRouteStop = DbRouteStop(
-        id = DbRouteStopId(route.relationalId, order),
+        stopId = DbRouteStopId(route.relationalId, order),
         physicalStop = physicalStopRepositoryAdapter.findSaveMapping(routeStop.physicalStop),
         route = route,
         pointSequenceIndex = routeStop.pointSequenceIndex,
@@ -55,7 +55,7 @@ class RouteRepositoryAdapter(
         }
         val saved = routeJpaRepository.save(toDb(route, null))
         for (routeStop in saved.routeStops) {
-            routeStop.id.routeId = saved.relationalId
+            routeStop.stopId.routeId = saved.relationalId
         }
         routeStopJpaRepository.saveAll(saved.routeStops)
         return saved

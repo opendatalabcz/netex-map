@@ -16,12 +16,14 @@ class LineVersionDataAssembler(
             val zoneId = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone)
             val validFrom = line.validBetween.first().fromDate
             val validTo = line.validBetween.first().toDate
+            val isDetour = line.keyList.keyValue.first { it.key == "JdfDetourTimetable" }?.value == "1"
             lineVersions[line.id] = lineVersionJpaRepository
                 .findByLineIdAndValidRange(
                     lineExternalId = line.id,
                     validFrom = validFrom,
                     validTo = validTo,
                     timezone = zoneId,
+                    isDetour = isDetour,
                 ).orElseGet { DbLineVersion(
                         relationalId = null,
                         externalId = line.id,
@@ -32,7 +34,7 @@ class LineVersionDataAssembler(
                         validFrom = validFrom,
                         validTo = validTo,
                         timezone = zoneId,
-                        isDetour = line.keyList.keyValue.first { it.key == "JdfDetourTimetable" }?.value == "1",
+                        isDetour = isDetour,
                 ) }
         }
         return lineVersions

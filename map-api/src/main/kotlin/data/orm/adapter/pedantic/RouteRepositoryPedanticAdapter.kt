@@ -24,7 +24,7 @@ class RouteRepositoryPedanticAdapter(
     fun toDomain(route: DbRoute): Route = Route(
         routeId = RouteId(route.externalId),
         pointSequence = geometryAdapter.toDomain(route.pointSequence),
-        routeStops = route.routeStops.sortedBy { it.id.stopOrder }.map(::toDomain),
+        routeStops = route.routeStops.sortedBy { it.stopId.stopOrder }.map(::toDomain),
     )
 
     fun toDomain(routeStop: DbRouteStop): RouteStop = RouteStop(
@@ -45,7 +45,7 @@ class RouteRepositoryPedanticAdapter(
     }
 
     fun toDb(routeStop: RouteStop, route: DbRoute, order: Int): DbRouteStop = DbRouteStop(
-        id = DbRouteStopId(route.relationalId, order),
+        stopId = DbRouteStopId(route.relationalId, order),
         physicalStop = physicalStopRepositoryPedanticAdapter.findSaveMapping(routeStop.physicalStop),
         route = route,
         pointSequenceIndex = routeStop.pointSequenceIndex,
@@ -58,7 +58,7 @@ class RouteRepositoryPedanticAdapter(
         }
         val saved = routeJpaRepository.save(toDb(route, null))
         for (routeStop in saved.routeStops) {
-            routeStop.id.routeId = saved.relationalId
+            routeStop.stopId.routeId = saved.relationalId
         }
         routeStopJpaRepository.saveAll(saved.routeStops)
         return saved
@@ -67,7 +67,7 @@ class RouteRepositoryPedanticAdapter(
     private fun findSaveExistingMapping(route: Route, savedRoute: DbRoute): DbRoute {
         var differ = false
         val toDelete = mutableListOf<DbRouteStop>()
-        val sortedSavedStops = savedRoute.routeStops.sortedBy { it.id.stopOrder }
+        val sortedSavedStops = savedRoute.routeStops.sortedBy { it.stopId.stopOrder }
         for ((new, old) in route.routeStops.zipWithFill(sortedSavedStops)) {
             if (new != null && old != null) {
                 if (new.pointSequenceIndex != old.pointSequenceIndex) {
@@ -113,7 +113,7 @@ class RouteRepositoryPedanticAdapter(
     }
 
     private fun logDifference(fieldName: String, old: Any?, new: Any?, contextRoute: DbRoute, contextStop: DbRouteStop) {
-        logDifference("stop [${contextStop.id.stopOrder}]: $fieldName", old, new, contextRoute)
+        logDifference("stop [${contextStop.stopId.stopOrder}]: $fieldName", old, new, contextRoute)
     }
 
     private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbRoute) {

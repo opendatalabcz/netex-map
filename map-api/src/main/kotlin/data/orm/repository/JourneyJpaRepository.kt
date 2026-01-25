@@ -16,7 +16,8 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
                 "j.lineVersion.externalId = :lineExternalId AND " +
                 "j.lineVersion.validFrom = :validTo AND " +
                 "j.lineVersion.validTo = :validFrom AND " +
-                "j.lineVersion.timezone = :timezone"
+                "j.lineVersion.timezone = :timezone AND " +
+                "j.lineVersion.isDetour = :isDetour"
     )
     fun findByExternalIdAndLineIdAndValidRange(
         @Param("externalId") externalId: String,
@@ -24,5 +25,6 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
         @Param("validFrom") validFrom: LocalDateTime,
         @Param("validTo") validTo: LocalDateTime,
         @Param("timezone") timezone: ZoneId,
+        @Param("isDetour") isDetour: Boolean,
     ): Optional<DbJourney>
 }

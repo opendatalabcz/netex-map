@@ -7,13 +7,16 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
+import jakarta.persistence.PostLoad
+import jakarta.persistence.PostPersist
 import jakarta.persistence.Table
+import org.springframework.data.domain.Persistable
 
 @Entity
 @Table(name = "route_stop")
 class DbRouteStop(
     @EmbeddedId
-    val id: DbRouteStopId,
+    val stopId: DbRouteStopId,
 
     @MapsId("routeId")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,5 +29,18 @@ class DbRouteStop(
 
     @Column(nullable = false)
     val pointSequenceIndex: Int,
-) {
+): Persistable<DbRouteStopId> {
+
+    @Transient
+    private var isNewEntity: Boolean = (stopId.routeId == null)
+
+    override fun getId(): DbRouteStopId = stopId
+
+    override fun isNew(): Boolean = isNewEntity
+
+    @PostPersist
+    @PostLoad
+    private fun markNotNew() {
+        isNewEntity = false
+    }
 }

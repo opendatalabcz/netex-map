@@ -15,12 +15,14 @@ interface LineVersionJpaRepository: JpaRepository<DbLineVersion, Long> {
             "WHERE lv.externalId = :lineExternalId AND " +
                 "lv.validFrom = :validFrom AND " +
                 "lv.validTo = :validTo AND " +
-                "lv.timezone = :timezone"
+                "lv.timezone = :timezone AND " +
+                "lv.isDetour = :isDetour"
     )
     fun findByLineIdAndValidRange(
         @Param("lineExternalId") lineExternalId: String,
         @Param("validFrom") validFrom: LocalDateTime,
         @Param("validTo") validTo: LocalDateTime,
         @Param("timezone") timezone: ZoneId,
+        @Param("isDetour") isDetour: Boolean,
     ): Optional<DbLineVersion>
 }

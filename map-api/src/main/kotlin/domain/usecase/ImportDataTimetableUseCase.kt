@@ -18,15 +18,21 @@ class ImportDataTimetableUseCase(
         timetableParser: TimetableParserDataPort,
     ) {
         val resultList = mutableListOf<TimetableParserDataPort.TimetableParseResult>()
+        var i = 0
         timetableSource.provideInput { entryContentStream ->
             val result = timetableParser.parseTimetable(entryContentStream)
             resultList.add(result)
             operatingPeriodJpaRepository.saveAll(result.operatingPeriods.filter { it.relationalId == null })
-        }
-        lineVersionJpaRepository.saveAll(resultList.flatMap { it.lineVersions.filter { it.relationalId == null } })
-        resultList.flatMap { it.journeys.filter { it.relationalId == null } }.also { journeys ->
-            journeyJpaRepository.saveAll(journeys)
-            scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
+            i++
+            if (i >= 100) {
+                lineVersionJpaRepository.saveAll(resultList.flatMap { it.lineVersions.filter { it.relationalId == null } })
+                resultList.flatMap { it.journeys.filter { it.relationalId == null } }.also { journeys ->
+                    journeyJpaRepository.saveAll(journeys)
+                    scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
+                }
+                resultList.clear()
+                i = 0
+            }
         }
     }
 }

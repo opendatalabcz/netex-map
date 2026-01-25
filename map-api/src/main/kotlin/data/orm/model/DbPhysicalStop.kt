@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.locationtech.jts.geom.Point
 
@@ -12,7 +13,8 @@ import org.locationtech.jts.geom.Point
 @Table(name = "physical_stop")
 class DbPhysicalStop(
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "physical_stop_seq_gen")
+    @SequenceGenerator(name = "physical_stop_seq_gen", sequenceName = "physical_stop_seq", allocationSize = 20)
     var relationalId: Long?,
 
     @Column(nullable = false)

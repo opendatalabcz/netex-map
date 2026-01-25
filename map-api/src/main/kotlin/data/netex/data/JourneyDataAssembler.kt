@@ -38,6 +38,7 @@ class JourneyDataAssembler(
                     validFrom = lineVersion.validFrom,
                     validTo = lineVersion.validTo,
                     timezone = lineVersion.timezone,
+                    isDetour = lineVersion.isDetour,
                 ).orElseGet { assembleJourney(
                     journey = journey,
                     journeyPatternId = journeyPatternId,

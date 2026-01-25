@@ -34,7 +34,7 @@ class JourneyRepositoryPedanticAdapter(
         journeyId = JourneyId(journey.externalId),
         lineVersion = lineVersionRepositoryPedanticAdapter.toDomain(journey.lineVersion),
         journeyPatternId = JourneyPatternId(journey.journeyPatternId),
-        schedule = journey.schedule.sortedBy { it.id.stopOrder }.map(::toDomain),
+        schedule = journey.schedule.sortedBy { it.stopId.stopOrder }.map(::toDomain),
         operatingPeriods = journey.operatingPeriods.map(::toDomain),
         route = journey.route?.let(routeRepositoryPedanticAdapter::toDomain)
     )
@@ -72,7 +72,7 @@ class JourneyRepositoryPedanticAdapter(
         journey: DbJourney,
         order: Int,
     ): DbScheduledStop = DbScheduledStop(
-        id = DbScheduledStopId(journey.relationalId, order),
+        stopId = DbScheduledStopId(journey.relationalId, order),
         name = scheduledStop.name,
         journey = journey,
         arrival = scheduledStop.arrival,
@@ -104,6 +104,7 @@ class JourneyRepositoryPedanticAdapter(
             validFrom = journey.lineVersion.validIn.from,
             validTo = journey.lineVersion.validIn.to,
             timezone = journey.lineVersion.validIn.timezone,
+            isDetour = journey.lineVersion.isDetour,
         )
         if (optionalSaved.isPresent) {
             return findSaveExistIngMapping(journey, optionalSaved.get())
@@ -113,7 +114,7 @@ class JourneyRepositoryPedanticAdapter(
             relationalId = null
         ))
         for (scheduledStop in saved.schedule) {
-            scheduledStop.id.journeyId = saved.relationalId
+            scheduledStop.stopId.journeyId = saved.relationalId
         }
         scheduledStopJpaRepository.saveAll(saved.schedule)
         return saved
@@ -137,7 +138,7 @@ class JourneyRepositoryPedanticAdapter(
     private fun compareScheduledStopsDiffer(journey: Journey, savedJourney: DbJourney): Pair<Boolean, List<DbScheduledStop>> {
         var stopsDiffer = false
         val toDelete = mutableListOf<DbScheduledStop>()
-        val sortedSavedStops = savedJourney.schedule.sortedBy { it.id.stopOrder }
+        val sortedSavedStops = savedJourney.schedule.sortedBy { it.stopId.stopOrder }
         if (journey.schedule.size != sortedSavedStops.size) logDifference("number of scheduled stops", sortedSavedStops.size, journey.schedule.size, savedJourney)
         for ((new, old) in journey.schedule.zipWithFill(sortedSavedStops)) {
             if (new != null && old != null) {
@@ -213,7 +214,7 @@ class JourneyRepositoryPedanticAdapter(
         findSaveMapping(journey)
     }
 
-    override fun findById(lineId: LineId, validRange: DateRange, journeyId: JourneyId): Journey? {
+    override fun findById(lineId: LineId, validRange: DateRange, isDetour: Boolean, journeyId: JourneyId): Journey? {
         return journeyJpaRepository
             .findByExternalIdAndLineIdAndValidRange(
                 externalId = journeyId.value,
@@ -221,12 +222,13 @@ class JourneyRepositoryPedanticAdapter(
                 validFrom = validRange.from,
                 validTo = validRange.to,
                 timezone = validRange.timezone,
+                isDetour = isDetour,
             ).map(::toDomain)
             .orElse(null)
     }
 
     private fun logDifference(fieldName: String, old: Any?, new: Any?, contextJourney: DbJourney, contextStop: DbScheduledStop) {
-        logDifference("stop [${contextStop.id.stopOrder}]: $fieldName", old, new, contextJourney)
+        logDifference("stop [${contextStop.stopId.stopOrder}]: $fieldName", old, new, contextJourney)
     }
 
     private fun logDifference(fieldName: String, old: Any?, new: Any?, context: DbJourney) {
