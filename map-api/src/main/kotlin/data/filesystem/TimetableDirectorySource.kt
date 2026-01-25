@@ -12,10 +12,8 @@ class TimetableDirectorySource(
     }
 
     override fun provideInput(onEntry: (contentStream: InputStream) -> Unit) {
-        directory.walkTopDown()
-            .filter { it.isFile }
-            .forEach { file ->
-                file.inputStream().use(onEntry)
-            }
+        for (file in directory.walkTopDown().filter { it.isFile }) {
+            file.inputStream().use(onEntry)
+        }
     }
 }

@@ -4,14 +4,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
-import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
 import jakarta.persistence.PostLoad
 import jakarta.persistence.PostPersist
 import jakarta.persistence.Table
-import jakarta.persistence.UniqueConstraint
 import org.springframework.data.domain.Persistable
 import java.time.LocalTime
 
@@ -23,6 +21,9 @@ class DbScheduledStop(
 
     @Column(nullable = false)
     val name: String,
+
+    @Column(nullable = false)
+    val stopOnRequest: Boolean,
 
     @MapsId("journeyId")
     @ManyToOne(fetch = FetchType.LAZY)

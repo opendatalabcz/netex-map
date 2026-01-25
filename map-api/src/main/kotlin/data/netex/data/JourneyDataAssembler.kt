@@ -94,11 +94,12 @@ class JourneyDataAssembler(
             checkNotNull(scheduledStopPoint) { "Scheduled stop point $scheduledStopPointId not found" }
 
             return@mapIndexed DbScheduledStop(
+                stopId = DbScheduledStopId(savedJourney.relationalId, index),
+                stopOnRequest = stopPointInJourneyPattern.isRequestStop ?: false,
                 name = scheduledStopPoint.name.value,
+                journey = savedJourney,
                 arrival = timetabledPassingTime.arrivalTime,
                 departure = timetabledPassingTime.departureTime,
-                stopId = DbScheduledStopId(savedJourney.relationalId, index),
-                journey = savedJourney,
             )
         }
     }

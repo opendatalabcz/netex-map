@@ -4,6 +4,7 @@ import java.time.LocalTime
 
 data class ScheduledStop(
     val name: String,
+    val stopOnRequest: Boolean,
     val arrival: LocalTime?,
     val departure: LocalTime?,
 ) {

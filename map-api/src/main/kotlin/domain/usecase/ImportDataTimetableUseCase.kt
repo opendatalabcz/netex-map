@@ -23,16 +23,20 @@ class ImportDataTimetableUseCase(
             val result = timetableParser.parseTimetable(entryContentStream)
             resultList.add(result)
             operatingPeriodJpaRepository.saveAll(result.operatingPeriods.filter { it.relationalId == null })
-            i++
-            if (i >= 100) {
-                lineVersionJpaRepository.saveAll(resultList.flatMap { it.lineVersions.filter { it.relationalId == null } })
-                resultList.flatMap { it.journeys.filter { it.relationalId == null } }.also { journeys ->
-                    journeyJpaRepository.saveAll(journeys)
-                    scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
-                }
+            if (++i >= 100) {
+                batchSave(resultList)
                 resultList.clear()
                 i = 0
             }
+        }
+        batchSave(resultList)
+    }
+    
+    private fun batchSave(resultList: List<TimetableParserDataPort.TimetableParseResult>) {
+        lineVersionJpaRepository.saveAll(resultList.flatMap { it.lineVersions.filter { it.relationalId == null } })
+        resultList.flatMap { it.journeys.filter { it.relationalId == null } }.also { journeys ->
+            journeyJpaRepository.saveAll(journeys)
+            scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
         }
     }
 }

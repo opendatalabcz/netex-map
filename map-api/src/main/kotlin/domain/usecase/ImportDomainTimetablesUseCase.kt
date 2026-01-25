@@ -1,6 +1,6 @@
 package cz.cvut.fit.gaierda1.domain.usecase
 
-import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
+import cz.cvut.fit.gaierda1.domain.port.TimetableParserDomainPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
@@ -11,7 +11,7 @@ class ImportDomainTimetablesUseCase(
 ) {
     fun importTimetables(
         timetableSource: TimetableSourcePort,
-        timetableParser: TimetableParserPort,
+        timetableParser: TimetableParserDomainPort,
     ) {
         timetableSource.provideInput { entryContentStream ->
             val result = timetableParser.parseTimetable(entryContentStream)

@@ -4,7 +4,7 @@ import cz.cvut.fit.gaierda1.domain.model.Journey
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import java.io.InputStream
 
-interface TimetableParserPort {
+interface TimetableParserDomainPort {
     data class TimetableParseResult(
         val lineVersions: List<LineVersion>,
         val journeys: List<Journey>,

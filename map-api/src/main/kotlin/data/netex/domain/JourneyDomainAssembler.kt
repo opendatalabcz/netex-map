@@ -68,6 +68,7 @@ class JourneyDomainAssembler {
 
             return@map ScheduledStop(
                 name = scheduledStopPoint.name.value,
+                stopOnRequest = stopPointInJourneyPattern.isRequestStop ?: false,
                 arrival = timetabledPassingTime.arrivalTime,
                 departure = timetabledPassingTime.departureTime,
             )

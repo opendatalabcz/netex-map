@@ -36,6 +36,7 @@ class JourneyRepositoryAdapter(
 
     fun toDomain(scheduledStop: DbScheduledStop): ScheduledStop = ScheduledStop(
         name = scheduledStop.name,
+        stopOnRequest = scheduledStop.stopOnRequest,
         arrival = scheduledStop.arrival,
         departure = scheduledStop.departure,
     )
@@ -69,6 +70,7 @@ class JourneyRepositoryAdapter(
     ): DbScheduledStop = DbScheduledStop(
         stopId = DbScheduledStopId(journey.relationalId, order),
         name = scheduledStop.name,
+        stopOnRequest = scheduledStop.stopOnRequest,
         journey = journey,
         arrival = scheduledStop.arrival,
         departure = scheduledStop.departure,
