@@ -31,12 +31,12 @@ class ImportDataTimetableUseCase(
         }
         batchSave(resultList)
     }
-    
+
     private fun batchSave(resultList: List<TimetableParserDataPort.TimetableParseResult>) {
-        lineVersionJpaRepository.saveAll(resultList.flatMap { it.lineVersions.filter { it.relationalId == null } })
-        resultList.flatMap { it.journeys.filter { it.relationalId == null } }.also { journeys ->
-            journeyJpaRepository.saveAll(journeys)
-            scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
-        }
+        val newLineVersions = resultList.flatMap { it.lineVersions.filter { it.relationalId == null } }
+        val journeysOfNewLineVersions = resultList.flatMap { it.journeys.filter { newLineVersions.contains(it.lineVersion) } }
+        lineVersionJpaRepository.saveAll(newLineVersions)
+        journeyJpaRepository.saveAll(journeysOfNewLineVersions)
+        scheduledStopJpaRepository.saveAll(journeysOfNewLineVersions.flatMap { it.schedule })
     }
 }
