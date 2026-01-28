@@ -33,6 +33,7 @@ class TimetableDomainParser(
 
         return TimetableParserDomainPort.TimetableParseResult(
             lineVersions = lineVersionsMap.values.toList(),
+            operatingPeriods = operatingPeriodsMap.values.toList(),
             journeys = journeysMap.values.toList(),
         )
     }

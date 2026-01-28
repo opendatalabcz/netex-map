@@ -4,6 +4,7 @@ import cz.cvut.fit.gaierda1.domain.model.Route
 import cz.cvut.fit.gaierda1.domain.model.RouteId
 
 interface RouteRepository {
-    fun save(route: Route)
+    fun saveIfAbsent(route: Route)
+    fun saveAllIfAbsent(routes: Iterable<Route>)
     fun findById(id: RouteId): Route?
 }

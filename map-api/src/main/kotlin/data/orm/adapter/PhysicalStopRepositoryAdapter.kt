@@ -8,7 +8,7 @@ import cz.cvut.fit.gaierda1.domain.repository.PhysicalStopRepository
 import org.springframework.stereotype.Component
 
 @Component
-class PhysicalStopRepositoryAdapter(
+open class PhysicalStopRepositoryAdapter(
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
     private val geometryAdapter: GeometryAdapter,
 ): PhysicalStopRepository {
@@ -27,17 +27,46 @@ class PhysicalStopRepositoryAdapter(
         tags = physicalStop.tags
     )
 
-    fun findSaveMapping(physicalStop: PhysicalStop): DbPhysicalStop {
+    fun findOrMap(physicalStop: PhysicalStop): DbPhysicalStop {
         val optionalSaved = physicalStopJpaRepository.findByExternalId(physicalStop.stopId.value)
-        if (optionalSaved.isPresent) {
-            return optionalSaved.get()
-        }
-        val mapped = toDb(physicalStop, optionalSaved.map { it.relationalId }.orElse(null))
-        return physicalStopJpaRepository.save(mapped)
+        return optionalSaved.orElseGet { toDb(physicalStop, null) }
+    }
+
+    fun saveDb(physicalStop: DbPhysicalStop) {
+        physicalStopJpaRepository.save(physicalStop)
+    }
+
+    fun saveAllDb(physicalStops: Iterable<DbPhysicalStop>) {
+        physicalStopJpaRepository.saveAll(physicalStops)
+    }
+
+    fun findSaveMapping(physicalStop: PhysicalStop): DbPhysicalStop {
+        val mapped = findOrMap(physicalStop)
+        if (mapped.relationalId == null) saveDb(mapped)
+        return mapped
+    }
+
+    private val physicalStopComparator = compareBy<PhysicalStop> { it.stopId.value }
+
+    private fun findSaveMappingsImpl(physicalStops: Iterable<PhysicalStop>, result: Boolean): List<DbPhysicalStop>? {
+        val uniqueStops = sortedSetOf(comparator = physicalStopComparator)
+        uniqueStops.addAll(physicalStops)
+        val mappedUniqueStops = uniqueStops.map(::findOrMap)
+        saveAllDb(mappedUniqueStops.filter { it.relationalId == null })
+        return if (result) physicalStops.map { domainStop -> mappedUniqueStops.find { dbStop -> domainStop.stopId.value == dbStop.externalId }!! }
+            else null
+    }
+
+    fun findSaveMappings(physicalStops: Iterable<PhysicalStop>): List<DbPhysicalStop> {
+        return findSaveMappingsImpl(physicalStops, true)!!
     }
     
-    override fun save(physicalStop: PhysicalStop) {
+    override fun saveIfAbsent(physicalStop: PhysicalStop) {
         findSaveMapping(physicalStop)
+    }
+
+    override fun saveAllIfAbsent(physicalStops: Iterable<PhysicalStop>) {
+        findSaveMappingsImpl(physicalStops, false)
     }
 
     override fun findById(id: PhysicalStopId): PhysicalStop? {

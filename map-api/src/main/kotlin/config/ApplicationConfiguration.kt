@@ -6,6 +6,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.OperatingPeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
+import cz.cvut.fit.gaierda1.domain.repository.OperatingPeriodRepository
 import cz.cvut.fit.gaierda1.domain.usecase.ImportDataTimetableUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.ImportDomainTimetablesUseCase
 import org.springframework.context.annotation.Bean
@@ -16,8 +17,9 @@ class ApplicationConfiguration {
     @Bean
     fun importDomainTimetablesUseCase(
         lineVersionRepository: LineVersionRepository,
+        operatingPeriodRepository: OperatingPeriodRepository,
         journeyRepository: JourneyRepository,
-    ): ImportDomainTimetablesUseCase = ImportDomainTimetablesUseCase(lineVersionRepository, journeyRepository)
+    ): ImportDomainTimetablesUseCase = ImportDomainTimetablesUseCase(lineVersionRepository, operatingPeriodRepository, journeyRepository)
 
     @Bean
     fun importDataTimetableUseCase(

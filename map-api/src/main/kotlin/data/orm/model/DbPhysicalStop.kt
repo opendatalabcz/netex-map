@@ -17,7 +17,7 @@ class DbPhysicalStop(
     @SequenceGenerator(name = "physical_stop_seq_gen", sequenceName = "physical_stop_seq", allocationSize = 20)
     var relationalId: Long?,
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     val externalId: String,
 
     @Column(nullable = false)

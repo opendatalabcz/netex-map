@@ -5,6 +5,7 @@ import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 
 interface LineVersionRepository {
-    fun save(lineVersion: LineVersion)
-    fun findById(lineId: LineId, validRange: DateRange): LineVersion?
+    fun saveIfAbsent(lineVersion: LineVersion)
+    fun saveAllIfAbsent(lineVersions: Iterable<LineVersion>)
+    fun findById(lineId: LineId, validRange: DateRange, isDetour: Boolean): LineVersion?
 }

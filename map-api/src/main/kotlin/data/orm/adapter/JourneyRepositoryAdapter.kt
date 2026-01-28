@@ -1,27 +1,27 @@
 package cz.cvut.fit.gaierda1.data.orm.adapter
 
 import cz.cvut.fit.gaierda1.data.orm.model.DbJourney
+import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
 import cz.cvut.fit.gaierda1.data.orm.model.DbOperatingPeriod
+import cz.cvut.fit.gaierda1.data.orm.model.DbRoute
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
-import cz.cvut.fit.gaierda1.data.orm.repository.OperatingPeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.model.DateRange
 import cz.cvut.fit.gaierda1.domain.model.Journey
 import cz.cvut.fit.gaierda1.domain.model.JourneyId
 import cz.cvut.fit.gaierda1.domain.model.JourneyPatternId
 import cz.cvut.fit.gaierda1.domain.model.LineId
-import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
 import org.springframework.stereotype.Component
 
 @Component
-class JourneyRepositoryAdapter(
+open class JourneyRepositoryAdapter(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
-    private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
+    private val operatingPeriodRepositoryAdapter: OperatingPeriodRepositoryAdapter,
     private val lineVersionRepositoryAdapter: LineVersionRepositoryAdapter,
     private val routeRepositoryAdapter: RouteRepositoryAdapter,
 ): JourneyRepository {
@@ -30,7 +30,7 @@ class JourneyRepositoryAdapter(
         lineVersion = lineVersionRepositoryAdapter.toDomain(journey.lineVersion),
         journeyPatternId = JourneyPatternId(journey.journeyPatternId),
         schedule = journey.schedule.sortedBy { it.stopId.stopOrder }.map(::toDomain),
-        operatingPeriods = journey.operatingPeriods.map(::toDomain),
+        operatingPeriods = journey.operatingPeriods.map(operatingPeriodRepositoryAdapter::toDomain),
         route = journey.route?.let(routeRepositoryAdapter::toDomain)
     )
 
@@ -41,23 +41,22 @@ class JourneyRepositoryAdapter(
         departure = scheduledStop.departure,
     )
 
-    fun toDomain(operatingPeriod: DbOperatingPeriod): OperatingPeriod = OperatingPeriod(
-        timezone = operatingPeriod.timezone,
-        fromDate = operatingPeriod.fromDate,
-        toDate = operatingPeriod.toDate,
-        validDays = operatingPeriod.validDays
-    )
-
-    fun toDb(journey: Journey, relationalId: Long?): DbJourney {
+    fun toDb(
+        journey: Journey,
+        relationalId: Long?,
+        lineVersion: DbLineVersion,
+        route: DbRoute?,
+        operatingPeriods: List<DbOperatingPeriod>,
+    ): DbJourney {
         val schedule = mutableListOf<DbScheduledStop>()
         val dbJourney = DbJourney(
             relationalId = relationalId,
             externalId = journey.journeyId.value,
             journeyPatternId = journey.journeyPatternId.value,
-            lineVersion = lineVersionRepositoryAdapter.findSaveMapping(journey.lineVersion),
-            route = journey.route?.let(routeRepositoryAdapter::findSaveMapping),
+            lineVersion = lineVersion,
+            route = route,
             schedule = schedule,
-            operatingPeriods = journey.operatingPeriods.map(::findSaveMapping),
+            operatingPeriods = operatingPeriods,
         )
         schedule.addAll(journey.schedule.mapIndexed { index, scheduledStop -> toDb(scheduledStop, dbJourney, index) })
         return dbJourney
@@ -76,25 +75,10 @@ class JourneyRepositoryAdapter(
         departure = scheduledStop.departure,
     )
 
-    fun toDb(operatingPeriod: OperatingPeriod, relationalId: Long?): DbOperatingPeriod = DbOperatingPeriod(
-        relationalId = relationalId,
-        timezone = operatingPeriod.timezone,
-        fromDate = operatingPeriod.fromDate,
-        toDate = operatingPeriod.toDate,
-        validDays = operatingPeriod.validDays,
-    )
-
-    fun findSaveMapping(operatingPeriod: OperatingPeriod): DbOperatingPeriod {
-        val optionalSaved = operatingPeriodJpaRepository.findByLineVersionIdAndValidDays(
-            fromDate = operatingPeriod.fromDate,
-            toDate = operatingPeriod.toDate,
-            timezone = operatingPeriod.timezone,
-            validDays = operatingPeriod.validDays,
-        )
-        return optionalSaved.orElseGet { operatingPeriodJpaRepository.save(toDb(operatingPeriod, null)) }
-    }
-
-    fun findSaveMapping(journey: Journey): DbJourney {
+    fun findOrMap(
+        journey: Journey,
+        dependenciesSupplier: () -> Triple<DbLineVersion, DbRoute?, List<DbOperatingPeriod>>,
+    ): DbJourney {
         val optionalSaved = journeyJpaRepository.findByExternalIdAndLineIdAndValidRange(
             externalId = journey.journeyId.value,
             lineExternalId = journey.lineVersion.lineId.value,
@@ -103,22 +87,75 @@ class JourneyRepositoryAdapter(
             timezone = journey.lineVersion.validIn.timezone,
             isDetour = journey.lineVersion.isDetour,
         )
-        if (optionalSaved.isPresent) {
-            return optionalSaved.get()
+        return optionalSaved.orElseGet {
+            val (lineVersion, route, operatingPeriods) = dependenciesSupplier()
+            toDb(journey, null, lineVersion, route, operatingPeriods)
         }
-        val saved = journeyJpaRepository.save(toDb(
-            journey = journey,
-            relationalId = null
-        ))
-        for (scheduledStop in saved.schedule) {
-            scheduledStop.stopId.journeyId = saved.relationalId
-        }
-        scheduledStopJpaRepository.saveAll(saved.schedule)
-        return saved
     }
 
-    override fun save(journey: Journey) {
+    fun saveDb(journey: DbJourney) {
+        journeyJpaRepository.save(journey)
+        scheduledStopJpaRepository.saveAll(journey.schedule)
+    }
+
+    fun saveAllDb(journeys: Iterable<DbJourney>) {
+        journeyJpaRepository.saveAll(journeys)
+        scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
+    }
+
+    private fun dependenciesSupplierFor(journey: Journey) = {
+        Triple(
+            lineVersionRepositoryAdapter.findSaveMapping(journey.lineVersion),
+            journey.route?.let(routeRepositoryAdapter::findSaveMapping),
+            operatingPeriodRepositoryAdapter.findSaveMappings(journey.operatingPeriods),
+        )
+    }
+
+    fun findSaveMapping(journey: Journey): DbJourney {
+        val mapped = findOrMap(journey, dependenciesSupplierFor(journey))
+        if (mapped.relationalId == null) saveDb(mapped)
+        return mapped
+    }
+
+    private val journeyComparator = compareBy<Journey> { it.journeyId.value }
+        .thenBy { it.lineVersion.lineId.value }
+        .thenBy { it.lineVersion.validIn.from }
+        .thenBy { it.lineVersion.validIn.to }
+        .thenBy { it.lineVersion.isDetour }
+        .thenBy { it.lineVersion.validIn.timezone.id }
+
+    private fun findSaveMappingsImpl(journeys: Iterable<Journey>, result: Boolean): List<DbJourney>? {
+        val uniqueJourneys = sortedSetOf(comparator = journeyComparator)
+        uniqueJourneys.addAll(journeys)
+        lineVersionRepositoryAdapter.saveAllIfAbsent(uniqueJourneys.map { it.lineVersion })
+        operatingPeriodRepositoryAdapter.saveAllIfAbsent(uniqueJourneys.flatMap { it.operatingPeriods })
+        routeRepositoryAdapter.saveAllIfAbsent(uniqueJourneys.mapNotNull { it.route })
+
+        val mappedUniqueJourneys = uniqueJourneys.map { journey ->
+            findOrMap(journey, dependenciesSupplierFor(journey))
+        }
+        saveAllDb(mappedUniqueJourneys.filter { it.relationalId == null })
+        return if (result) journeys.map { domainJourney -> mappedUniqueJourneys.find { dbJourney ->
+                    domainJourney.journeyId.value == dbJourney.externalId
+                        && domainJourney.lineVersion.lineId.value == dbJourney.lineVersion.externalId
+                        && domainJourney.lineVersion.validIn.from.equals(dbJourney.lineVersion.validFrom)
+                        && domainJourney.lineVersion.validIn.to.equals(dbJourney.lineVersion.validTo)
+                        && domainJourney.lineVersion.isDetour == dbJourney.lineVersion.isDetour
+                        && domainJourney.lineVersion.validIn.timezone.id == dbJourney.lineVersion.timezone.id
+                }!! }
+            else null
+    }
+
+    fun findSaveMappings(journeys: Iterable<Journey>): List<DbJourney> {
+        return findSaveMappingsImpl(journeys, true)!!
+    }
+
+    override fun saveIfAbsent(journey: Journey) {
         findSaveMapping(journey)
+    }
+
+    override fun saveAllIfAbsent(journeys: Iterable<Journey>) {
+        findSaveMappingsImpl(journeys, false)
     }
 
     override fun findById(lineId: LineId, validRange: DateRange, isDetour: Boolean, journeyId: JourneyId): Journey? {
