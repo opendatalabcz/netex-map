@@ -9,17 +9,24 @@ import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
 import cz.cvut.fit.gaierda1.domain.repository.OperatingPeriodRepository
 import cz.cvut.fit.gaierda1.domain.usecase.ImportDataTimetableUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.ImportDomainTimetablesUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.ViewJourneys
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.web.config.EnableSpringDataWebSupport
 
 @Configuration
+@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 class ApplicationConfiguration {
     @Bean
     fun importDomainTimetablesUseCase(
         lineVersionRepository: LineVersionRepository,
         operatingPeriodRepository: OperatingPeriodRepository,
         journeyRepository: JourneyRepository,
-    ): ImportDomainTimetablesUseCase = ImportDomainTimetablesUseCase(lineVersionRepository, operatingPeriodRepository, journeyRepository)
+    ): ImportDomainTimetablesUseCase = ImportDomainTimetablesUseCase(
+        lineVersionRepository,
+        operatingPeriodRepository,
+        journeyRepository,
+    )
 
     @Bean
     fun importDataTimetableUseCase(
@@ -31,6 +38,13 @@ class ApplicationConfiguration {
         lineVersionJpaRepository,
         operatingPeriodJpaRepository,
         journeyJpaRepository,
-        scheduledStopJpaRepository
+        scheduledStopJpaRepository,
+    )
+
+    @Bean
+    fun viewJourneys(
+        journeyRepository: JourneyRepository,
+    ): ViewJourneys = ViewJourneys(
+        journeyRepository,
     )
 }

@@ -1,7 +1,7 @@
 package cz.cvut.fit.gaierda1.data.netex.domain
 
 import cz.cvut.fit.gaierda1.data.netex.NetexFileRegistry
-import cz.cvut.fit.gaierda1.domain.model.DateRange
+import cz.cvut.fit.gaierda1.domain.model.DateTimeRange
 import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import org.springframework.stereotype.Component
@@ -19,7 +19,7 @@ class LineVersionDomainAssembler {
                 name = line.name.value,
                 shortName = line.shortName.value,
                 transportMode = line.transportMode.value(),
-                validIn = DateRange(
+                validIn = DateTimeRange(
                     from = line.validBetween.first().fromDate,
                     to = line.validBetween.first().toDate,
                     timezone = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone),

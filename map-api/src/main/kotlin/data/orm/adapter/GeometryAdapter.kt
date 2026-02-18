@@ -12,7 +12,7 @@ class GeometryAdapter(
     private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326),
 ) {
     fun toDomain(point: Point): cz.cvut.fit.gaierda1.domain.model.Point =
-        cz.cvut.fit.gaierda1.domain.model.Point(point.y, point.x)
+        cz.cvut.fit.gaierda1.domain.model.Point(longitude = point.x, latitude = point.y)
 
     fun toDb(point: cz.cvut.fit.gaierda1.domain.model.Point): Point =
         geometryFactory.createPoint(Coordinate(point.longitude, point.latitude))

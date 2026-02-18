@@ -8,13 +8,15 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
-import cz.cvut.fit.gaierda1.domain.model.DateRange
+import cz.cvut.fit.gaierda1.domain.model.DateTimeRange
 import cz.cvut.fit.gaierda1.domain.model.Journey
 import cz.cvut.fit.gaierda1.domain.model.JourneyId
 import cz.cvut.fit.gaierda1.domain.model.JourneyPatternId
 import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 
 @Component
@@ -158,7 +160,7 @@ open class JourneyRepositoryAdapter(
         findSaveMappingsImpl(journeys, false)
     }
 
-    override fun findById(lineId: LineId, validRange: DateRange, isDetour: Boolean, journeyId: JourneyId): Journey? {
+    override fun findById(lineId: LineId, validRange: DateTimeRange, isDetour: Boolean, journeyId: JourneyId): Journey? {
         return journeyJpaRepository
             .findByExternalIdAndLineIdAndValidRange(
                 externalId = journeyId.value,
@@ -169,5 +171,9 @@ open class JourneyRepositoryAdapter(
                 isDetour = isDetour,
             ).map(::toDomain)
             .orElse(null)
+    }
+
+    override fun getPage(pageable: Pageable): Page<Journey> {
+        return journeyJpaRepository.findAll(pageable).map(::toDomain)
     }
 }

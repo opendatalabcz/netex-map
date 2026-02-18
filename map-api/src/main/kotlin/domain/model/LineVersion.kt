@@ -9,7 +9,7 @@ data class LineVersion(
     val name: String,
     val shortName: String,
     val transportMode: String, // TODO make enum
-    val validIn: DateRange,
+    val validIn: DateTimeRange,
     val isDetour: Boolean,
 ) {
 }

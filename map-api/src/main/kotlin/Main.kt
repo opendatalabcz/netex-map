@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManagerFactory
 import org.hibernate.SessionFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.context.ConfigurableApplicationContext
 import java.io.File
 import java.time.LocalTime
 
@@ -17,7 +18,9 @@ class Application
 
 fun main(args: Array<String>) {
     val appContext = runApplication<Application>(*args)
+}
 
+fun doImport(appContext: ConfigurableApplicationContext, useDomainImport: Boolean) {
     val entityManagerFactory = appContext.getBean(EntityManagerFactory::class.java)
     val sessionFactory = entityManagerFactory.unwrap(SessionFactory::class.java)
     val stats = sessionFactory.statistics
@@ -32,7 +35,7 @@ fun main(args: Array<String>) {
 
     val start = LocalTime.now()
     println("$start: Begin importing timetables")
-    if (false) {
+    if (useDomainImport) {
         importDomainTimetableUseCase.importTimetables(timetableSource, timetableDomainParser)
     } else {
         importDataTimetableUseCase.importTimetables(timetableSource, timetableDataParser)

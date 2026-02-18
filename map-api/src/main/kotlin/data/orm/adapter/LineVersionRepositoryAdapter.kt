@@ -2,7 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.adapter
 
 import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
-import cz.cvut.fit.gaierda1.domain.model.DateRange
+import cz.cvut.fit.gaierda1.domain.model.DateTimeRange
 import cz.cvut.fit.gaierda1.domain.model.LineId
 import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
@@ -19,7 +19,7 @@ open class LineVersionRepositoryAdapter(
         shortName = lineVersion.shortName,
         transportMode = lineVersion.transportMode,
         isDetour = lineVersion.isDetour,
-        validIn = DateRange(
+        validIn = DateTimeRange(
             from = lineVersion.validFrom,
             to = lineVersion.validTo,
             timezone = lineVersion.timezone,
@@ -97,7 +97,7 @@ open class LineVersionRepositoryAdapter(
         findSaveMappingsImpl(lineVersions, false)
     }
 
-    override fun findById(lineId: LineId, validRange: DateRange, isDetour: Boolean): LineVersion? {
+    override fun findById(lineId: LineId, validRange: DateTimeRange, isDetour: Boolean): LineVersion? {
         return lineVersionJpaRepository
             .findByLineIdAndValidRange(
                 lineExternalId = lineId.value,
