@@ -1,0 +1,46 @@
+{
+  "name": "netex-map",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build",
+    "lint": "run-s lint:*",
+    "lint:oxlint": "oxlint . --fix",
+    "lint:eslint": "eslint . --fix --cache",
+    "format": "prettier --write --experimental-cli src/"
+  },
+  "dependencies": {
+    "@mdi/font": "7.x",
+    "vue": "3.x",
+    "vue-i18n": "11.x",
+    "vuetify": "3.x"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "24.x",
+    "@types/node": "24.x",
+    "@vitejs/plugin-vue": "6.x",
+    "@vue/eslint-config-typescript": "14.x",
+    "@vue/tsconfig": "0.8.x",
+    "eslint": "9.x",
+    "eslint-config-prettier": "10.x",
+    "eslint-plugin-oxlint": "1.46.x",
+    "eslint-plugin-vue": "10.8.x",
+    "jiti": "2.x",
+    "npm-run-all2": "8.x",
+    "oxlint": "1.47.x",
+    "prettier": "3.8.1",
+    "typescript": "5.9.x",
+    "vite": "7.x",
+    "vite-plugin-vue-devtools": "8.x",
+    "vite-plugin-vuetify": "2.x",
+    "vue-tsc": "3.x"
+  },
+  "engines": {
+    "node": "20.x || >=22.12.0"
+  }
+}
