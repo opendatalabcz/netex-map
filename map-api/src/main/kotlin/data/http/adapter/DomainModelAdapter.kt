@@ -41,9 +41,8 @@ class DomainModelAdapter {
     )
 
     fun toHttp(operatingPeriod: OperatingPeriod): HttpOperatingPeriod = HttpOperatingPeriod(
-        timezone = operatingPeriod.timezone.id,
-        fromDate = operatingPeriod.fromDate,
-        toDate = operatingPeriod.toDate,
+        fromDate = ZonedDateTime.of(operatingPeriod.fromDate, operatingPeriod.timezone),
+        toDate = ZonedDateTime.of(operatingPeriod.toDate, operatingPeriod.timezone),
         validDays = operatingPeriod.validDays.map { if (it) 1 else 0 }.joinToString(""),
     )
 

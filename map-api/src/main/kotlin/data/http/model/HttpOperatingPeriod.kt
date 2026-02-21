@@ -1,11 +1,10 @@
 package cz.cvut.fit.gaierda1.data.http.model
 
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 class HttpOperatingPeriod(
-    val timezone: String,
-    val fromDate: LocalDateTime,
-    val toDate: LocalDateTime,
+    val fromDate: ZonedDateTime,
+    val toDate: ZonedDateTime,
     val validDays: String,
 ) {
 }
