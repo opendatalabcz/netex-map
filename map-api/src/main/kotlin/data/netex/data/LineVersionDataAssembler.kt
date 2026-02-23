@@ -3,6 +3,7 @@ package cz.cvut.fit.gaierda1.data.netex.data
 import cz.cvut.fit.gaierda1.data.netex.NetexFileRegistry
 import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.springframework.stereotype.Component
 import java.time.ZoneId
 
@@ -17,14 +18,16 @@ class LineVersionDataAssembler(
             val validFrom = line.validBetween.first().fromDate
             val validTo = line.validBetween.first().toDate
             val isDetour = line.keyList.keyValue.first { it.key == "JdfDetourTimetable" }?.value == "1"
-            lineVersions[line.id] = lineVersionJpaRepository
-                .findByLineIdAndValidRange(
-                    lineExternalId = line.id,
-                    validFrom = validFrom,
-                    validTo = validTo,
-                    timezone = zoneId,
-                    isDetour = isDetour,
-                ).orElseGet { DbLineVersion(
+            lineVersions[line.id] = Measurer.addToDbFind {
+                lineVersionJpaRepository
+                    .findByLineIdAndValidRange(
+                        lineExternalId = line.id,
+                        validFrom = validFrom,
+                        validTo = validTo,
+                        timezone = zoneId,
+                        isDetour = isDetour,
+                    )
+            }.orElseGet { DbLineVersion(
                         relationalId = null,
                         externalId = line.id,
                         publicCode = line.publicCode,

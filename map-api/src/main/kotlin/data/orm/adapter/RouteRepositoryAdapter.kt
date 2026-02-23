@@ -10,6 +10,7 @@ import cz.cvut.fit.gaierda1.domain.model.Route
 import cz.cvut.fit.gaierda1.domain.model.RouteId
 import cz.cvut.fit.gaierda1.domain.model.RouteStop
 import cz.cvut.fit.gaierda1.domain.repository.RouteRepository
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.springframework.stereotype.Component
 
 @Component
@@ -54,18 +55,22 @@ open class RouteRepositoryAdapter(
     )
 
     fun findOrMap(route: Route, physicalStopsSupplier: () -> List<DbPhysicalStop>): DbRoute {
-        val optionalSaved = routeJpaRepository.findByExternalId(route.routeId.value)
+        val optionalSaved = Measurer.addToDbFind { routeJpaRepository.findByExternalId(route.routeId.value) }
         return optionalSaved.orElseGet { toDb(route, null, physicalStopsSupplier()) }
     }
 
     fun saveDb(route: DbRoute) {
-        routeJpaRepository.save(route)
-        routeStopJpaRepository.saveAll(route.routeStops)
+        Measurer.addToDbSave {
+            routeJpaRepository.save(route)
+            routeStopJpaRepository.saveAll(route.routeStops)
+        }
     }
 
     fun saveAllDb(routes: Iterable<DbRoute>) {
-        routeJpaRepository.saveAll(routes)
-        routeStopJpaRepository.saveAll(routes.flatMap { it.routeStops })
+        Measurer.addToDbSave {
+            routeJpaRepository.saveAll(routes)
+            routeStopJpaRepository.saveAll(routes.flatMap { it.routeStops })
+        }
     }
 
     private fun physicalStopsSupplierFor(route: Route) = {
@@ -89,8 +94,9 @@ open class RouteRepositoryAdapter(
             findOrMap(route, physicalStopsSupplierFor(route))
         }
         saveAllDb(mappedUniqueRoutes.filter { it.relationalId == null })
-        return if (result) routes.map { domainRoute -> mappedUniqueRoutes.find { dbRoute -> domainRoute.routeId.value == dbRoute.externalId }!! }
-            else null
+        return if (result) {
+            routes.map { domainRoute -> mappedUniqueRoutes.find { dbRoute -> domainRoute.routeId.value == dbRoute.externalId }!! }
+        } else null
     }
 
     fun findSaveMappings(routes: Iterable<Route>): List<DbRoute> {

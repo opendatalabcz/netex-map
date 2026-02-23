@@ -18,6 +18,7 @@ import cz.cvut.fit.gaierda1.domain.model.Page
 import cz.cvut.fit.gaierda1.domain.model.PageRequest
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.springframework.stereotype.Component
 import java.util.Optional
 
@@ -82,15 +83,17 @@ open class JourneyRepositoryAdapter(
         departure = scheduledStop.departure,
     )
 
-    fun findByDomainId(journey: Journey): Optional<DbJourney> = journeyJpaRepository
-        .findByExternalIdAndLineIdAndValidRange(
-            externalId = journey.journeyId.value,
-            lineExternalId = journey.lineVersion.lineId.value,
-            validFrom = journey.lineVersion.validIn.from,
-            validTo = journey.lineVersion.validIn.to,
-            timezone = journey.lineVersion.validIn.timezone,
-            isDetour = journey.lineVersion.isDetour,
-        )
+    fun findByDomainId(journey: Journey): Optional<DbJourney> = Measurer.addToDbFind {
+        journeyJpaRepository
+            .findByExternalIdAndLineIdAndValidRange(
+                externalId = journey.journeyId.value,
+                lineExternalId = journey.lineVersion.lineId.value,
+                validFrom = journey.lineVersion.validIn.from,
+                validTo = journey.lineVersion.validIn.to,
+                timezone = journey.lineVersion.validIn.timezone,
+                isDetour = journey.lineVersion.isDetour,
+            )
+    }
 
     fun findOrMap(
         journey: Journey,
@@ -104,13 +107,17 @@ open class JourneyRepositoryAdapter(
     }
 
     fun saveDb(journey: DbJourney) {
-        journeyJpaRepository.save(journey)
-        scheduledStopJpaRepository.saveAll(journey.schedule)
+        Measurer.addToDbSave {
+            journeyJpaRepository.save(journey)
+            scheduledStopJpaRepository.saveAll(journey.schedule)
+        }
     }
 
     fun saveAllDb(journeys: Iterable<DbJourney>) {
-        journeyJpaRepository.saveAll(journeys)
-        scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
+        Measurer.addToDbSave {
+            journeyJpaRepository.saveAll(journeys)
+            scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })
+        }
     }
 
     private fun dependenciesSupplierFor(journey: Journey) = {
@@ -145,15 +152,18 @@ open class JourneyRepositoryAdapter(
             findOrMap(journey, dependenciesSupplierFor(journey))
         }
         saveAllDb(mappedUniqueJourneys.filter { it.relationalId == null })
-        return if (result) journeys.map { domainJourney -> mappedUniqueJourneys.find { dbJourney ->
+        return if (result) {
+            journeys.map { domainJourney ->
+                mappedUniqueJourneys.find { dbJourney ->
                     domainJourney.journeyId.value == dbJourney.externalId
-                        && domainJourney.lineVersion.lineId.value == dbJourney.lineVersion.externalId
-                        && domainJourney.lineVersion.validIn.from.equals(dbJourney.lineVersion.validFrom)
-                        && domainJourney.lineVersion.validIn.to.equals(dbJourney.lineVersion.validTo)
-                        && domainJourney.lineVersion.isDetour == dbJourney.lineVersion.isDetour
-                        && domainJourney.lineVersion.validIn.timezone.id == dbJourney.lineVersion.timezone.id
-                }!! }
-            else null
+                            && domainJourney.lineVersion.lineId.value == dbJourney.lineVersion.externalId
+                            && domainJourney.lineVersion.validIn.from.equals(dbJourney.lineVersion.validFrom)
+                            && domainJourney.lineVersion.validIn.to.equals(dbJourney.lineVersion.validTo)
+                            && domainJourney.lineVersion.isDetour == dbJourney.lineVersion.isDetour
+                            && domainJourney.lineVersion.validIn.timezone.id == dbJourney.lineVersion.timezone.id
+                }!!
+            }
+        } else null
     }
 
     fun findSaveMappings(journeys: Iterable<Journey>): List<DbJourney> {
@@ -226,8 +236,10 @@ open class JourneyRepositoryAdapter(
     }
 
     override fun findAllWithNullRoute(pageRequest: PageRequest): Page<Journey> {
-        return journeyJpaRepository
-            .findByNullRoute(pageAdapter.toData(pageRequest))
+        return Measurer.addToDbFind {
+            journeyJpaRepository
+                .findByNullRoute(pageAdapter.toData(pageRequest))
+        }
             .map(::toDomain)
             .let(pageAdapter::toDomain)
     }

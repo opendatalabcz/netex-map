@@ -4,6 +4,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbOperatingPeriod
 import cz.cvut.fit.gaierda1.data.orm.repository.OperatingPeriodJpaRepository
 import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
 import cz.cvut.fit.gaierda1.domain.repository.OperatingPeriodRepository
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.springframework.stereotype.Component
 
 @Component
@@ -26,21 +27,23 @@ class OperatingPeriodRepositoryAdapter(
     )
 
     fun findOrMap(operatingPeriod: OperatingPeriod): DbOperatingPeriod {
-        val optionalSaved = operatingPeriodJpaRepository.findByLineVersionIdAndValidDays(
-            fromDate = operatingPeriod.fromDate,
-            toDate = operatingPeriod.toDate,
-            timezone = operatingPeriod.timezone,
-            validDays = operatingPeriod.validDays,
-        )
-        return optionalSaved.orElseGet { toDb(operatingPeriod, null) }
+        val optionalSaved = Measurer.addToDbFind {
+            operatingPeriodJpaRepository.findByLineVersionIdAndValidDays(
+                fromDate = operatingPeriod.fromDate,
+                toDate = operatingPeriod.toDate,
+                timezone = operatingPeriod.timezone,
+                validDays = operatingPeriod.validDays,
+            )
+        }
+        return optionalSaved.orElseGet{ toDb(operatingPeriod, null) }
     }
 
     fun saveDb(operatingPeriod: DbOperatingPeriod) {
-        operatingPeriodJpaRepository.save(operatingPeriod)
+        Measurer.addToDbSave { operatingPeriodJpaRepository.save(operatingPeriod) }
     }
 
     fun saveAllDb(operatingPeriods: Iterable<DbOperatingPeriod>) {
-        operatingPeriodJpaRepository.saveAll(operatingPeriods)
+        Measurer.addToDbSave { operatingPeriodJpaRepository.saveAll(operatingPeriods) }
     }
 
     fun findSaveMapping(operatingPeriod: OperatingPeriod): DbOperatingPeriod {
@@ -59,13 +62,14 @@ class OperatingPeriodRepositoryAdapter(
         uniqueOperatingPeriods.addAll(operatingPeriods)
         val mappedUniqueOperatingPeriods = uniqueOperatingPeriods.map(::findOrMap)
         saveAllDb(mappedUniqueOperatingPeriods.filter { it.relationalId == null })
-        return if (result) operatingPeriods.map { domainOperatingPeriod -> mappedUniqueOperatingPeriods.find { dbOperatingPeriod ->
-                    domainOperatingPeriod.fromDate.equals(dbOperatingPeriod.fromDate)
+        return if (result) operatingPeriods.map { domainOperatingPeriod ->
+            mappedUniqueOperatingPeriods.find { dbOperatingPeriod ->
+                domainOperatingPeriod.fromDate.equals(dbOperatingPeriod.fromDate)
                         && domainOperatingPeriod.toDate.equals(dbOperatingPeriod.toDate)
                         && domainOperatingPeriod.timezone.id == dbOperatingPeriod.timezone.id
                         && domainOperatingPeriod.validDays == dbOperatingPeriod.validDays
-                }!! }
-            else null
+            }!!
+        } else null
     }
 
     fun findSaveMappings(operatingPeriods: Iterable<OperatingPeriod>): List<DbOperatingPeriod> {

@@ -7,6 +7,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.port.TimetableParserDataPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
+import cz.cvut.fit.gaierda1.measuring.Measurer
 
 class ImportTimetablesData(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
@@ -25,7 +26,8 @@ class ImportTimetablesData(
         timetableSource.provideInput { entryContentStream ->
             val result = timetableParser.parseTimetable(entryContentStream)
             resultList.add(result)
-            operatingPeriodJpaRepository.saveAll(result.operatingPeriods.filter { it.relationalId == null })
+            val newOperatingPeriods = result.operatingPeriods.filter { it.relationalId == null }
+            Measurer.addToDbSave { operatingPeriodJpaRepository.saveAll(newOperatingPeriods) }
             if (++i >= 100) {
                 nextDayCalculation(calculateNextDayOperationDataUseCase, resultList)
                 batchSave(resultList)
@@ -52,8 +54,11 @@ class ImportTimetablesData(
     private fun batchSave(resultList: List<TimetableParserDataPort.TimetableParseResult>) {
         val newLineVersions = resultList.flatMap { it.lineVersions.filter { it.relationalId == null } }
         val journeysOfNewLineVersions = resultList.flatMap { it.journeys.filter { newLineVersions.contains(it.lineVersion) } }
-        lineVersionJpaRepository.saveAll(newLineVersions)
-        journeyJpaRepository.saveAll(journeysOfNewLineVersions)
-        scheduledStopJpaRepository.saveAll(journeysOfNewLineVersions.flatMap { it.schedule })
+        val scheduleStopsOfNewLineVersions = journeysOfNewLineVersions.flatMap { it.schedule }
+        Measurer.addToDbSave {
+            lineVersionJpaRepository.saveAll(newLineVersions)
+            journeyJpaRepository.saveAll(journeysOfNewLineVersions)
+            scheduledStopJpaRepository.saveAll(scheduleStopsOfNewLineVersions)
+        }
     }
 }

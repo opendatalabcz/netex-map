@@ -11,6 +11,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -117,17 +118,19 @@ class CalculateJourneyRoutesDataMock(
         val pageSize = 30
         var currentPage: Page<DbJourney>
         do {
-            currentPage = journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize))
+            currentPage = Measurer.addToDbFind { journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize)) }
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
             val newRoutes = currentPage.content.mapNotNull { it.route }
             val newRouteStops = newRoutes.flatMap { it.routeStops }
             val newPhysicalStops = newRouteStops.map { it.physicalStop }
-            physicalStopJpaRepository.saveAll(newPhysicalStops)
-            routeJpaRepository.saveAll(newRoutes)
-            routeStopJpaRepository.saveAll(newRouteStops)
-            journeyJpaRepository.saveAll(currentPage.content)
+            Measurer.addToDbSave {
+                physicalStopJpaRepository.saveAll(newPhysicalStops)
+                routeJpaRepository.saveAll(newRoutes)
+                routeStopJpaRepository.saveAll(newRouteStops)
+                journeyJpaRepository.saveAll(currentPage.content)
+            }
         } while (currentPage.totalPages != 1)
     }
 }

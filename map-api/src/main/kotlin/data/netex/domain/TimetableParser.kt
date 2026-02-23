@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.data.netex.domain
 
 import cz.cvut.fit.gaierda1.data.netex.NetexFileIndexer
 import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import jakarta.xml.bind.JAXBContext
 import jakarta.xml.bind.JAXBElement
 import jakarta.xml.bind.Unmarshaller
@@ -16,11 +17,16 @@ class TimetableParser(
     private val operatingPeriodsDomainAssembler: OperatingPeriodsDomainAssembler,
     private val journeyDomainAssembler: JourneyDomainAssembler,
 ): TimetableParserPort {
+    private val jaxbContext: JAXBContext by lazy {
+        Measurer.addToXmlParse { JAXBContext.newInstance(PublicationDeliveryStructure::class.java) }
+    }
+
     override fun parseTimetable(contentStream: InputStream): TimetableParserPort.TimetableParseResult {
-        val jaxbContext: JAXBContext = JAXBContext.newInstance(PublicationDeliveryStructure::class.java)
         val unmarshaller: Unmarshaller = jaxbContext.createUnmarshaller()
 
-        val publicationDelivery: PublicationDeliveryStructure = when (val result = unmarshaller.unmarshal(contentStream)) {
+        val publicationDelivery: PublicationDeliveryStructure = when (
+            val result = Measurer.addToXmlParse { unmarshaller.unmarshal(contentStream) }
+        ) {
             is JAXBElement<*> -> (result.value as? PublicationDeliveryStructure)?: error("Unexpected result type: ${result::class}")
             is PublicationDeliveryStructure -> result
             else -> error("Unexpected result type: ${result::class}")

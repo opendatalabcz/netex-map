@@ -7,6 +7,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbOperatingPeriod
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.rutebanken.netex.model.ScheduledStopPoint
 import org.rutebanken.netex.model.ServiceJourney
 import org.rutebanken.netex.model.StopPointInJourneyPattern
@@ -31,15 +32,17 @@ class JourneyDataAssembler(
             val lineVersion = lineVersions[lineId]
             checkNotNull(lineVersion) { "Line $lineId not found" }
             
-            journeys[journey.id] = journeyJpaRepository
-                .findByExternalIdAndLineIdAndValidRange(
-                    externalId = journey.id,
-                    lineExternalId = lineVersion.externalId,
-                    validFrom = lineVersion.validFrom,
-                    validTo = lineVersion.validTo,
-                    timezone = lineVersion.timezone,
-                    isDetour = lineVersion.isDetour,
-                ).orElseGet { assembleJourney(
+            journeys[journey.id] = Measurer.addToDbFind {
+                journeyJpaRepository
+                    .findByExternalIdAndLineIdAndValidRange(
+                        externalId = journey.id,
+                        lineExternalId = lineVersion.externalId,
+                        validFrom = lineVersion.validFrom,
+                        validTo = lineVersion.validTo,
+                        timezone = lineVersion.timezone,
+                        isDetour = lineVersion.isDetour,
+                    )
+            }.orElseGet { assembleJourney(
                     journey = journey,
                     journeyPatternId = journeyPatternId,
                     lineVersion = lineVersion,

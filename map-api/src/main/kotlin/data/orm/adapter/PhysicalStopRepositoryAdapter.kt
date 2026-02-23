@@ -5,6 +5,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.model.PhysicalStop
 import cz.cvut.fit.gaierda1.domain.model.PhysicalStopId
 import cz.cvut.fit.gaierda1.domain.repository.PhysicalStopRepository
+import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.springframework.stereotype.Component
 
 @Component
@@ -28,16 +29,16 @@ open class PhysicalStopRepositoryAdapter(
     )
 
     fun findOrMap(physicalStop: PhysicalStop): DbPhysicalStop {
-        val optionalSaved = physicalStopJpaRepository.findByExternalId(physicalStop.stopId.value)
+        val optionalSaved = Measurer.addToDbFind { physicalStopJpaRepository.findByExternalId(physicalStop.stopId.value) }
         return optionalSaved.orElseGet { toDb(physicalStop, null) }
     }
 
     fun saveDb(physicalStop: DbPhysicalStop) {
-        physicalStopJpaRepository.save(physicalStop)
+        Measurer.addToDbSave { physicalStopJpaRepository.save(physicalStop) }
     }
 
     fun saveAllDb(physicalStops: Iterable<DbPhysicalStop>) {
-        physicalStopJpaRepository.saveAll(physicalStops)
+        Measurer.addToDbSave { physicalStopJpaRepository.saveAll(physicalStops) }
     }
 
     fun findSaveMapping(physicalStop: PhysicalStop): DbPhysicalStop {
