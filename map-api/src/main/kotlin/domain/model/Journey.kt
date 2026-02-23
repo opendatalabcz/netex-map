@@ -12,6 +12,7 @@ data class Journey(
     val journeyPatternId: JourneyPatternId,
     val schedule: List<ScheduledStop>,
     val operatingPeriods: List<OperatingPeriod>,
-    val route: Route?,
+    var route: Route?,
+    var nextDayFirstStopIndex: Int?,
 ) {
 }

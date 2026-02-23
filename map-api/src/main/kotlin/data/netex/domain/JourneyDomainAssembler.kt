@@ -47,6 +47,7 @@ class JourneyDomainAssembler {
                     operatingPeriods
                 ),
                 route = null,
+                nextDayFirstStopIndex = null,
             )
         }
         return journeys

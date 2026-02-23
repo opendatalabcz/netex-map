@@ -52,5 +52,7 @@ class DbJourney(
         inverseJoinColumns = [JoinColumn(name = "operating_period_id")]
     )
     val operatingPeriods: List<DbOperatingPeriod>,
+
+    var nextDayFirstStopIndex: Int?,
 ) {
 }

@@ -7,5 +7,6 @@ data class HttpJourney(
     val schedule: List<HttpScheduledStop>,
     val operatingPeriods: List<HttpOperatingPeriod>,
     val route: HttpRoute?,
+    val nextDayFirstStopIndex: Int?,
 ) {
 }

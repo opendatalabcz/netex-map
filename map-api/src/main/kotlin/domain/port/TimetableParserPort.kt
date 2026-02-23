@@ -5,7 +5,7 @@ import cz.cvut.fit.gaierda1.domain.model.LineVersion
 import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
 import java.io.InputStream
 
-interface TimetableParserDomainPort {
+interface TimetableParserPort {
     data class TimetableParseResult(
         val lineVersions: List<LineVersion>,
         val operatingPeriods: List<OperatingPeriod>,

@@ -71,5 +71,6 @@ class DomainModelAdapter {
         schedule = journey.schedule.map(::toHttp),
         operatingPeriods = journey.operatingPeriods.map(::toHttp),
         route = journey.route?.let(::toHttp),
+        nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
     )
 }

@@ -8,16 +8,18 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
+import cz.cvut.fit.gaierda1.data.util.PageAdapter
 import cz.cvut.fit.gaierda1.domain.model.DateTimeRange
 import cz.cvut.fit.gaierda1.domain.model.Journey
 import cz.cvut.fit.gaierda1.domain.model.JourneyId
 import cz.cvut.fit.gaierda1.domain.model.JourneyPatternId
 import cz.cvut.fit.gaierda1.domain.model.LineId
+import cz.cvut.fit.gaierda1.domain.model.Page
+import cz.cvut.fit.gaierda1.domain.model.PageRequest
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
+import java.util.Optional
 
 @Component
 open class JourneyRepositoryAdapter(
@@ -26,6 +28,7 @@ open class JourneyRepositoryAdapter(
     private val operatingPeriodRepositoryAdapter: OperatingPeriodRepositoryAdapter,
     private val lineVersionRepositoryAdapter: LineVersionRepositoryAdapter,
     private val routeRepositoryAdapter: RouteRepositoryAdapter,
+    private val pageAdapter: PageAdapter,
 ): JourneyRepository {
     fun toDomain(journey: DbJourney): Journey = Journey(
         journeyId = JourneyId(journey.externalId),
@@ -33,7 +36,8 @@ open class JourneyRepositoryAdapter(
         journeyPatternId = JourneyPatternId(journey.journeyPatternId),
         schedule = journey.schedule.sortedBy { it.stopId.stopOrder }.map(::toDomain),
         operatingPeriods = journey.operatingPeriods.map(operatingPeriodRepositoryAdapter::toDomain),
-        route = journey.route?.let(routeRepositoryAdapter::toDomain)
+        route = journey.route?.let(routeRepositoryAdapter::toDomain),
+        nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
     )
 
     fun toDomain(scheduledStop: DbScheduledStop): ScheduledStop = ScheduledStop(
@@ -59,6 +63,7 @@ open class JourneyRepositoryAdapter(
             route = route,
             schedule = schedule,
             operatingPeriods = operatingPeriods,
+            nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
         )
         schedule.addAll(journey.schedule.mapIndexed { index, scheduledStop -> toDb(scheduledStop, dbJourney, index) })
         return dbJourney
@@ -77,11 +82,8 @@ open class JourneyRepositoryAdapter(
         departure = scheduledStop.departure,
     )
 
-    fun findOrMap(
-        journey: Journey,
-        dependenciesSupplier: () -> Triple<DbLineVersion, DbRoute?, List<DbOperatingPeriod>>,
-    ): DbJourney {
-        val optionalSaved = journeyJpaRepository.findByExternalIdAndLineIdAndValidRange(
+    fun findByDomainId(journey: Journey): Optional<DbJourney> = journeyJpaRepository
+        .findByExternalIdAndLineIdAndValidRange(
             externalId = journey.journeyId.value,
             lineExternalId = journey.lineVersion.lineId.value,
             validFrom = journey.lineVersion.validIn.from,
@@ -89,6 +91,12 @@ open class JourneyRepositoryAdapter(
             timezone = journey.lineVersion.validIn.timezone,
             isDetour = journey.lineVersion.isDetour,
         )
+
+    fun findOrMap(
+        journey: Journey,
+        dependenciesSupplier: () -> Triple<DbLineVersion, DbRoute?, List<DbOperatingPeriod>>,
+    ): DbJourney {
+        val optionalSaved = findByDomainId(journey)
         return optionalSaved.orElseGet {
             val (lineVersion, route, operatingPeriods) = dependenciesSupplier()
             toDb(journey, null, lineVersion, route, operatingPeriods)
@@ -173,7 +181,54 @@ open class JourneyRepositoryAdapter(
             .orElse(null)
     }
 
-    override fun getPage(pageable: Pageable): Page<Journey> {
-        return journeyJpaRepository.findAll(pageable).map(::toDomain)
+    override fun save(journey: Journey) {
+        val optionalSaved = findByDomainId(journey)
+        val savedId = optionalSaved.map { it.relationalId }.orElse(null)
+        val (lineVersion, route, operatingPeriods) = dependenciesSupplierFor(journey)()
+        val mapped = toDb(journey, savedId, lineVersion, route, operatingPeriods)
+        saveDb(mapped)
+        optionalSaved.ifPresent { saved ->
+            val scheduleLengthDiff = saved.schedule.size - journey.schedule.size
+            if (scheduleLengthDiff > 0) {
+                scheduledStopJpaRepository.deleteAll(saved.schedule.takeLast(scheduleLengthDiff))
+            }
+        }
+    }
+
+    override fun saveAll(journeys: Iterable<Journey>) {
+        lineVersionRepositoryAdapter.saveAllIfAbsent(journeys.map { it.lineVersion })
+        operatingPeriodRepositoryAdapter.saveAllIfAbsent(journeys.flatMap { it.operatingPeriods })
+        routeRepositoryAdapter.saveAllIfAbsent(journeys.mapNotNull { it.route })
+
+        val toDeleteScheduledStops = mutableListOf<DbScheduledStop>()
+        val mappedJourneys = journeys.map { journey ->
+            val optionalSaved = findByDomainId(journey)
+            val savedId = optionalSaved.map { it.relationalId }.orElse(null)
+            val (lineVersion, route, operatingPeriods) = dependenciesSupplierFor(journey)()
+            val mapped = toDb(journey, savedId, lineVersion, route, operatingPeriods)
+            optionalSaved.ifPresent { saved ->
+                val scheduleLengthDiff = saved.schedule.size - journey.schedule.size
+                if (scheduleLengthDiff > 0) {
+                    toDeleteScheduledStops.addAll(saved.schedule.takeLast(scheduleLengthDiff))
+                }
+            }
+            return@map mapped
+        }
+        saveAllDb(mappedJourneys)
+        scheduledStopJpaRepository.deleteAll(toDeleteScheduledStops)
+    }
+
+    override fun findAll(pageRequest: PageRequest): Page<Journey> {
+        return journeyJpaRepository
+            .findAll(pageAdapter.toData(pageRequest))
+            .map(::toDomain)
+            .let(pageAdapter::toDomain)
+    }
+
+    override fun findAllWithNullRoute(pageRequest: PageRequest): Page<Journey> {
+        return journeyJpaRepository
+            .findByNullRoute(pageAdapter.toData(pageRequest))
+            .map(::toDomain)
+            .let(pageAdapter::toDomain)
     }
 }

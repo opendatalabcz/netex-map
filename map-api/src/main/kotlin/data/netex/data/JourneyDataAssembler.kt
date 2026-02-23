@@ -68,6 +68,7 @@ class JourneyDataAssembler(
             schedule = schedule,
             operatingPeriods = linkOperatingPeriods(journey, registry, operatingPeriods),
             route = null,
+            nextDayFirstStopIndex = null,
         )
         schedule.addAll(assembleScheduledStops(
             serviceJourney = journey,

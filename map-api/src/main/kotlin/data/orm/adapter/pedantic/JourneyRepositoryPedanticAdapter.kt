@@ -11,6 +11,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbRoute
 import cz.cvut.fit.gaierda1.data.orm.model.DbScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
+import cz.cvut.fit.gaierda1.data.util.PageAdapter
 import cz.cvut.fit.gaierda1.domain.model.Journey
 import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
 import org.slf4j.Logger
@@ -24,7 +25,8 @@ class JourneyRepositoryPedanticAdapter(
     operatingPeriodRepositoryAdapter: OperatingPeriodRepositoryAdapter,
     lineVersionRepositoryAdapter: LineVersionRepositoryAdapter,
     routeRepositoryAdapter: RouteRepositoryAdapter,
-): JourneyRepositoryAdapter(journeyJpaRepository, scheduledStopJpaRepository, operatingPeriodRepositoryAdapter, lineVersionRepositoryAdapter, routeRepositoryAdapter) {
+    pageAdapter: PageAdapter,
+): JourneyRepositoryAdapter(journeyJpaRepository, scheduledStopJpaRepository, operatingPeriodRepositoryAdapter, lineVersionRepositoryAdapter, routeRepositoryAdapter, pageAdapter) {
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun findOrMap(
@@ -46,6 +48,9 @@ class JourneyRepositoryPedanticAdapter(
             }
             compareScheduledStops(journey, saved)
             compareOperatingPeriods(journey, saved)
+            if (journey.nextDayFirstStopIndex != saved.nextDayFirstStopIndex) {
+                logDifference("next day first stop index", saved.nextDayFirstStopIndex, journey.nextDayFirstStopIndex, saved)
+            }
             return saved
         }
         val (lineVersion, route, operatingPeriods) = dependenciesSupplier()

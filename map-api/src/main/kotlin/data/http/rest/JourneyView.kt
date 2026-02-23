@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.data.http.rest
 
 import cz.cvut.fit.gaierda1.data.http.adapter.DomainModelAdapter
 import cz.cvut.fit.gaierda1.data.http.model.HttpJourney
+import cz.cvut.fit.gaierda1.data.util.PageAdapter
 import cz.cvut.fit.gaierda1.domain.port.JourneyViewPort
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -14,10 +15,13 @@ import org.springframework.web.bind.annotation.RestController
 class JourneyView(
     private val journeyViewPort: JourneyViewPort,
     private val domainModelAdapter: DomainModelAdapter,
+    private val pageAdapter: PageAdapter,
 ) {
-
     @GetMapping
     fun getJourneys(pageable: Pageable): Page<HttpJourney> {
-        return journeyViewPort.getJourneys(pageable).map(domainModelAdapter::toHttp)
+        return journeyViewPort
+            .getJourneys(pageAdapter.toDomain(pageable))
+            .map(domainModelAdapter::toHttp)
+            .let(pageAdapter::toData)
     }
 }
