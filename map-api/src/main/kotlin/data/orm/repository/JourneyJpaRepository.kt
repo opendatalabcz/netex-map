@@ -14,8 +14,8 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
     @Query("SELECT j FROM DbJourney j " +
             "WHERE j.externalId = :externalId AND " +
                 "j.lineVersion.externalId = :lineExternalId AND " +
-                "j.lineVersion.validFrom = :validTo AND " +
-                "j.lineVersion.validTo = :validFrom AND " +
+                "j.lineVersion.validFrom = :validFrom AND " +
+                "j.lineVersion.validTo = :validTo AND " +
                 "j.lineVersion.timezone = :timezone AND " +
                 "j.lineVersion.isDetour = :isDetour"
     )
