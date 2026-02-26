@@ -4,14 +4,21 @@ import cz.cvut.fit.gaierda1.data.orm.model.DbJourney
 
 class CalculateNextDayOperationData: CalculateNextDayOperationDataUseCase {
     override fun calculateFor(journey: DbJourney) {
-        var previousTime = journey.schedule.first().run { departure ?: arrival!! }
+        var previousDepartureTime = journey.schedule.first().run { arrival ?: departure!! }
         journey.schedule.forEachIndexed { idx, stop ->
-            val currentDepartureTime = stop.departure ?: stop.arrival!!
-            if (previousTime > currentDepartureTime) {
+            val currentArrivalTime = stop.arrival ?: stop.departure!!
+            if (previousDepartureTime > currentArrivalTime) {
                 journey.nextDayFirstStopIndex = idx
                 return
             }
-            previousTime = currentDepartureTime
+            val currentDepartureTime = stop.departure ?: stop.arrival!!
+            if (currentArrivalTime > currentDepartureTime) {
+                if (idx + 1 < journey.schedule.size) {
+                    journey.nextDayFirstStopIndex = idx + 1
+                }
+                return
+            }
+            previousDepartureTime = currentDepartureTime
         }
     }
 }
