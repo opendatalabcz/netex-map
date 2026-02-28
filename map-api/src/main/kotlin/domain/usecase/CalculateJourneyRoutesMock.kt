@@ -106,7 +106,7 @@ class CalculateJourneyRoutesMock(
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
-            routeRepository.saveAllIfAbsent(currentPage.content.mapNotNull { it.route })
+//            routeRepository.saveAll(currentPage.content.mapNotNull { it.route })
             journeyRepository.saveAll(currentPage.content)
         } while (currentPage.totalPages != 1)
     }

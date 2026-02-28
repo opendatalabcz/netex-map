@@ -46,8 +46,8 @@ class ImportTimetables(
     }
 
     private fun batchSave(resultList: List<TimetableParserPort.TimetableParseResult>) {
-        lineVersionRepository.saveAllIfAbsent(resultList.flatMap { it.lineVersions })
-        operatingPeriodRepository.saveAllIfAbsent(resultList.flatMap { it.operatingPeriods })
+//        lineVersionRepository.saveAllIfAbsent(resultList.flatMap { it.lineVersions })
+//        operatingPeriodRepository.saveAllIfAbsent(resultList.flatMap { it.operatingPeriods })
         journeyRepository.saveAllIfAbsent(resultList.flatMap { it.journeys })
     }
 }
