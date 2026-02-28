@@ -125,7 +125,7 @@ open class JourneyRepositoryAdapter(
         }
     }
 
-    private fun dependenciesSupplierFor(journey: Journey) = {
+    private fun dependenciesSupplierForSingle(journey: Journey) = {
         Triple(
             lineVersionRepositoryAdapter.findSaveMapping(journey.lineVersion),
             journey.route?.let(routeRepositoryAdapter::findSaveMapping),
@@ -134,7 +134,7 @@ open class JourneyRepositoryAdapter(
     }
 
     fun findSaveMapping(journey: Journey): DbJourney {
-        val mapped = findOrMap(journey, dependenciesSupplierFor(journey))
+        val mapped = findOrMap(journey, dependenciesSupplierForSingle(journey))
         if (mapped.relationalId == null) saveDb(mapped)
         return mapped
     }
@@ -149,12 +149,21 @@ open class JourneyRepositoryAdapter(
     private fun findSaveMappingsImpl(journeys: Iterable<Journey>, result: Boolean): List<DbJourney>? {
         val uniqueJourneys = sortedSetOf(comparator = journeyComparator)
         uniqueJourneys.addAll(journeys)
-        lineVersionRepositoryAdapter.saveAllIfAbsent(uniqueJourneys.map { it.lineVersion })
-        operatingPeriodRepositoryAdapter.saveAllIfAbsent(uniqueJourneys.flatMap { it.operatingPeriods })
-        routeRepositoryAdapter.saveAllIfAbsent(uniqueJourneys.mapNotNull { it.route })
+        val mappedLineVersions = lineVersionRepositoryAdapter.findSaveMappings(uniqueJourneys.map { it.lineVersion })
+        val operatingPeriodsCountPrefixSum = uniqueJourneys.map { it.operatingPeriods.size }.runningReduce(Int::plus)
+        val mappedOperatingPeriods = operatingPeriodRepositoryAdapter.findSaveMappings(uniqueJourneys.flatMap { it.operatingPeriods })
+        val routeIndexPrefixSum = uniqueJourneys.map { if (it.route != null) 1 else 0 }.runningReduce(Int::plus)
+        val mappedRoutes = routeRepositoryAdapter.findSaveMappings(uniqueJourneys.mapNotNull { it.route })
 
-        val mappedUniqueJourneys = uniqueJourneys.map { journey ->
-            findOrMap(journey, dependenciesSupplierFor(journey))
+        val mappedUniqueJourneys = uniqueJourneys.mapIndexed { idx, journey ->
+            findOrMap(journey, {
+                val prefixSum = operatingPeriodsCountPrefixSum[idx]
+                Triple(
+                    mappedLineVersions[idx],
+                    journey.route?.let { mappedRoutes[routeIndexPrefixSum[idx] - 1] },
+                    mappedOperatingPeriods.subList(prefixSum - journey.operatingPeriods.size, prefixSum)
+                )
+            })
         }
         saveAllDb(mappedUniqueJourneys.filter { it.relationalId == null })
         return if (result) {
@@ -199,7 +208,7 @@ open class JourneyRepositoryAdapter(
     override fun save(journey: Journey) {
         val optionalSaved = findByDomainId(journey)
         val savedId = optionalSaved.map { it.relationalId }.orElse(null)
-        val (lineVersion, route, operatingPeriods) = dependenciesSupplierFor(journey)()
+        val (lineVersion, route, operatingPeriods) = dependenciesSupplierForSingle(journey)()
         val mapped = toDb(journey, savedId, lineVersion, route, operatingPeriods)
         saveDb(mapped)
         optionalSaved.ifPresent { saved ->
@@ -211,15 +220,20 @@ open class JourneyRepositoryAdapter(
     }
 
     override fun saveAll(journeys: Iterable<Journey>) {
-        lineVersionRepositoryAdapter.saveAllIfAbsent(journeys.map { it.lineVersion })
-        operatingPeriodRepositoryAdapter.saveAllIfAbsent(journeys.flatMap { it.operatingPeriods })
-        routeRepositoryAdapter.saveAllIfAbsent(journeys.mapNotNull { it.route })
+        val mappedLineVersions = lineVersionRepositoryAdapter.findSaveMappings(journeys.map { it.lineVersion })
+        val operatingPeriodsCountPrefixSum = journeys.map { it.operatingPeriods.size }.runningReduce(Int::plus)
+        val mappedOperatingPeriods = operatingPeriodRepositoryAdapter.findSaveMappings(journeys.flatMap { it.operatingPeriods })
+        val routeIndexPrefixSum = journeys.map { if (it.route != null) 1 else 0 }.runningReduce(Int::plus)
+        val mappedRoutes = routeRepositoryAdapter.findSaveMappings(journeys.mapNotNull { it.route })
 
         val toDeleteScheduledStops = mutableListOf<DbScheduledStop>()
-        val mappedJourneys = journeys.map { journey ->
+        val mappedJourneys = journeys.mapIndexed { idx, journey ->
             val optionalSaved = findByDomainId(journey)
             val savedId = optionalSaved.map { it.relationalId }.orElse(null)
-            val (lineVersion, route, operatingPeriods) = dependenciesSupplierFor(journey)()
+            val lineVersion = mappedLineVersions[idx]
+            val route = journey.route?.let { mappedRoutes[routeIndexPrefixSum[idx] - 1] }
+            val prefixSum = operatingPeriodsCountPrefixSum[idx]
+            val operatingPeriods = mappedOperatingPeriods.subList(prefixSum - journey.operatingPeriods.size, prefixSum)
             val mapped = toDb(journey, savedId, lineVersion, route, operatingPeriods)
             optionalSaved.ifPresent { saved ->
                 val scheduleLengthDiff = saved.schedule.size - journey.schedule.size
@@ -227,7 +241,7 @@ open class JourneyRepositoryAdapter(
                     toDeleteScheduledStops.addAll(saved.schedule.takeLast(scheduleLengthDiff))
                 }
             }
-            return@map mapped
+            return@mapIndexed mapped
         }
         saveAllDb(mappedJourneys)
         scheduledStopJpaRepository.deleteAll(toDeleteScheduledStops)

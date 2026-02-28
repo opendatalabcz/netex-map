@@ -78,12 +78,10 @@ open class RouteRepositoryAdapter(
         }
     }
 
-    private fun physicalStopsSupplierFor(route: Route) = {
-        physicalStopRepositoryAdapter.findSaveMappings(route.routeStops.map { it.physicalStop })
-    }
-
     fun findSaveMapping(route: Route): DbRoute {
-        val mappedRoute = findOrMap(route, physicalStopsSupplierFor(route))
+        val mappedRoute = findOrMap(route, {
+            physicalStopRepositoryAdapter.findSaveMappings(route.routeStops.map { it.physicalStop })
+        })
         if (mappedRoute.relationalId == null) saveDb(mappedRoute)
         return mappedRoute
     }
@@ -93,10 +91,13 @@ open class RouteRepositoryAdapter(
     private fun findSaveMappingsImpl(routes: Iterable<Route>, result: Boolean): List<DbRoute>? {
         val uniqueRoutes = sortedSetOf(comparator = routeComparator)
         uniqueRoutes.addAll(routes)
-        physicalStopRepositoryAdapter.saveAllIfAbsent(uniqueRoutes.flatMap { it.routeStops.map { it.physicalStop } })
+        val routeStopsCountPrefixSum = uniqueRoutes.map { it.routeStops.size }.runningReduce(Int::plus)
+        val mappedPhysicalStops = physicalStopRepositoryAdapter
+            .findSaveMappings(uniqueRoutes.flatMap { it.routeStops.map { it.physicalStop } })
 
-        val mappedUniqueRoutes = uniqueRoutes.map { route ->
-            findOrMap(route, physicalStopsSupplierFor(route))
+        val mappedUniqueRoutes = uniqueRoutes.mapIndexed { idx, route ->
+            val prefixSum = routeStopsCountPrefixSum[idx]
+            findOrMap(route, { mappedPhysicalStops.subList(prefixSum - route.routeStops.size, prefixSum) })
         }
         saveAllDb(mappedUniqueRoutes.filter { it.relationalId == null })
         return if (result) {
