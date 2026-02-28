@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import MapContainer from '@/map/MapContainer.vue'
 </script>
 
 <template>
-    <div class="wrapper">
-        You did it!
-    </div>
+    <map-container />
 </template>
+
+<style>
+body {
+    margin: 0;
+}
+</style>
