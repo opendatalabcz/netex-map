@@ -1,34 +1,58 @@
-class LocalTime {
-    private hours
-    private minutes
-    private seconds
+const MILlIS_IN_SECOND = 1000
+const MILLIS_IN_MINUTE = 60 * MILlIS_IN_SECOND
+const MILLIS_IN_HOUR = 60 * MILLIS_IN_MINUTE
+const MILLIS_IN_DAY = 24 * MILLIS_IN_HOUR
 
-    constructor(hours = 0, minutes = 0, seconds = 0) {
-        this.hours = Math.max(0, Math.min(23, hours))
-        this.minutes = Math.max(0, Math.min(59, minutes))
-        this.seconds = Math.max(0, Math.min(59, seconds))
+class LocalTime {
+    readonly totalMillis: number
+
+    static FIRST_MOMENT_IN_DAY = new LocalTime(0)
+    static LAST_MOMENT_IN_DAY = new LocalTime(MILLIS_IN_DAY - 1)
+
+    constructor(totalMillis: number) {
+        this.totalMillis = totalMillis % MILLIS_IN_DAY
+    }
+
+    static of(hours = 0, minutes = 0, seconds = 0, millis = 0) {
+        return new LocalTime(hours * MILLIS_IN_HOUR + minutes * MILLIS_IN_MINUTE + seconds * MILlIS_IN_SECOND + millis)
+    }
+
+    private static parseIntOrZero(string: string): number {
+        const parsed = Number.parseInt(string)
+        return Number.isNaN(parsed) ? 0 : parsed
     }
 
     static parse(timeString: string) {
-        const [h, m, s] = timeString.split(':').map(Number)
-        return new LocalTime(h, m ?? 0, s ?? 0)
+        const colonSplit = timeString.split(':')
+        const dotSplit = colonSplit[2]?.split('.')
+        const hours = colonSplit[0] != null ? LocalTime.parseIntOrZero(colonSplit[0]) : 0
+        const minutes = colonSplit[1] != null ? LocalTime.parseIntOrZero(colonSplit[1]) : 0
+        const seconds = dotSplit?.[0] != null ? LocalTime.parseIntOrZero(dotSplit[0]) : 0
+        const millis = dotSplit?.[1] != null ? LocalTime.parseIntOrZero(dotSplit[1].substring(0, 3)) : 0
+        return LocalTime.of(hours, minutes, seconds, millis)
+    }
+
+    static ofDate(date: Date) {
+        return LocalTime.of(date.getHours(), date.getMinutes(), date.getSeconds())
+    }
+
+    get hour() { return Math.floor(this.totalMillis / MILLIS_IN_HOUR) }
+    get minute() { return Math.floor((this.totalMillis % MILLIS_IN_HOUR) / MILLIS_IN_MINUTE) }
+    get second() { return Math.floor((this.totalMillis % MILLIS_IN_MINUTE) / MILlIS_IN_SECOND) }
+    get millis() { return this.totalMillis % MILlIS_IN_SECOND }
+
+    isBefore(other: LocalTime) {
+        return this.totalMillis < other.totalMillis
+    }
+
+    isAfter(other: LocalTime) {
+        return this.totalMillis > other.totalMillis
     }
 
     toString() {
-        const pad = (n: number) => String(n).padStart(2, '0')
-        return `${this.hours}:${pad(this.minutes)}:${pad(this.seconds)}`
-    }
-
-    get hour() { return this.hours }
-    get minute() { return this.minutes }
-    get second() { return this.seconds }
-
-    isAfter(other: LocalTime) {
-        return this.toTotalSeconds() > other.toTotalSeconds()
-    }
-
-    toTotalSeconds() {
-        return this.hours * 3600 + this.minutes * 60 + this.seconds
+        const baseTime = `${this.hour}:${this.minute.toString().padStart(2)}:${this.second.toString().padStart(2)}`
+        const millis = this.millis
+        return millis === 0 ? baseTime : baseTime + millis.toString().padStart(3)
     }
 }
 
