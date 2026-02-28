@@ -55,11 +55,14 @@ open class RouteRepositoryAdapter(
     )
 
     fun findOrMap(route: Route, physicalStopsSupplier: () -> List<DbPhysicalStop>): DbRoute {
+        ++Measurer.searchedRoutes
         val optionalSaved = Measurer.addToDbFind { routeJpaRepository.findByExternalId(route.routeId.value) }
         return optionalSaved.orElseGet { toDb(route, null, physicalStopsSupplier()) }
     }
 
     fun saveDb(route: DbRoute) {
+        ++Measurer.savedRoutes
+        Measurer.savedRouteStops += route.routeStops.size
         Measurer.addToDbSave {
             routeJpaRepository.save(route)
             routeStopJpaRepository.saveAll(route.routeStops)
@@ -67,6 +70,8 @@ open class RouteRepositoryAdapter(
     }
 
     fun saveAllDb(routes: Iterable<DbRoute>) {
+        Measurer.savedRoutes += routes.count()
+        Measurer.savedRouteStops += routes.sumOf { it.routeStops.size }
         Measurer.addToDbSave {
             routeJpaRepository.saveAll(routes)
             routeStopJpaRepository.saveAll(routes.flatMap { it.routeStops })

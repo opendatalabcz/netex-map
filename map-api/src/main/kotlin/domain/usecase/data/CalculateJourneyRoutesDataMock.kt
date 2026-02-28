@@ -125,6 +125,14 @@ class CalculateJourneyRoutesDataMock(
             val newRoutes = currentPage.content.mapNotNull { it.route }
             val newRouteStops = newRoutes.flatMap { it.routeStops }
             val newPhysicalStops = newRouteStops.map { it.physicalStop }
+            Measurer.savedRoutes += newRoutes.size
+            Measurer.savedRouteStops += newRouteStops.size
+            Measurer.savedPhysicalStops += newPhysicalStops.size
+            Measurer.savedJourneys += currentPage.content.size
+            Measurer.searchedRoutes += newRoutes.size
+            Measurer.searchedPhysicalStops += newPhysicalStops.size
+            newRoutes.forEach { Measurer.addToDbFind { routeJpaRepository.findByExternalId(it.externalId) } }
+            newPhysicalStops.forEach { Measurer.addToDbFind { physicalStopJpaRepository.findByExternalId(it.externalId) } }
             Measurer.addToDbSave {
                 physicalStopJpaRepository.saveAll(newPhysicalStops)
                 routeJpaRepository.saveAll(newRoutes)

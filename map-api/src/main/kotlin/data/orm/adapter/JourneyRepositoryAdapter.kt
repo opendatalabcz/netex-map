@@ -84,6 +84,7 @@ open class JourneyRepositoryAdapter(
     )
 
     fun findByDomainId(journey: Journey): Optional<DbJourney> = Measurer.addToDbFind {
+        ++Measurer.searchedJourneys
         journeyJpaRepository
             .findByExternalIdAndLineIdAndValidRange(
                 externalId = journey.journeyId.value,
@@ -107,6 +108,8 @@ open class JourneyRepositoryAdapter(
     }
 
     fun saveDb(journey: DbJourney) {
+        ++Measurer.savedJourneys
+        Measurer.savedScheduledStops += journey.schedule.size
         Measurer.addToDbSave {
             journeyJpaRepository.save(journey)
             scheduledStopJpaRepository.saveAll(journey.schedule)
@@ -114,6 +117,8 @@ open class JourneyRepositoryAdapter(
     }
 
     fun saveAllDb(journeys: Iterable<DbJourney>) {
+        Measurer.savedJourneys += journeys.count()
+        Measurer.savedScheduledStops += journeys.sumOf { it.schedule.size }
         Measurer.addToDbSave {
             journeyJpaRepository.saveAll(journeys)
             scheduledStopJpaRepository.saveAll(journeys.flatMap { it.schedule })

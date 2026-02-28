@@ -16,6 +16,7 @@ class OperatingPeriodsDataAssembler(
         for (operatingPeriod in registry.uicOperatingPeriodRegistry.values) {
             val zoneId = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone)
             val validDays = operatingPeriod.validDayBits.map { it == '1' }
+            ++Measurer.searchedOperatingPeriods
             operatingPeriods[operatingPeriod.id] = Measurer.addToDbFind {
                 operatingPeriodJpaRepository
                     .findByLineVersionIdAndValidDays(

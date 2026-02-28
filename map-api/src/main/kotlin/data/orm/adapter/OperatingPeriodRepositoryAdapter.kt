@@ -27,6 +27,7 @@ class OperatingPeriodRepositoryAdapter(
     )
 
     fun findOrMap(operatingPeriod: OperatingPeriod): DbOperatingPeriod {
+        ++Measurer.searchedOperatingPeriods
         val optionalSaved = Measurer.addToDbFind {
             operatingPeriodJpaRepository.findByLineVersionIdAndValidDays(
                 fromDate = operatingPeriod.fromDate,
@@ -39,10 +40,12 @@ class OperatingPeriodRepositoryAdapter(
     }
 
     fun saveDb(operatingPeriod: DbOperatingPeriod) {
+        ++Measurer.savedOperatingPeriods
         Measurer.addToDbSave { operatingPeriodJpaRepository.save(operatingPeriod) }
     }
 
     fun saveAllDb(operatingPeriods: Iterable<DbOperatingPeriod>) {
+        Measurer.savedOperatingPeriods += operatingPeriods.count()
         Measurer.addToDbSave { operatingPeriodJpaRepository.saveAll(operatingPeriods) }
     }
 

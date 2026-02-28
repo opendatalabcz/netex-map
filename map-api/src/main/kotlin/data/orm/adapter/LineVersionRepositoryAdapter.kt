@@ -41,6 +41,7 @@ open class LineVersionRepositoryAdapter(
     )
 
      fun findOrMap(lineVersion: LineVersion): DbLineVersion {
+         ++Measurer.searchedLineVersions
         val optionalSaved = Measurer.addToDbFind {
             lineVersionJpaRepository.findByLineIdAndValidRange(
                 lineExternalId = lineVersion.lineId.value,
@@ -54,10 +55,12 @@ open class LineVersionRepositoryAdapter(
     }
 
     fun saveDb(lineVersion: DbLineVersion) {
+        ++Measurer.savedLineVersions
         Measurer.addToDbSave { lineVersionJpaRepository.save(lineVersion) }
     }
 
     fun saveAllDb(lineVersions: Iterable<DbLineVersion>) {
+        Measurer.savedLineVersions += lineVersions.count()
         Measurer.addToDbSave { lineVersionJpaRepository.saveAll(lineVersions) }
     }
 

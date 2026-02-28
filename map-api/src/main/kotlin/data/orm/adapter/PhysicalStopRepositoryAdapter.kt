@@ -29,15 +29,18 @@ open class PhysicalStopRepositoryAdapter(
     )
 
     fun findOrMap(physicalStop: PhysicalStop): DbPhysicalStop {
+        ++Measurer.searchedPhysicalStops
         val optionalSaved = Measurer.addToDbFind { physicalStopJpaRepository.findByExternalId(physicalStop.stopId.value) }
         return optionalSaved.orElseGet { toDb(physicalStop, null) }
     }
 
     fun saveDb(physicalStop: DbPhysicalStop) {
+        ++Measurer.savedPhysicalStops
         Measurer.addToDbSave { physicalStopJpaRepository.save(physicalStop) }
     }
 
     fun saveAllDb(physicalStops: Iterable<DbPhysicalStop>) {
+        Measurer.savedPhysicalStops += physicalStops.count()
         Measurer.addToDbSave { physicalStopJpaRepository.saveAll(physicalStops) }
     }
 

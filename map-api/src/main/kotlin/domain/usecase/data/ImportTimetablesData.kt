@@ -27,6 +27,7 @@ class ImportTimetablesData(
             val result = timetableParser.parseTimetable(entryContentStream)
             resultList.add(result)
             val newOperatingPeriods = result.operatingPeriods.filter { it.relationalId == null }
+            Measurer.savedOperatingPeriods += newOperatingPeriods.size
             Measurer.addToDbSave { operatingPeriodJpaRepository.saveAll(newOperatingPeriods) }
             if (++i >= 100) {
                 nextDayCalculation(calculateNextDayOperationDataUseCase, resultList)
@@ -55,6 +56,9 @@ class ImportTimetablesData(
         val newLineVersions = resultList.flatMap { it.lineVersions.filter { it.relationalId == null } }
         val journeysOfNewLineVersions = resultList.flatMap { it.journeys.filter { newLineVersions.contains(it.lineVersion) } }
         val scheduleStopsOfNewLineVersions = journeysOfNewLineVersions.flatMap { it.schedule }
+        Measurer.savedLineVersions += newLineVersions.size
+        Measurer.savedJourneys += journeysOfNewLineVersions.size
+        Measurer.savedScheduledStops += scheduleStopsOfNewLineVersions.size
         Measurer.addToDbSave {
             lineVersionJpaRepository.saveAll(newLineVersions)
             journeyJpaRepository.saveAll(journeysOfNewLineVersions)

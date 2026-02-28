@@ -18,6 +18,7 @@ class LineVersionDataAssembler(
             val validFrom = line.validBetween.first().fromDate
             val validTo = line.validBetween.first().toDate
             val isDetour = line.keyList.keyValue.first { it.key == "JdfDetourTimetable" }?.value == "1"
+            ++Measurer.searchedLineVersions
             lineVersions[line.id] = Measurer.addToDbFind {
                 lineVersionJpaRepository
                     .findByLineIdAndValidRange(
