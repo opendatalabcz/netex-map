@@ -8,13 +8,19 @@ import cz.cvut.fit.gaierda1.domain.port.TimetableParserDataPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
 import cz.cvut.fit.gaierda1.measuring.Measurer
+import jakarta.persistence.EntityManager
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
+@Component
 class ImportTimetablesData(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
     private val journeyJpaRepository: JourneyJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
+    private val entityManager: EntityManager,
 ): ImportTimetablesDataUseCase {
+    @Transactional
     override fun importTimetables(
         timetableSource: TimetableSourcePort,
         timetableParser: TimetableParserDataPort,
@@ -63,6 +69,8 @@ class ImportTimetablesData(
             lineVersionJpaRepository.saveAll(newLineVersions)
             journeyJpaRepository.saveAll(journeysOfNewLineVersions)
             scheduledStopJpaRepository.saveAll(scheduleStopsOfNewLineVersions)
+            entityManager.flush()
+            entityManager.clear()
         }
     }
 }
