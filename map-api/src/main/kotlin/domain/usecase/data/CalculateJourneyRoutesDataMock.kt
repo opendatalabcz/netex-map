@@ -130,9 +130,7 @@ class CalculateJourneyRoutesDataMock(
             Measurer.savedPhysicalStops += newPhysicalStops.size
             Measurer.savedJourneys += currentPage.content.size
             Measurer.searchedRoutes += newRoutes.size
-            Measurer.searchedPhysicalStops += newPhysicalStops.size
             newRoutes.forEach { Measurer.addToDbFind { routeJpaRepository.findByExternalId(it.externalId) } }
-            newPhysicalStops.forEach { Measurer.addToDbFind { physicalStopJpaRepository.findByExternalId(it.externalId) } }
             Measurer.addToDbSave {
                 physicalStopJpaRepository.saveAll(newPhysicalStops)
                 routeJpaRepository.saveAll(newRoutes)
