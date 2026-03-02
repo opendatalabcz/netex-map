@@ -13,3 +13,16 @@ spring:
         generate_statistics: true
         jdbc:
           batch_size: 100
+
+decorator:
+  datasource:
+    datasource-proxy:
+      enabled: true
+      enable-logging: true
+      multiline: true
+      count-query: true
+
+logging:
+  level:
+    # datasource-proxy's listeners live under this package:
+    net.ttddyy.dsproxy.listener: INFO

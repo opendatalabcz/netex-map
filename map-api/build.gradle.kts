@@ -33,6 +33,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("com.h2database:h2")
+    implementation("com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:2.0.0")
 }
 
 tasks.test {
