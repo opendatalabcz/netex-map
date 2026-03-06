@@ -33,7 +33,6 @@ class JourneyRepositoryAdapter(
     private val routeRepositoryAdapter: RouteRepositoryAdapter,
     private val physicalStopRepositoryAdapter: PhysicalStopRepositoryAdapter,
     private val pageAdapter: PageAdapter,
-    private val entityManager: EntityManager,
 ): JourneyRepository {
     fun toDomain(journey: DbJourney): Journey = Journey(
         journeyId = JourneyId(journey.externalId),
@@ -255,10 +254,6 @@ class JourneyRepositoryAdapter(
         if (mapping.toSaveJourneys.isNotEmpty()) {
             saveAllDb(mapping.toSaveJourneys)
         }
-        Measurer.addToDbSave {
-            entityManager.flush()
-            entityManager.clear()
-        }
     }
 
     override fun findById(lineId: LineId, validRange: DateTimeRange, isDetour: Boolean, journeyId: JourneyId): Journey? {
@@ -346,12 +341,10 @@ class JourneyRepositoryAdapter(
             lineVersionRepositoryAdapter.saveAllDb(mappedLineVersions.toSaveLineVersions)
         }
         saveAllDb(mappedJourneys)
-        Measurer.addToDbSave {
-            if (toDeleteScheduledStops.isNotEmpty()) {
+        if (toDeleteScheduledStops.isNotEmpty()) {
+            Measurer.addToDbSave {
                 scheduledStopJpaRepository.deleteAll(toDeleteScheduledStops)
             }
-            entityManager.flush()
-            entityManager.clear()
         }
     }
 

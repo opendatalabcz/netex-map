@@ -12,9 +12,6 @@ class TimetableDirectorySource(
         if (!directory.isDirectory) throw IllegalArgumentException("Path ${directory.path} is not a directory")
     }
 
-    override fun provideInput(onEntry: (contentStream: InputStream) -> Unit) {
-        for (file in directory.walkTopDown().filter { it.isFile }.take(fileCount)) {
-            file.inputStream().use(onEntry)
-        }
-    }
+    override fun provideInput(): Sequence<InputStream> =
+        directory.walkTopDown().filter { it.isFile }.take(fileCount).map(File::inputStream)
 }

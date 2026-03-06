@@ -12,13 +12,13 @@ import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
 import cz.cvut.fit.gaierda1.measuring.Measurer
-import jakarta.persistence.EntityManager
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalTime
 import java.util.UUID
 import kotlin.math.PI
@@ -33,7 +33,7 @@ class CalculateJourneyRoutesDataMock(
     private val routeJpaRepository: RouteJpaRepository,
     private val routeStopJpaRepository: RouteStopJpaRepository,
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
-    private val entityManager: EntityManager,
+    private val transactionTemplate: TransactionTemplate,
 ): CalculateJourneyRoutesUseCase {
     companion object {
         private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
@@ -120,8 +120,8 @@ class CalculateJourneyRoutesDataMock(
 
     override fun calculateRoutes() {
         val pageSize = 30
-        var currentPage: Page<DbJourney>
-        do {
+        var currentPage: Page<DbJourney>? = null
+        do { transactionTemplate.executeWithoutResult {
             currentPage = Measurer.addToDbFind { journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize)) }
             for (i in 1.rangeTo(pageSize)) {
                 Measurer.addToDbFind { routeJpaRepository.findByExternalId((generatedId + i).toString()) }
@@ -142,9 +142,7 @@ class CalculateJourneyRoutesDataMock(
                 routeJpaRepository.saveAll(newRoutes)
                 routeStopJpaRepository.saveAll(newRouteStops)
                 journeyJpaRepository.saveAll(currentPage.content)
-                entityManager.flush()
-                entityManager.clear()
             }
-        } while (currentPage.totalPages != 1)
+        } } while ((currentPage?.totalPages ?: 1) != 1)
     }
 }

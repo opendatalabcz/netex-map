@@ -10,6 +10,7 @@ import cz.cvut.fit.gaierda1.domain.usecase.ViewJourneys
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.web.config.EnableSpringDataWebSupport
+import org.springframework.transaction.support.TransactionTemplate
 
 @Configuration
 @EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
@@ -18,14 +19,18 @@ class ApplicationConfiguration {
 
     @Bean fun importTimetablesUseCase(
         journeyRepository: JourneyRepository,
+        transactionTemplate: TransactionTemplate,
     ): ImportTimetablesUseCase = ImportTimetablesUseCaseTransactionWrapper(
         ImportTimetables(journeyRepository),
+        transactionTemplate,
     )
 
     @Bean fun calculateJourneyRoutesMock(
         journeyRepository: JourneyRepository,
-    ): CalculateJourneyRoutesMock = CalculateJourneyRoutesMock(
+        transactionTemplate: TransactionTemplate,
+    ): CalculateJourneyRoutesMock = CalculateJourneyRoutesMockTransactional(
         journeyRepository,
+        transactionTemplate,
     )
 
     @Bean fun journeyViewPort(
