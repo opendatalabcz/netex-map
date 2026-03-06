@@ -7,12 +7,16 @@ import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.port.TimetableParserDataPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
+import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 
+@Component
 class ImportTimetablesData(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
     private val journeyJpaRepository: JourneyJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
+    private val transactionTemplate: TransactionTemplate,
 ): ImportTimetablesDataUseCase {
     override fun importTimetables(
         timetableSource: TimetableSourcePort,
@@ -21,20 +25,21 @@ class ImportTimetablesData(
         calculateJourneyRoutesUseCase: CalculateJourneyRoutesUseCase,
     ) {
         val resultList = mutableListOf<TimetableParserDataPort.TimetableParseResult>()
-        var i = 0
-        timetableSource.provideInput { entryContentStream ->
-            val result = timetableParser.parseTimetable(entryContentStream)
-            resultList.add(result)
-            operatingPeriodJpaRepository.saveAll(result.operatingPeriods.filter { it.relationalId == null })
-            if (++i >= 100) {
+        val inputStreamSequence = timetableSource.provideInput().iterator()
+        while (inputStreamSequence.hasNext()) {
+            transactionTemplate.executeWithoutResult {
+                for (i in 0 until 30) {
+                    if (!inputStreamSequence.hasNext()) break
+                    val result = timetableParser.parseTimetable(inputStreamSequence.next())
+                    resultList.add(result)
+                    val newOperatingPeriods = result.operatingPeriods.filter { it.relationalId == null }
+                    operatingPeriodJpaRepository.saveAll(newOperatingPeriods)
+                }
                 nextDayCalculation(calculateNextDayOperationDataUseCase, resultList)
                 batchSave(resultList)
                 resultList.clear()
-                i = 0
             }
         }
-        nextDayCalculation(calculateNextDayOperationDataUseCase, resultList)
-        batchSave(resultList)
         calculateJourneyRoutesUseCase.calculateRoutes()
     }
     
@@ -52,8 +57,9 @@ class ImportTimetablesData(
     private fun batchSave(resultList: List<TimetableParserDataPort.TimetableParseResult>) {
         val newLineVersions = resultList.flatMap { it.lineVersions.filter { it.relationalId == null } }
         val journeysOfNewLineVersions = resultList.flatMap { it.journeys.filter { newLineVersions.contains(it.lineVersion) } }
+        val scheduleStopsOfNewLineVersions = journeysOfNewLineVersions.flatMap { it.schedule }
         lineVersionJpaRepository.saveAll(newLineVersions)
         journeyJpaRepository.saveAll(journeysOfNewLineVersions)
-        scheduledStopJpaRepository.saveAll(journeysOfNewLineVersions.flatMap { it.schedule })
+        scheduledStopJpaRepository.saveAll(scheduleStopsOfNewLineVersions)
     }
 }

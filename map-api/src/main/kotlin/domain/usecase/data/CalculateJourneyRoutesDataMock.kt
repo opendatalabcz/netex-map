@@ -16,6 +16,8 @@ import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalTime
 import java.util.UUID
 import kotlin.math.PI
@@ -24,11 +26,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
+@Component
 class CalculateJourneyRoutesDataMock(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val routeJpaRepository: RouteJpaRepository,
     private val routeStopJpaRepository: RouteStopJpaRepository,
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
+    private val transactionTemplate: TransactionTemplate,
 ): CalculateJourneyRoutesUseCase {
     companion object {
         private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
@@ -36,7 +40,6 @@ class CalculateJourneyRoutesDataMock(
         private const val KILOMETER_TO_DEGREE = 0.008_983
         private const val AVG_STEP_LENGTH = KILOMETER_TO_DEGREE / 20
         private const val AVG_SPEED_DPM = 50.0 * KILOMETER_TO_DEGREE / 60.0
-        private var generatedId = 0
     }
 
     private fun interpolate(a: Double, b: Double, t: Double): Double = a + (b - a) * t
@@ -92,7 +95,7 @@ class CalculateJourneyRoutesDataMock(
         val routeStops = mutableListOf<DbRouteStop>()
         val route = DbRoute(
             relationalId = null,
-            externalId = (++generatedId).toString(),
+            externalId = UUID.randomUUID().toString(),
             pointSequence = geometryFactory.createLineString(path.toTypedArray()),
             routeStops = routeStops,
         )
@@ -115,8 +118,8 @@ class CalculateJourneyRoutesDataMock(
 
     override fun calculateRoutes() {
         val pageSize = 30
-        var currentPage: Page<DbJourney>
-        do {
+        var currentPage: Page<DbJourney>? = null
+        do { transactionTemplate.executeWithoutResult {
             currentPage = journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize))
             for (journey in currentPage.content) {
                 assignRoute(journey)
@@ -128,6 +131,6 @@ class CalculateJourneyRoutesDataMock(
             routeJpaRepository.saveAll(newRoutes)
             routeStopJpaRepository.saveAll(newRouteStops)
             journeyJpaRepository.saveAll(currentPage.content)
-        } while (currentPage.totalPages != 1)
+        } } while ((currentPage?.totalPages ?: 1) != 1)
     }
 }

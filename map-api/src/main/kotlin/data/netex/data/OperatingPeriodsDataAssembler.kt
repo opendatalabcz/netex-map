@@ -22,11 +22,11 @@ class OperatingPeriodsDataAssembler(
                     timezone = zoneId,
                     validDays = validDays,
                 ).orElseGet { DbOperatingPeriod(
-                        relationalId = null,
-                        timezone = zoneId,
-                        fromDate = operatingPeriod.fromDate,
-                        toDate = operatingPeriod.toDate,
-                        validDays = validDays,
+                    relationalId = null,
+                    timezone = zoneId,
+                    fromDate = operatingPeriod.fromDate,
+                    toDate = operatingPeriod.toDate,
+                    validDays = validDays,
                 ) }
         }
         return operatingPeriods

@@ -3,12 +3,8 @@ package cz.cvut.fit.gaierda1.domain.usecase
 import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
-import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
-import cz.cvut.fit.gaierda1.domain.repository.OperatingPeriodRepository
 
 class ImportTimetables(
-    private val lineVersionRepository: LineVersionRepository,
-    private val operatingPeriodRepository: OperatingPeriodRepository,
     private val journeyRepository: JourneyRepository,
 ): ImportTimetablesUseCase {
     override fun importTimetables(
@@ -18,16 +14,16 @@ class ImportTimetables(
         calculateJourneyRoutesUseCase: CalculateJourneyRoutesUseCase,
     ) {
         val resultList = mutableListOf<TimetableParserPort.TimetableParseResult>()
-        var i = 0
-        timetableSource.provideInput { entryContentStream ->
-            val result = timetableParser.parseTimetable(entryContentStream)
-            resultList.add(result)
-            if (++i >= 100) {
-                nextDayCalculation(calculateNextDayOperationUseCase, resultList)
-                batchSave(resultList)
-                resultList.clear()
-                i = 0
+        val inputStreamSequence = timetableSource.provideInput().iterator()
+        while (inputStreamSequence.hasNext()) {
+            for (i in 0 until 30) {
+                if (!inputStreamSequence.hasNext()) break
+                val result = timetableParser.parseTimetable(inputStreamSequence.next())
+                resultList.add(result)
             }
+            nextDayCalculation(calculateNextDayOperationUseCase, resultList)
+            batchSave(resultList)
+            resultList.clear()
         }
         nextDayCalculation(calculateNextDayOperationUseCase, resultList)
         batchSave(resultList)
@@ -46,8 +42,6 @@ class ImportTimetables(
     }
 
     private fun batchSave(resultList: List<TimetableParserPort.TimetableParseResult>) {
-        lineVersionRepository.saveAllIfAbsent(resultList.flatMap { it.lineVersions })
-        operatingPeriodRepository.saveAllIfAbsent(resultList.flatMap { it.operatingPeriods })
         journeyRepository.saveAllIfAbsent(resultList.flatMap { it.journeys })
     }
 }

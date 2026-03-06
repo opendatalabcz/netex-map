@@ -30,7 +30,7 @@ class JourneyDataAssembler(
             val lineId = patternRegistryValue.serviceJourneyPattern.routeView.lineRef.value.ref
             val lineVersion = lineVersions[lineId]
             checkNotNull(lineVersion) { "Line $lineId not found" }
-            
+
             journeys[journey.id] = journeyJpaRepository
                 .findByExternalIdAndLineIdAndValidRange(
                     externalId = journey.id,

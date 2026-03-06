@@ -1,7 +1,9 @@
 package cz.cvut.fit.gaierda1.domain.usecase.data
 
 import cz.cvut.fit.gaierda1.data.orm.model.DbJourney
+import org.springframework.stereotype.Component
 
+@Component
 class CalculateNextDayOperationData: CalculateNextDayOperationDataUseCase {
     override fun calculateFor(journey: DbJourney) {
         var previousDepartureTime = journey.schedule.first().run { arrival ?: departure!! }

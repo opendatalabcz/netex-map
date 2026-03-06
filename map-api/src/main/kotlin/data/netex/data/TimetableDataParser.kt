@@ -16,11 +16,16 @@ class TimetableDataParser(
     private val operatingPeriodsDataAssembler: OperatingPeriodsDataAssembler,
     private val journeyDataAssembler: JourneyDataAssembler,
 ): TimetableParserDataPort {
+    private val jaxbContext: JAXBContext by lazy {
+        JAXBContext.newInstance(PublicationDeliveryStructure::class.java)
+    }
+
     override fun parseTimetable(contentStream: InputStream): TimetableParserDataPort.TimetableParseResult {
-        val jaxbContext: JAXBContext = JAXBContext.newInstance(PublicationDeliveryStructure::class.java)
         val unmarshaller: Unmarshaller = jaxbContext.createUnmarshaller()
 
-        val publicationDelivery: PublicationDeliveryStructure = when (val result = unmarshaller.unmarshal(contentStream)) {
+        val publicationDelivery: PublicationDeliveryStructure = when (
+            val result = unmarshaller.unmarshal(contentStream)
+        ) {
             is JAXBElement<*> -> (result.value as? PublicationDeliveryStructure)?: error("Unexpected result type: ${result::class}")
             is PublicationDeliveryStructure -> result
             else -> error("Unexpected result type: ${result::class}")

@@ -12,7 +12,6 @@ import cz.cvut.fit.gaierda1.domain.model.RouteId
 import cz.cvut.fit.gaierda1.domain.model.RouteStop
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
-import cz.cvut.fit.gaierda1.domain.repository.RouteRepository
 import java.time.LocalTime
 import java.util.UUID
 import kotlin.math.PI
@@ -21,9 +20,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-class CalculateJourneyRoutesMock(
+open class CalculateJourneyRoutesMock(
     private val journeyRepository: JourneyRepository,
-    private val routeRepository: RouteRepository,
 ): CalculateJourneyRoutesUseCase {
     companion object {
         private val CZ_BBOX = BoundingBox(Point(12.6296776, 50.7374067), Point(18.1876545, 49.0192903))
@@ -60,7 +58,7 @@ class CalculateJourneyRoutesMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    private fun assignRoute(journey: Journey) {
+    protected fun assignRoute(journey: Journey) {
         val centerOfMass = randomPoint()
         var currentPoint = randomPoint()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
@@ -106,7 +104,6 @@ class CalculateJourneyRoutesMock(
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
-            routeRepository.saveAllIfAbsent(currentPage.content.mapNotNull { it.route })
             journeyRepository.saveAll(currentPage.content)
         } while (currentPage.totalPages != 1)
     }

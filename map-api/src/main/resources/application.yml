@@ -10,6 +10,5 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        generate_statistics: true
         jdbc:
           batch_size: 100

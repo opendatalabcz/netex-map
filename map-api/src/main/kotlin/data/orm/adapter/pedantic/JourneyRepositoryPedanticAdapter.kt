@@ -3,6 +3,7 @@ package cz.cvut.fit.gaierda1.data.orm.adapter.pedantic
 import cz.cvut.fit.gaierda1.data.orm.adapter.JourneyRepositoryAdapter
 import cz.cvut.fit.gaierda1.data.orm.adapter.LineVersionRepositoryAdapter
 import cz.cvut.fit.gaierda1.data.orm.adapter.OperatingPeriodRepositoryAdapter
+import cz.cvut.fit.gaierda1.data.orm.adapter.PhysicalStopRepositoryAdapter
 import cz.cvut.fit.gaierda1.data.orm.adapter.RouteRepositoryAdapter
 import cz.cvut.fit.gaierda1.data.orm.model.DbJourney
 import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
@@ -25,8 +26,9 @@ class JourneyRepositoryPedanticAdapter(
     operatingPeriodRepositoryAdapter: OperatingPeriodRepositoryAdapter,
     lineVersionRepositoryAdapter: LineVersionRepositoryAdapter,
     routeRepositoryAdapter: RouteRepositoryAdapter,
+    physicalStopRepositoryAdapter: PhysicalStopRepositoryAdapter,
     pageAdapter: PageAdapter,
-): JourneyRepositoryAdapter(journeyJpaRepository, scheduledStopJpaRepository, operatingPeriodRepositoryAdapter, lineVersionRepositoryAdapter, routeRepositoryAdapter, pageAdapter) {
+): JourneyRepositoryAdapter(journeyJpaRepository, scheduledStopJpaRepository, operatingPeriodRepositoryAdapter, lineVersionRepositoryAdapter, routeRepositoryAdapter, physicalStopRepositoryAdapter, pageAdapter) {
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun findOrMap(

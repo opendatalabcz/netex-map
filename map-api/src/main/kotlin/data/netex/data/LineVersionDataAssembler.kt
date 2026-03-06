@@ -25,16 +25,16 @@ class LineVersionDataAssembler(
                     timezone = zoneId,
                     isDetour = isDetour,
                 ).orElseGet { DbLineVersion(
-                        relationalId = null,
-                        externalId = line.id,
-                        publicCode = line.publicCode,
-                        name = line.name.value,
-                        shortName = line.shortName.value,
-                        transportMode = line.transportMode.value(),
-                        validFrom = validFrom,
-                        validTo = validTo,
-                        timezone = zoneId,
-                        isDetour = isDetour,
+                    relationalId = null,
+                    externalId = line.id,
+                    publicCode = line.publicCode,
+                    name = line.name.value,
+                    shortName = line.shortName.value,
+                    transportMode = line.transportMode.value(),
+                    validFrom = validFrom,
+                    validTo = validTo,
+                    timezone = zoneId,
+                    isDetour = isDetour,
                 ) }
         }
         return lineVersions

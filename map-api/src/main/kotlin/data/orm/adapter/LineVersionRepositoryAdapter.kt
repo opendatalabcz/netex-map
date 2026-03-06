@@ -9,7 +9,7 @@ import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
 import org.springframework.stereotype.Component
 
 @Component
-open class LineVersionRepositoryAdapter(
+class LineVersionRepositoryAdapter(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
 ): LineVersionRepository {
     fun toDomain(lineVersion: DbLineVersion): LineVersion = LineVersion(
@@ -58,10 +58,9 @@ open class LineVersionRepositoryAdapter(
         lineVersionJpaRepository.saveAll(lineVersions)
     }
 
-    fun findSaveMapping(lineVersion: LineVersion): DbLineVersion {
+    fun findSaveMapping(lineVersion: LineVersion): FindSaveSingleMapping {
         val mapped = findOrMap(lineVersion)
-        if (mapped.relationalId == null) saveDb(mapped)
-        return mapped
+        return FindSaveSingleMapping(mapped, mapped.relationalId == null)
     }
 
     private val lineVersionComparator = compareBy<LineVersion> { it.lineId.value }
@@ -70,31 +69,34 @@ open class LineVersionRepositoryAdapter(
         .thenBy { it.isDetour }
         .thenBy { it.validIn.timezone.id }
 
-    private fun findSaveMappingsImpl(lineVersions: Iterable<LineVersion>, result: Boolean): List<DbLineVersion>? {
+    private fun findSaveMappingsImpl(lineVersions: Iterable<LineVersion>, result: Boolean): Pair<List<DbLineVersion>?, List<DbLineVersion>> {
         val uniqueLineVersions = sortedSetOf(comparator = lineVersionComparator)
         uniqueLineVersions.addAll(lineVersions)
         val mappedUniqueLineVersions = uniqueLineVersions.map(::findOrMap)
-        saveAllDb(mappedUniqueLineVersions.filter { it.relationalId == null })
-        return if (result) lineVersions.map { domainLineVersion -> mappedUniqueLineVersions.find { dbLineVersion ->
-                    domainLineVersion.lineId.value == dbLineVersion.externalId
+        return (if (result) lineVersions.map { domainLineVersion ->
+            mappedUniqueLineVersions.find { dbLineVersion ->
+                domainLineVersion.lineId.value == dbLineVersion.externalId
                         && domainLineVersion.validIn.from.equals(dbLineVersion.validFrom)
                         && domainLineVersion.validIn.to.equals(dbLineVersion.validTo)
                         && domainLineVersion.isDetour == dbLineVersion.isDetour
                         && domainLineVersion.validIn.timezone.id == dbLineVersion.timezone.id
-                }!! }
-            else null
+            }!!
+        } else null) to mappedUniqueLineVersions.filter { it.relationalId == null }
     }
 
-    fun findSaveMappings(lineVersions: Iterable<LineVersion>): List<DbLineVersion> {
-        return findSaveMappingsImpl(lineVersions, true)!!
+    fun findSaveMappings(lineVersions: Iterable<LineVersion>): FindSaveMultipleMapping {
+        val res = findSaveMappingsImpl(lineVersions, true)
+        return FindSaveMultipleMapping(res.first!!, res.second)
     }
 
     override fun saveIfAbsent(lineVersion: LineVersion) {
-        findSaveMapping(lineVersion)
+        val mapping = findSaveMapping(lineVersion)
+        if (mapping.save) saveDb(mapping.lineVersion)
     }
 
     override fun saveAllIfAbsent(lineVersions: Iterable<LineVersion>) {
-        findSaveMappingsImpl(lineVersions, false)
+        val toSave = findSaveMappingsImpl(lineVersions, false).second
+        if (toSave.isNotEmpty()) saveAllDb(toSave)
     }
 
     override fun findById(lineId: LineId, validRange: DateTimeRange, isDetour: Boolean): LineVersion? {
@@ -108,4 +110,7 @@ open class LineVersionRepositoryAdapter(
             ).map(::toDomain)
             .orElse(null)
     }
+
+    data class FindSaveSingleMapping(val lineVersion: DbLineVersion, val save: Boolean)
+    data class FindSaveMultipleMapping(val lineVersions: List<DbLineVersion>, val toSaveLineVersions: List<DbLineVersion>)
 }
