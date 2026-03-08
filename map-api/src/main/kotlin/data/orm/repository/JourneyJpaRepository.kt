@@ -1,6 +1,6 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
-import cz.cvut.fit.gaierda1.data.orm.model.DbJourney
+import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -12,8 +12,8 @@ import java.time.ZoneId
 import java.util.Optional
 
 @Repository
-interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
-    @Query("SELECT j FROM DbJourney j " +
+interface JourneyJpaRepository: JpaRepository<Journey, Long> {
+    @Query("SELECT j FROM Journey j " +
             "WHERE j.externalId = :externalId AND " +
                 "j.lineVersion.externalId = :lineExternalId AND " +
                 "j.lineVersion.validFrom = :validFrom AND " +
@@ -28,8 +28,8 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
         @Param("validTo") validTo: LocalDateTime,
         @Param("timezone") timezone: ZoneId,
         @Param("isDetour") isDetour: Boolean,
-    ): Optional<DbJourney>
+    ): Optional<Journey>
 
-    @Query("SELECT j FROM DbJourney j WHERE j.route IS NULL")
-    fun findByNullRoute(pageable: Pageable): Page<DbJourney>
+    @Query("SELECT j FROM Journey j WHERE j.route IS NULL")
+    fun findByNullRoute(pageable: Pageable): Page<Journey>
 }

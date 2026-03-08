@@ -1,6 +1,6 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
-import cz.cvut.fit.gaierda1.data.orm.model.DbOperatingPeriod
+import cz.cvut.fit.gaierda1.data.orm.model.OperatingPeriod
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -10,8 +10,8 @@ import java.time.ZoneId
 import java.util.Optional
 
 @Repository
-interface OperatingPeriodJpaRepository: JpaRepository<DbOperatingPeriod, Long> {
-    @Query("SELECT op FROM DbOperatingPeriod op " +
+interface OperatingPeriodJpaRepository: JpaRepository<OperatingPeriod, Long> {
+    @Query("SELECT op FROM OperatingPeriod op " +
         "WHERE op.fromDate = :fromDate AND " +
             "op.toDate = :toDate AND " +
             "op.timezone = :timezone AND " +
@@ -22,5 +22,5 @@ interface OperatingPeriodJpaRepository: JpaRepository<DbOperatingPeriod, Long> {
         @Param("toDate") toDate: LocalDateTime,
         @Param("timezone") timezone: ZoneId,
         @Param("validDays") validDays: List<Boolean>,
-    ): Optional<DbOperatingPeriod>
+    ): Optional<OperatingPeriod>
 }

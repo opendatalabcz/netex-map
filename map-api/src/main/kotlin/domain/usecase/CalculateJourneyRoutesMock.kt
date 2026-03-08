@@ -1,17 +1,22 @@
 package cz.cvut.fit.gaierda1.domain.usecase
 
-import cz.cvut.fit.gaierda1.domain.model.BoundingBox
-import cz.cvut.fit.gaierda1.domain.model.Journey
-import cz.cvut.fit.gaierda1.domain.model.Page
-import cz.cvut.fit.gaierda1.domain.model.PageRequest
-import cz.cvut.fit.gaierda1.domain.model.PhysicalStop
-import cz.cvut.fit.gaierda1.domain.model.PhysicalStopId
-import cz.cvut.fit.gaierda1.domain.model.Point
-import cz.cvut.fit.gaierda1.domain.model.Route
-import cz.cvut.fit.gaierda1.domain.model.RouteId
-import cz.cvut.fit.gaierda1.domain.model.RouteStop
-import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
-import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
+import cz.cvut.fit.gaierda1.data.orm.model.Journey
+import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
+import cz.cvut.fit.gaierda1.data.orm.model.Route
+import cz.cvut.fit.gaierda1.data.orm.model.RouteStop
+import cz.cvut.fit.gaierda1.data.orm.model.RouteStopId
+import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
+import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalTime
 import java.util.UUID
 import kotlin.math.PI
@@ -20,27 +25,32 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-open class CalculateJourneyRoutesMock(
-    private val journeyRepository: JourneyRepository,
+@Component
+class CalculateJourneyRoutesMock(
+    private val journeyJpaRepository: JourneyJpaRepository,
+    private val routeJpaRepository: RouteJpaRepository,
+    private val routeStopJpaRepository: RouteStopJpaRepository,
+    private val physicalStopJpaRepository: PhysicalStopJpaRepository,
+    private val transactionTemplate: TransactionTemplate,
 ): CalculateJourneyRoutesUseCase {
     companion object {
-        private val CZ_BBOX = BoundingBox(Point(12.6296776, 50.7374067), Point(18.1876545, 49.0192903))
+        private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
+        private val CZ_BBOX = geometryFactory.createPoint(Coordinate(12.6296776, 50.7374067)) to geometryFactory.createPoint(Coordinate(18.1876545, 49.0192903))
         private const val KILOMETER_TO_DEGREE = 0.008_983
         private const val AVG_STEP_LENGTH = KILOMETER_TO_DEGREE / 20
         private const val AVG_SPEED_DPM = 50.0 * KILOMETER_TO_DEGREE / 60.0
-        private var generatedId = 0
     }
 
     private fun interpolate(a: Double, b: Double, t: Double): Double = a + (b - a) * t
 
-    private fun randomPoint(): Point = Point(
-        interpolate(CZ_BBOX.topLeft.longitude, CZ_BBOX.bottomRight.longitude, Random.nextDouble()),
-        interpolate(CZ_BBOX.topLeft.latitude, CZ_BBOX.bottomRight.latitude, Random.nextDouble())
+    private fun randomCoordinate(): Coordinate = Coordinate(
+        interpolate(CZ_BBOX.first.x, CZ_BBOX.second.x, Random.nextDouble()),
+        interpolate(CZ_BBOX.first.y, CZ_BBOX.second.y, Random.nextDouble())
     )
 
-    private fun angleBetween(a: Point, b: Point): Double {
-        val dx = b.longitude - a.longitude
-        val dy = b.latitude - a.latitude
+    private fun angleBetween(a: Coordinate, b: Coordinate): Double {
+        val dx = b.x - a.x
+        val dy = b.y - a.y
         return atan2(dy, dx)
     }
 
@@ -58,53 +68,68 @@ open class CalculateJourneyRoutesMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    protected fun assignRoute(journey: Journey) {
-        val centerOfMass = randomPoint()
-        var currentPoint = randomPoint()
+    private fun assignRoute(journey: Journey) {
+        val centerOfMass = randomCoordinate()
+        var currentCoord = randomCoordinate()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
         val javaRandom = java.util.Random()
-        val path = mutableListOf(currentPoint)
-        val routeStops = mutableListOf<RouteStop>()
+        val path = mutableListOf(currentCoord)
+        val routeMarkers = mutableListOf<Int>()
 
         val distancePrefixSum = stopDistancesPrefixSum(journey.schedule)
         var cumulativeDistance = 0.0
         for (idx in journey.schedule.indices) {
             while (cumulativeDistance < distancePrefixSum[idx]) {
                 val stepLength = javaRandom.nextExponential() * AVG_STEP_LENGTH
-                val nextPoint = Point(currentPoint.longitude + stepLength * cos(angle), currentPoint.latitude + stepLength * sin(angle))
-                path.add(nextPoint)
-                val angleMean = interpolate(angle, angleBetween(centerOfMass, nextPoint), 0.1)
+                val nextCoord = Coordinate(currentCoord.x + stepLength * cos(angle), currentCoord.y + stepLength * sin(angle))
+                path.add(nextCoord)
+                val angleMean = interpolate(angle, angleBetween(centerOfMass, nextCoord), 0.1)
                 angle = javaRandom.nextGaussian(angleMean, 0.6)
-                currentPoint = nextPoint
+                currentCoord = nextCoord
                 cumulativeDistance += stepLength
             }
-            routeStops.add(RouteStop(
-                physicalStop = PhysicalStop(
-                    stopId = PhysicalStopId(UUID.randomUUID().toString()),
-                    name = "random",
-                    position = currentPoint,
-                    tags = emptyMap(),
-                ),
-                pointSequenceIndex = path.lastIndex,
-            ))
+            routeMarkers.add(path.lastIndex)
         }
 
-        journey.route = Route(
-            routeId = RouteId((++generatedId).toString()),
-            pointSequence = path,
+        val routeStops = mutableListOf<RouteStop>()
+        val route = Route(
+            relationalId = null,
+            externalId = UUID.randomUUID().toString(),
+            pointSequence = geometryFactory.createLineString(path.toTypedArray()),
             routeStops = routeStops,
         )
+        for ((marker, idx) in routeMarkers.withIndex()) {
+            routeStops.add(RouteStop(
+                stopId = RouteStopId(route.relationalId, idx),
+                route = route,
+                physicalStop = PhysicalStop(
+                    relationalId = null,
+                    externalId = UUID.randomUUID().toString(),
+                    name = "random",
+                    position = geometryFactory.createPoint(path[marker]),
+                    tags = emptyMap(),
+                ),
+                pointSequenceIndex = marker,
+            ))
+        }
+        journey.route = route
     }
 
     override fun calculateRoutes() {
         val pageSize = 30
-        var currentPage: Page<Journey>
-        do {
-            currentPage = journeyRepository.findAllWithNullRoute(PageRequest(0, pageSize))
+        var currentPage: Page<Journey>? = null
+        do { transactionTemplate.executeWithoutResult {
+            currentPage = journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize))
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
-            journeyRepository.saveAll(currentPage.content)
-        } while (currentPage.totalPages != 1)
+            val newRoutes = currentPage.content.mapNotNull { it.route }
+            val newRouteStops = newRoutes.flatMap { it.routeStops }
+            val newPhysicalStops = newRouteStops.map { it.physicalStop }
+            physicalStopJpaRepository.saveAll(newPhysicalStops)
+            routeJpaRepository.saveAll(newRoutes)
+            routeStopJpaRepository.saveAll(newRouteStops)
+            journeyJpaRepository.saveAll(currentPage.content)
+        } } while ((currentPage?.totalPages ?: 1) != 1)
     }
 }

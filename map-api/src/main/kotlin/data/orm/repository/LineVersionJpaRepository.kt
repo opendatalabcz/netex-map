@@ -1,6 +1,6 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
-import cz.cvut.fit.gaierda1.data.orm.model.DbLineVersion
+import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -10,8 +10,8 @@ import java.time.ZoneId
 import java.util.Optional
 
 @Repository
-interface LineVersionJpaRepository: JpaRepository<DbLineVersion, Long> {
-    @Query("SELECT lv FROM DbLineVersion lv " +
+interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
+    @Query("SELECT lv FROM LineVersion lv " +
             "WHERE lv.externalId = :lineExternalId AND " +
                 "lv.validFrom = :validFrom AND " +
                 "lv.validTo = :validTo AND " +
@@ -24,5 +24,5 @@ interface LineVersionJpaRepository: JpaRepository<DbLineVersion, Long> {
         @Param("validTo") validTo: LocalDateTime,
         @Param("timezone") timezone: ZoneId,
         @Param("isDetour") isDetour: Boolean,
-    ): Optional<DbLineVersion>
+    ): Optional<LineVersion>
 }

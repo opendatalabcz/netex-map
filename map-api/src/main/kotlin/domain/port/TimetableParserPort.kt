@@ -1,8 +1,8 @@
 package cz.cvut.fit.gaierda1.domain.port
 
-import cz.cvut.fit.gaierda1.domain.model.Journey
-import cz.cvut.fit.gaierda1.domain.model.LineVersion
-import cz.cvut.fit.gaierda1.domain.model.OperatingPeriod
+import cz.cvut.fit.gaierda1.data.orm.model.Journey
+import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
+import cz.cvut.fit.gaierda1.data.orm.model.OperatingPeriod
 import java.io.InputStream
 
 interface TimetableParserPort {
