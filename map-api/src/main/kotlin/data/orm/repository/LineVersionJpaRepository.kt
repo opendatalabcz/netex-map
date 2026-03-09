@@ -1,9 +1,10 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -19,10 +20,16 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
                 "lv.isDetour = :isDetour"
     )
     fun findByLineIdAndValidRange(
-        @Param("lineExternalId") lineExternalId: String,
-        @Param("validFrom") validFrom: LocalDateTime,
-        @Param("validTo") validTo: LocalDateTime,
-        @Param("timezone") timezone: ZoneId,
-        @Param("isDetour") isDetour: Boolean,
+        lineExternalId: String,
+        validFrom: LocalDateTime,
+        validTo: LocalDateTime,
+        timezone: ZoneId,
+        isDetour: Boolean,
     ): Optional<LineVersion>
+
+    @Query("SELECT DISTINCT lv.publicCode FROM LineVersion lv ORDER BY lv.publicCode")
+    fun findAllPublicCodes(pageable: Pageable): Page<String>
+
+    @Query("SELECT lv FROM LineVersion lv WHERE lv.publicCode IN :publicCodes")
+    fun findAllByPublicCodes(publicCodes: List<String>): List<LineVersion>
 }

@@ -21,6 +21,7 @@ class ImportTimetables(
         timetableSource: TimetableSourcePort,
         timetableParser: TimetableParserPort,
         calculateNextDayOperationUseCase: CalculateNextDayOperationUseCase,
+        calculateLineVersionActivePeriodsUseCase: CalculateLineVersionActivePeriodsUseCase,
         calculateJourneyRoutesUseCase: CalculateJourneyRoutesUseCase,
     ) {
         val resultList = mutableListOf<TimetableParserPort.TimetableParseResult>()
@@ -39,6 +40,7 @@ class ImportTimetables(
                 resultList.clear()
             }
         }
+        calculateLineVersionActivePeriodsUseCase.calculateActivePeriods()
         calculateJourneyRoutesUseCase.calculateRoutes()
     }
     

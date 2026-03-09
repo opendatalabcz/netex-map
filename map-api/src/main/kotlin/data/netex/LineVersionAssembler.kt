@@ -34,6 +34,8 @@ class LineVersionAssembler(
                     validTo = validTo,
                     timezone = zoneId,
                     isDetour = isDetour,
+                    activeFrom = null,
+                    activeTo = null,
                 ) }
         }
         return lineVersions

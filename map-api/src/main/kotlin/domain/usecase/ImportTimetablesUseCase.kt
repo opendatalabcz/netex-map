@@ -8,6 +8,7 @@ interface ImportTimetablesUseCase {
         timetableSource: TimetableSourcePort,
         timetableParser: TimetableParserPort,
         calculateNextDayOperationUseCase: CalculateNextDayOperationUseCase,
+        calculateLineVersionActivePeriodsUseCase: CalculateLineVersionActivePeriodsUseCase,
         calculateJourneyRoutesUseCase: CalculateJourneyRoutesUseCase,
     )
 }

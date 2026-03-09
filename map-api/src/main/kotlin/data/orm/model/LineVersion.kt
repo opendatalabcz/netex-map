@@ -48,6 +48,10 @@ class LineVersion(
     @Column(nullable = false)
     val validTo: LocalDateTime,
 
+    var activeFrom: LocalDateTime?,
+
+    var activeTo: LocalDateTime?,
+
     @Column(nullable = false)
     val timezone: ZoneId,
 ){

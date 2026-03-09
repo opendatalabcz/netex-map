@@ -130,6 +130,6 @@ class CalculateJourneyRoutesMock(
             routeJpaRepository.saveAll(newRoutes)
             routeStopJpaRepository.saveAll(newRouteStops)
             journeyJpaRepository.saveAll(currentPage.content)
-        } } while ((currentPage?.totalPages ?: 1) != 1)
+        } } while (currentPage?.hasNext() ?: false)
     }
 }
