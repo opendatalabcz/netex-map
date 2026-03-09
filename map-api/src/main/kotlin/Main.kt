@@ -38,13 +38,9 @@ fun doImport(appContext: ConfigurableApplicationContext, args: Array<String>) {
 
     println("${OffsetDateTime.now()}: Begin importing $inputFileCount timetables")
     val importTime = measureTime {
-        importTimetables.importTimetables(
-            timetableSource,
-            timetableParser,
-            calculateNextDayOperation,
-            calculateLineVersionActivePeriods,
-            calculateJourneyRoutes
-        )
+        importTimetables.importTimetables(timetableSource, timetableParser, calculateNextDayOperation)
+        calculateJourneyRoutes.calculateRoutes()
+        calculateLineVersionActivePeriods.calculateActivePeriods()
     }
     println("${OffsetDateTime.now()}: Done importing timetables in $importTime")
 }
