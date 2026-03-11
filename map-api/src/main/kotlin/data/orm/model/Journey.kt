@@ -38,7 +38,7 @@ class Journey(
     @JoinColumn(name = "line_version_id", nullable = false)
     val lineVersion: LineVersion,
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id")
     var route: Route?,
 

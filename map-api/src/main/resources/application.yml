@@ -12,3 +12,8 @@ spring:
       hibernate:
         jdbc:
           batch_size: 100
+server:
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 2048
