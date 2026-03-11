@@ -66,6 +66,7 @@ class GetJourneysOperatingInDay(
      * Returns all journeys operating in a given day.
      *
      * Works correctly only for journeys that operate in the same timezone as parameter `timezone`.
+     * Other journeys may not operate in the time-range of the specified day.
      */
     override fun getJourneysOperatingInDay(day: LocalDate, timezone: ZoneId): JourneysOperatingInDayResult {
         val journeysForDay = journeyJpaRepository

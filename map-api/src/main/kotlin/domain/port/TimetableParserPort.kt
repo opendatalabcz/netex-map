@@ -12,5 +12,5 @@ interface TimetableParserPort {
         val journeys: List<Journey>,
     )
 
-    fun parseTimetable(contentStream: InputStream): TimetableParseResult
+    fun parseTimetable(contentStream: InputStream, operatingPeriodCache: MutableList<OperatingPeriod>): TimetableParseResult
 }

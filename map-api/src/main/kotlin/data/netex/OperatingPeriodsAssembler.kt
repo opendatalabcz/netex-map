@@ -9,12 +9,23 @@ import java.time.ZoneId
 class OperatingPeriodsAssembler(
     private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
 ) {
-    fun assembleOperatingPeriods(registry: NetexFileRegistry): Map<String, OperatingPeriod> {
+    fun assembleOperatingPeriods(
+        registry: NetexFileRegistry,
+        operatingPeriodCache: MutableList<OperatingPeriod>,
+    ): Map<String, OperatingPeriod> {
         val operatingPeriods = mutableMapOf<String, OperatingPeriod>()
         for (operatingPeriod in registry.uicOperatingPeriodRegistry.values) {
             val zoneId = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone)
             val validDays = operatingPeriod.validDayBits.map { it == '1' }
-            operatingPeriods[operatingPeriod.id] = operatingPeriodJpaRepository
+            val fromCache = operatingPeriodCache.find {
+                it.fromDate.equals(operatingPeriod.fromDate) && it.toDate.equals(operatingPeriod.toDate)
+                        &&  it.timezone.equals(zoneId) && it.validDays == validDays
+            }
+            if (fromCache != null) {
+                operatingPeriods[operatingPeriod.id] = fromCache
+                continue
+            }
+            val foundOrNew = operatingPeriodJpaRepository
                 .findByLineVersionIdAndValidDays(
                     fromDate = operatingPeriod.fromDate,
                     toDate = operatingPeriod.toDate,
@@ -27,6 +38,8 @@ class OperatingPeriodsAssembler(
                     toDate = operatingPeriod.toDate,
                     validDays = validDays,
                 ) }
+            operatingPeriodCache.add(foundOrNew)
+            operatingPeriods[operatingPeriod.id] = foundOrNew
         }
         return operatingPeriods
     }
