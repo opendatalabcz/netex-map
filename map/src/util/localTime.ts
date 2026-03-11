@@ -14,7 +14,12 @@ class LocalTime {
     }
 
     static of(hours = 0, minutes = 0, seconds = 0, millis = 0) {
-        return new LocalTime(hours * MILLIS_IN_HOUR + minutes * MILLIS_IN_MINUTE + seconds * MILlIS_IN_SECOND + millis)
+        return new LocalTime(
+            hours * MILLIS_IN_HOUR +
+                minutes * MILLIS_IN_MINUTE +
+                seconds * MILlIS_IN_SECOND +
+                millis,
+        )
     }
 
     private static parseIntOrZero(string: string): number {
@@ -28,7 +33,8 @@ class LocalTime {
         const hours = colonSplit[0] != null ? LocalTime.parseIntOrZero(colonSplit[0]) : 0
         const minutes = colonSplit[1] != null ? LocalTime.parseIntOrZero(colonSplit[1]) : 0
         const seconds = dotSplit?.[0] != null ? LocalTime.parseIntOrZero(dotSplit[0]) : 0
-        const millis = dotSplit?.[1] != null ? LocalTime.parseIntOrZero(dotSplit[1].substring(0, 3)) : 0
+        const millis =
+            dotSplit?.[1] != null ? LocalTime.parseIntOrZero(dotSplit[1].substring(0, 3)) : 0
         return LocalTime.of(hours, minutes, seconds, millis)
     }
 
@@ -36,10 +42,18 @@ class LocalTime {
         return LocalTime.of(date.getHours(), date.getMinutes(), date.getSeconds())
     }
 
-    get hour() { return Math.floor(this.totalMillis / MILLIS_IN_HOUR) }
-    get minute() { return Math.floor((this.totalMillis % MILLIS_IN_HOUR) / MILLIS_IN_MINUTE) }
-    get second() { return Math.floor((this.totalMillis % MILLIS_IN_MINUTE) / MILlIS_IN_SECOND) }
-    get millis() { return this.totalMillis % MILlIS_IN_SECOND }
+    get hour() {
+        return Math.floor(this.totalMillis / MILLIS_IN_HOUR)
+    }
+    get minute() {
+        return Math.floor((this.totalMillis % MILLIS_IN_HOUR) / MILLIS_IN_MINUTE)
+    }
+    get second() {
+        return Math.floor((this.totalMillis % MILLIS_IN_MINUTE) / MILlIS_IN_SECOND)
+    }
+    get millis() {
+        return this.totalMillis % MILlIS_IN_SECOND
+    }
 
     isBefore(other: LocalTime) {
         return this.totalMillis < other.totalMillis

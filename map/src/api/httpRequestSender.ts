@@ -1,6 +1,6 @@
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-const VITE_API_URL = import.meta.env.CLIENT_API_URL
+const VITE_API_URL = import.meta.env.VITE_API_URL
 
 const ResponseCodes = {
     OK: 200,
@@ -27,7 +27,7 @@ async function request(
     query: object | null | undefined,
     data: object | null | undefined,
 ): Promise<Response | null | undefined> {
-    const uri = path.map((s) => encodeURIComponent(s)).join('/')
+    const uri = path.map(encodeURIComponent).join('/')
     const urlQuery = query
         ? '?' +
           Object.entries(query)

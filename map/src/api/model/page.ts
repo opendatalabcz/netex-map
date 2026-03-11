@@ -1,16 +1,16 @@
 type Page<T> = {
-    content: T[],
+    content: T[]
     page: {
-        size: number,
-        number: number,
-        totalElements: number,
-        totalPages: number,
-    },
+        size: number
+        number: number
+        totalElements: number
+        totalPages: number
+    }
 }
 
 type PageRequest = {
-    page: number,
-    size: number,
+    page: number
+    size: number
 }
 
 export type { Page, PageRequest }

@@ -1,8 +1,9 @@
 type PhysicalStop = {
-    stopId: string,
-    name: string,
-    position: number[],
-    tags: Record<string, string>,
+    relationalId: number
+    externalId: string
+    name: string
+    position: number[]
+    tags: Record<string, string>
 }
 
 export type { PhysicalStop }

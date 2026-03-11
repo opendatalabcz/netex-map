@@ -1,8 +1,8 @@
-import type { PhysicalStop } from "@/api/model/physicalStop"
+import type { PhysicalStop } from '@/api/model/physicalStop'
 
 type RouteStop = {
-    physicalStop: PhysicalStop,
-    pointSequenceIndex: number,
+    physicalStop: PhysicalStop
+    pointSequenceIndex: number
 }
 
 export type { RouteStop }

@@ -1,9 +1,10 @@
-import type { RouteStop } from "@/api/model/routeStop"
+import type { RouteStop } from '@/api/model/routeStop'
 
 type Route = {
-    routeId: string,
-    pointSequence: number[][],
-    routeStops: RouteStop[],
+    relationalId: number
+    externalId: string
+    pointSequence: number[][]
+    routeStops: RouteStop[]
 }
 
 export type { Route }
