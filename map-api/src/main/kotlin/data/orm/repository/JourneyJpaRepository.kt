@@ -43,7 +43,6 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
     fun findAllWithDistinctJourneyPatternWithNullRoute(pageable: Pageable): Page<DbJourney>
 
     @Modifying
-    @Transactional
     @Query("UPDATE DbJourney j SET j.route = :route " +
             "WHERE j.lineVersion.relationalId = :lineVersionId AND j.journeyPatternId = :journeyPatternId")
     fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: Long, journeyPatternId: String, route: DbRoute)

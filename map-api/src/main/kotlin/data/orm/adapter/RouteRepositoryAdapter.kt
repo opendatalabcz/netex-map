@@ -14,7 +14,7 @@ import cz.cvut.fit.gaierda1.measuring.Measurer
 import org.springframework.stereotype.Component
 
 @Component
-open class RouteRepositoryAdapter(
+class RouteRepositoryAdapter(
     private val routeJpaRepository: RouteJpaRepository,
     private val routeStopJpaRepository: RouteStopJpaRepository,
     private val physicalStopRepositoryAdapter: PhysicalStopRepositoryAdapter,
@@ -82,17 +82,19 @@ open class RouteRepositoryAdapter(
         }
     }
 
-    fun findSaveMapping(route: Route): DbRoute {
+    fun findSaveMapping(route: Route): FindSaveSingleMapping {
+        var toSavePhysicalStopMappings = emptyList<DbPhysicalStop>()
         val mappedRoute = findOrMap(route, {
-            physicalStopRepositoryAdapter.findSaveMappings(route.routeStops.map { it.physicalStop })
+            val physicalStopsMapping = physicalStopRepositoryAdapter.findSaveMappings(route.routeStops.map { it.physicalStop })
+            toSavePhysicalStopMappings = physicalStopsMapping.toSavePhysicalStops
+            physicalStopsMapping.physicalStops
         })
-        if (mappedRoute.relationalId == null) saveDb(mappedRoute)
-        return mappedRoute
+        return FindSaveSingleMapping(mappedRoute, mappedRoute.relationalId == null, toSavePhysicalStopMappings)
     }
 
     private val routeComparator = compareBy<Route> { it.routeId.value }
 
-    private fun findSaveMappingsImpl(routes: Iterable<Route>, result: Boolean): List<DbRoute>? {
+    private fun findSaveMappingsImpl(routes: Iterable<Route>, result: Boolean): Triple<List<DbRoute>?, List<DbRoute>, List<DbPhysicalStop>> {
         val uniqueRoutes = sortedSetOf(comparator = routeComparator)
         uniqueRoutes.addAll(routes)
         val routeStopsCountPrefixSum = uniqueRoutes.map { it.routeStops.size }.runningReduce(Int::plus)
@@ -101,24 +103,36 @@ open class RouteRepositoryAdapter(
 
         val mappedUniqueRoutes = uniqueRoutes.mapIndexed { idx, route ->
             val prefixSum = routeStopsCountPrefixSum[idx]
-            findOrMap(route, { mappedPhysicalStops.subList(prefixSum - route.routeStops.size, prefixSum) })
+            findOrMap(route, { mappedPhysicalStops.physicalStops.subList(prefixSum - route.routeStops.size, prefixSum) })
         }
-        saveAllDb(mappedUniqueRoutes.filter { it.relationalId == null })
-        return if (result) {
+        return Triple(if (result) {
             routes.map { domainRoute -> mappedUniqueRoutes.find { dbRoute -> domainRoute.routeId.value == dbRoute.externalId }!! }
-        } else null
+        } else null, mappedUniqueRoutes.filter { it.relationalId == null }, mappedPhysicalStops.toSavePhysicalStops)
     }
 
-    fun findSaveMappings(routes: Iterable<Route>): List<DbRoute> {
-        return findSaveMappingsImpl(routes, result = true)!!
+    fun findSaveMappings(routes: Iterable<Route>): FindSaveMultipleMapping {
+        val res = findSaveMappingsImpl(routes, result = true)
+        return FindSaveMultipleMapping(res.first!!, res.second, res.third)
     }
 
     override fun saveIfAbsent(route: Route) {
-        findSaveMapping(route)
+        val mapping = findSaveMapping(route)
+        if (mapping.save) {
+            if (mapping.toSavePhysicalStops.isNotEmpty()) {
+                physicalStopRepositoryAdapter.saveAllDb(mapping.toSavePhysicalStops)
+            }
+            saveDb(mapping.route)
+        }
     }
 
     override fun saveAllIfAbsent(routes: Iterable<Route>) {
-        findSaveMappingsImpl(routes, result = false)
+        val res = findSaveMappingsImpl(routes, result = false)
+        if (res.second.isNotEmpty()) {
+            if (res.third.isNotEmpty()) {
+                physicalStopRepositoryAdapter.saveAllDb(res.third)
+            }
+            saveAllDb(res.second)
+        }
     }
 
     override fun findById(id: RouteId): Route? {
@@ -127,4 +141,15 @@ open class RouteRepositoryAdapter(
             .map(::toDomain)
             .orElse(null)
     }
+
+    data class FindSaveSingleMapping(
+        val route: DbRoute,
+        val save: Boolean,
+        val toSavePhysicalStops: List<DbPhysicalStop>,
+    )
+    data class FindSaveMultipleMapping(
+        val routes: List<DbRoute>,
+        val toSaveRoutes: List<DbRoute>,
+        val toSavePhysicalStops: List<DbPhysicalStop>,
+    )
 }

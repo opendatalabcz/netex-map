@@ -6,7 +6,7 @@ import cz.cvut.fit.gaierda1.data.netex.domain.TimetableParser
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesMock
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateNextDayOperationUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.data.ImportTimetablesData
-import cz.cvut.fit.gaierda1.domain.usecase.ImportTimetables
+import cz.cvut.fit.gaierda1.domain.usecase.ImportTimetablesUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.data.CalculateJourneyRoutesDataMock
 import cz.cvut.fit.gaierda1.domain.usecase.data.CalculateNextDayOperationData
 import cz.cvut.fit.gaierda1.measuring.Measurer
@@ -65,7 +65,7 @@ fun doImport(appContext: ConfigurableApplicationContext, useDomainImport: Boolea
     val timetableParser = appContext.getBean(TimetableParser::class.java)
     val calculateNextDayOperation = appContext.getBean(CalculateNextDayOperationUseCase::class.java)
     val calculateJourneyRoutes = appContext.getBean(CalculateJourneyRoutesMock::class.java)
-    val importTimetable = appContext.getBean(ImportTimetables::class.java)
+    val importTimetable = appContext.getBean(ImportTimetablesUseCase::class.java)
 
     val timetableDataParser = appContext.getBean(TimetableDataParser::class.java)
     val calculateNextDayOperationData = appContext.getBean(CalculateNextDayOperationData::class.java)

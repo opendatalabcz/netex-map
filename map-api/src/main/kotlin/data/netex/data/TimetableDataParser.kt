@@ -1,6 +1,7 @@
 package cz.cvut.fit.gaierda1.data.netex.data
 
 import cz.cvut.fit.gaierda1.data.netex.NetexFileIndexer
+import cz.cvut.fit.gaierda1.data.orm.model.DbOperatingPeriod
 import cz.cvut.fit.gaierda1.domain.port.TimetableParserDataPort
 import cz.cvut.fit.gaierda1.measuring.Measurer
 import jakarta.xml.bind.JAXBContext
@@ -21,7 +22,7 @@ class TimetableDataParser(
         Measurer.addToXmlParse { JAXBContext.newInstance(PublicationDeliveryStructure::class.java) }
     }
 
-    override fun parseTimetable(contentStream: InputStream): TimetableParserDataPort.TimetableParseResult {
+    override fun parseTimetable(contentStream: InputStream, operatingPeriodCache: MutableList<DbOperatingPeriod>): TimetableParserDataPort.TimetableParseResult {
         val unmarshaller: Unmarshaller = jaxbContext.createUnmarshaller()
 
         val publicationDelivery: PublicationDeliveryStructure = when (
@@ -34,7 +35,7 @@ class TimetableDataParser(
         val registry = netexFileIndexer.createRegistry(publicationDelivery)
 
         val lineVersionsMap = lineVersionDataAssembler.assembleLineVersions(registry)
-        val operatingPeriodsMap = operatingPeriodsDataAssembler.assembleOperatingPeriods(registry)
+        val operatingPeriodsMap = operatingPeriodsDataAssembler.assembleOperatingPeriods(registry, operatingPeriodCache)
         val journeysMap = journeyDataAssembler.assembleJourneys(registry, lineVersionsMap, operatingPeriodsMap)
 
         return TimetableParserDataPort.TimetableParseResult(

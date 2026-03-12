@@ -12,11 +12,13 @@ import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
 import cz.cvut.fit.gaierda1.measuring.Measurer
+import jakarta.persistence.EntityManager
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.stereotype.Component
 import java.time.LocalTime
 import java.util.UUID
 import kotlin.math.PI
@@ -25,11 +27,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
+@Component
 class CalculateJourneyRoutesDataMock(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val routeJpaRepository: RouteJpaRepository,
     private val routeStopJpaRepository: RouteStopJpaRepository,
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
+    private val entityManager: EntityManager,
 ): CalculateJourneyRoutesUseCase {
     companion object {
         private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
@@ -127,6 +131,9 @@ class CalculateJourneyRoutesDataMock(
         do {
             currentPage = Measurer.addToDbFind { journeyJpaRepository
                 .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest.of(0, pageSize)) }
+            for (i in 1.rangeTo(currentPage.content.size)) {
+                Measurer.addToDbFind { routeJpaRepository.findByExternalId((generatedId + i).toString()) }
+            }
             val newRoutes = currentPage.content.map(::createRoute)
             val newRouteStops = newRoutes.flatMap { it.routeStops }
             val newPhysicalStops = newRouteStops.map { it.physicalStop }
@@ -134,11 +141,12 @@ class CalculateJourneyRoutesDataMock(
             Measurer.savedRouteStops += newRouteStops.size
             Measurer.savedPhysicalStops += newPhysicalStops.size
             Measurer.searchedRoutes += newRoutes.size
-            newRoutes.forEach { Measurer.addToDbFind { routeJpaRepository.findByExternalId(it.externalId) } }
             Measurer.addToDbSave {
                 physicalStopJpaRepository.saveAll(newPhysicalStops)
                 routeJpaRepository.saveAll(newRoutes)
                 routeStopJpaRepository.saveAll(newRouteStops)
+                entityManager.flush()
+                entityManager.clear()
                 for ((idx, journey) in currentPage.content.withIndex()) {
                     journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
                         journey.lineVersion.relationalId!!,
