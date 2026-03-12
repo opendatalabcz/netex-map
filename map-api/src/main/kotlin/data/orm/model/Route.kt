@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.annotations.BatchSize
 import org.locationtech.jts.geom.LineString
 
 @Entity
@@ -25,7 +26,11 @@ class Route(
     @Column(columnDefinition = "geography(LineString,4326)", nullable = false)
     val pointSequence: LineString,
 
+    @BatchSize(size = 30)
     @OneToMany(mappedBy = "route", fetch = FetchType.EAGER)
-    val routeStops: List<RouteStop>
+    val routeStops: List<RouteStop>,
+
+    @Column(nullable = false)
+    val totalDistance: Double,
 ) {
 }

@@ -6,6 +6,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase.*
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -68,6 +69,7 @@ class GetJourneysOperatingInDay(
      * Works correctly only for journeys that operate in the same timezone as parameter `timezone`.
      * Other journeys may not operate in the time-range of the specified day.
      */
+    @Transactional(readOnly = true)
     override fun getJourneysOperatingInDay(day: LocalDate, timezone: ZoneId): JourneysOperatingInDayResult {
         val journeysForDay = journeyJpaRepository
             .findAllOperatingInRange(ZonedDateTime.of(day, LocalTime.MIN, timezone), ZonedDateTime.of(day, LocalTime.MAX, timezone))

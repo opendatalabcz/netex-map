@@ -5,5 +5,6 @@ data class HttpRoute(
     val externalId: String,
     val pointSequence: List<Array<Double>>,
     val routeStops: List<HttpRouteStop>,
+    val totalDistance: Double,
 ) {
 }

@@ -14,6 +14,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import org.hibernate.annotations.BatchSize
 
 @Entity
 @Table(
@@ -42,9 +43,11 @@ class Journey(
     @JoinColumn(name = "route_id")
     var route: Route?,
 
+    @BatchSize(size = 30)
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "journey")
     val schedule: List<ScheduledStop>,
 
+    @BatchSize(size = 30)
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "journey_operating_period",

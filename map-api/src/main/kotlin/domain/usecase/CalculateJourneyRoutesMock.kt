@@ -61,7 +61,7 @@ class CalculateJourneyRoutesMock(
             }
             val arrivalTimeSeconds = (curStop.arrival ?: curStop.departure!!).toSecondOfDay()
             val prevDepartureTimeSeconds = acc.second.toSecondOfDay()
-            val secondsDiff = if (arrivalTimeSeconds > prevDepartureTimeSeconds) arrivalTimeSeconds - prevDepartureTimeSeconds
+            val secondsDiff = if (arrivalTimeSeconds >= prevDepartureTimeSeconds) arrivalTimeSeconds - prevDepartureTimeSeconds
             else 24 * 60 * 60 - prevDepartureTimeSeconds + arrivalTimeSeconds
             val distance = secondsDiff * AVG_SPEED_DPM / 60.0
             acc.first.add(acc.first.last() + distance)
@@ -75,10 +75,13 @@ class CalculateJourneyRoutesMock(
         val javaRandom = java.util.Random()
         val path = mutableListOf(currentCoord)
         val routeMarkers = mutableListOf<Int>()
+        val stopDistances = mutableListOf<Double>()
+        val sortedSchedule = journey.schedule.sortedBy { it.stopId.stopOrder }
 
-        val distancePrefixSum = stopDistancesPrefixSum(journey.schedule)
+        val distancePrefixSum = stopDistancesPrefixSum(sortedSchedule)
         var cumulativeDistance = 0.0
-        for (idx in journey.schedule.indices) {
+        var distanceFromPreviousStop = 0.0
+        for (idx in sortedSchedule.indices) {
             while (cumulativeDistance < distancePrefixSum[idx]) {
                 val stepLength = javaRandom.nextExponential() * AVG_STEP_LENGTH
                 val nextCoord = Coordinate(currentCoord.x + stepLength * cos(angle), currentCoord.y + stepLength * sin(angle))
@@ -87,8 +90,11 @@ class CalculateJourneyRoutesMock(
                 angle = javaRandom.nextGaussian(angleMean, 0.6)
                 currentCoord = nextCoord
                 cumulativeDistance += stepLength
+                distanceFromPreviousStop += stepLength
             }
             routeMarkers.add(path.lastIndex)
+            stopDistances.add(distanceFromPreviousStop)
+            distanceFromPreviousStop = 0.0
         }
 
         val routeStops = mutableListOf<RouteStop>()
@@ -97,8 +103,9 @@ class CalculateJourneyRoutesMock(
             externalId = UUID.randomUUID().toString(),
             pointSequence = geometryFactory.createLineString(path.toTypedArray()),
             routeStops = routeStops,
+            totalDistance = cumulativeDistance,
         )
-        for ((marker, idx) in routeMarkers.withIndex()) {
+        for ((idx, marker) in routeMarkers.withIndex()) {
             routeStops.add(RouteStop(
                 stopId = RouteStopId(route.relationalId, idx),
                 route = route,
@@ -110,6 +117,7 @@ class CalculateJourneyRoutesMock(
                     tags = emptyMap(),
                 ),
                 pointSequenceIndex = marker,
+                distanceToNextStop = if (idx == routeMarkers.size - 1) 0.0 else stopDistances[idx + 1],
             ))
         }
         journey.route = route

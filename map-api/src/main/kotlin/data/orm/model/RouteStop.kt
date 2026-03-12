@@ -29,6 +29,9 @@ class RouteStop(
 
     @Column(nullable = false)
     val pointSequenceIndex: Int,
+
+    @Column(nullable = false)
+    val distanceToNextStop: Double,
 ): Persistable<RouteStopId> {
 
     @Transient
