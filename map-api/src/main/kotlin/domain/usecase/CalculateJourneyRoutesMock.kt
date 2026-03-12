@@ -12,7 +12,6 @@ import cz.cvut.fit.gaierda1.domain.model.RouteId
 import cz.cvut.fit.gaierda1.domain.model.RouteStop
 import cz.cvut.fit.gaierda1.domain.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
-import cz.cvut.fit.gaierda1.domain.repository.RouteRepository
 import java.time.LocalTime
 import java.util.UUID
 import kotlin.math.PI
@@ -23,12 +22,11 @@ import kotlin.random.Random
 
 class CalculateJourneyRoutesMock(
     private val journeyRepository: JourneyRepository,
-    private val routeRepository: RouteRepository,
 ): CalculateJourneyRoutesUseCase {
     companion object {
         private val CZ_BBOX = BoundingBox(Point(12.6296776, 50.7374067), Point(18.1876545, 49.0192903))
         private const val KILOMETER_TO_DEGREE = 0.008_983
-        private const val AVG_STEP_LENGTH = KILOMETER_TO_DEGREE / 20
+        private const val STEP_LENGTH = KILOMETER_TO_DEGREE / 8
         private const val AVG_SPEED_DPM = 50.0 * KILOMETER_TO_DEGREE / 60.0
         private var generatedId = 0
     }
@@ -53,7 +51,7 @@ class CalculateJourneyRoutesMock(
             }
             val arrivalTimeSeconds = (curStop.arrival ?: curStop.departure!!).toSecondOfDay()
             val prevDepartureTimeSeconds = acc.second.toSecondOfDay()
-            val secondsDiff = if (arrivalTimeSeconds > prevDepartureTimeSeconds) arrivalTimeSeconds - prevDepartureTimeSeconds
+            val secondsDiff = if (arrivalTimeSeconds >= prevDepartureTimeSeconds) arrivalTimeSeconds - prevDepartureTimeSeconds
             else 24 * 60 * 60 - prevDepartureTimeSeconds + arrivalTimeSeconds
             val distance = secondsDiff * AVG_SPEED_DPM / 60.0
             acc.first.add(acc.first.last() + distance)
@@ -66,35 +64,45 @@ class CalculateJourneyRoutesMock(
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
         val javaRandom = java.util.Random()
         val path = mutableListOf(currentPoint)
-        val routeStops = mutableListOf<RouteStop>()
+        val routeMarkers = mutableListOf<Int>()
+        val stopDistances = mutableListOf<Double>()
 
         val distancePrefixSum = stopDistancesPrefixSum(journey.schedule)
         var cumulativeDistance = 0.0
+        var distanceFromPreviousStop = 0.0
         for (idx in journey.schedule.indices) {
-            while (cumulativeDistance < distancePrefixSum[idx]) {
-                val stepLength = javaRandom.nextExponential() * AVG_STEP_LENGTH
-                val nextPoint = Point(currentPoint.longitude + stepLength * cos(angle), currentPoint.latitude + stepLength * sin(angle))
+            do {
+                val nextPoint = Point(currentPoint.longitude + STEP_LENGTH * cos(angle), currentPoint.latitude + STEP_LENGTH * sin(angle))
                 path.add(nextPoint)
                 val angleMean = interpolate(angle, angleBetween(centerOfMass, nextPoint), 0.1)
                 angle = javaRandom.nextGaussian(angleMean, 0.6)
                 currentPoint = nextPoint
-                cumulativeDistance += stepLength
-            }
-            routeStops.add(RouteStop(
+                cumulativeDistance += STEP_LENGTH
+                distanceFromPreviousStop += STEP_LENGTH
+            } while (cumulativeDistance < distancePrefixSum[idx])
+            routeMarkers.add(path.lastIndex)
+            stopDistances.add(distanceFromPreviousStop)
+            distanceFromPreviousStop = 0.0
+        }
+
+        val routeStops = routeMarkers.withIndex().map { (idx, marker) ->
+            RouteStop(
                 physicalStop = PhysicalStop(
                     stopId = PhysicalStopId(UUID.randomUUID().toString()),
                     name = "random",
-                    position = currentPoint,
+                    position = path[marker],
                     tags = emptyMap(),
                 ),
-                pointSequenceIndex = path.lastIndex,
-            ))
+                pointSequenceIndex = marker,
+                distanceToNextStop = if (idx == routeMarkers.size - 1) 0.0 else stopDistances[idx + 1],
+            )
         }
 
         journey.route = Route(
             routeId = RouteId((++generatedId).toString()),
             pointSequence = path,
             routeStops = routeStops,
+            totalDistance = cumulativeDistance,
         )
     }
 
@@ -102,12 +110,16 @@ class CalculateJourneyRoutesMock(
         val pageSize = 30
         var currentPage: Page<Journey>
         do {
-            currentPage = journeyRepository.findAllWithNullRoute(PageRequest(0, pageSize))
+            currentPage = journeyRepository
+                .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest(0, pageSize))
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
-//            routeRepository.saveAll(currentPage.content.mapNotNull { it.route })
-            journeyRepository.saveAll(currentPage.content)
+            journeyRepository.setRouteForAllByLineVersionAndJourneyPattern(
+                currentPage.content.map { JourneyRepository.SeRouteByLineVersionAndJourneyPatternTriplet(
+                    it.lineVersion, it.journeyPatternId, it.route!!
+                ) }
+            )
         } while (currentPage.totalPages != 1)
     }
 }

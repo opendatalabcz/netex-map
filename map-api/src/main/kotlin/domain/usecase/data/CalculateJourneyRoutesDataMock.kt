@@ -35,7 +35,7 @@ class CalculateJourneyRoutesDataMock(
         private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
         private val CZ_BBOX = geometryFactory.createPoint(Coordinate(12.6296776, 50.7374067)) to geometryFactory.createPoint(Coordinate(18.1876545, 49.0192903))
         private const val KILOMETER_TO_DEGREE = 0.008_983
-        private const val AVG_STEP_LENGTH = KILOMETER_TO_DEGREE / 20
+        private const val STEP_LENGTH = KILOMETER_TO_DEGREE / 8
         private const val AVG_SPEED_DPM = 50.0 * KILOMETER_TO_DEGREE / 60.0
         private var generatedId = 0
     }
@@ -60,7 +60,7 @@ class CalculateJourneyRoutesDataMock(
             }
             val arrivalTimeSeconds = (curStop.arrival ?: curStop.departure!!).toSecondOfDay()
             val prevDepartureTimeSeconds = acc.second.toSecondOfDay()
-            val secondsDiff = if (arrivalTimeSeconds > prevDepartureTimeSeconds) arrivalTimeSeconds - prevDepartureTimeSeconds
+            val secondsDiff = if (arrivalTimeSeconds >= prevDepartureTimeSeconds) arrivalTimeSeconds - prevDepartureTimeSeconds
             else 24 * 60 * 60 - prevDepartureTimeSeconds + arrivalTimeSeconds
             val distance = secondsDiff * AVG_SPEED_DPM / 60.0
             acc.first.add(acc.first.last() + distance)
@@ -74,20 +74,25 @@ class CalculateJourneyRoutesDataMock(
         val javaRandom = java.util.Random()
         val path = mutableListOf(currentCoord)
         val routeMarkers = mutableListOf<Int>()
+        val stopDistances = mutableListOf<Double>()
+        val sortedSchedule = journey.schedule.sortedBy { it.stopId.stopOrder }
 
-        val distancePrefixSum = stopDistancesPrefixSum(journey.schedule)
+        val distancePrefixSum = stopDistancesPrefixSum(sortedSchedule)
         var cumulativeDistance = 0.0
-        for (idx in journey.schedule.indices) {
-            while (cumulativeDistance < distancePrefixSum[idx]) {
-                val stepLength = javaRandom.nextExponential() * AVG_STEP_LENGTH
-                val nextCoord = Coordinate(currentCoord.x + stepLength * cos(angle), currentCoord.y + stepLength * sin(angle))
+        var distanceFromPreviousStop = 0.0
+        for (idx in sortedSchedule.indices) {
+            do {
+                val nextCoord = Coordinate(currentCoord.x + STEP_LENGTH * cos(angle), currentCoord.y + STEP_LENGTH * sin(angle))
                 path.add(nextCoord)
                 val angleMean = interpolate(angle, angleBetween(centerOfMass, nextCoord), 0.1)
                 angle = javaRandom.nextGaussian(angleMean, 0.6)
                 currentCoord = nextCoord
-                cumulativeDistance += stepLength
-            }
+                cumulativeDistance += STEP_LENGTH
+                distanceFromPreviousStop += STEP_LENGTH
+            } while (cumulativeDistance < distancePrefixSum[idx])
             routeMarkers.add(path.lastIndex)
+            stopDistances.add(distanceFromPreviousStop)
+            distanceFromPreviousStop = 0.0
         }
 
         val routeStops = mutableListOf<DbRouteStop>()
@@ -96,8 +101,9 @@ class CalculateJourneyRoutesDataMock(
             externalId = (++generatedId).toString(),
             pointSequence = geometryFactory.createLineString(path.toTypedArray()),
             routeStops = routeStops,
+            totalDistance = cumulativeDistance,
         )
-        for ((marker, idx) in routeMarkers.withIndex()) {
+        for ((idx, marker) in routeMarkers.withIndex()) {
             routeStops.add(DbRouteStop(
                 stopId = DbRouteStopId(route.relationalId, idx),
                 route = route,
@@ -109,6 +115,7 @@ class CalculateJourneyRoutesDataMock(
                     tags = emptyMap(),
                 ),
                 pointSequenceIndex = marker,
+                distanceToNextStop = if (idx == routeMarkers.size - 1) 0.0 else stopDistances[idx + 1],
             ))
         }
         journey.route = route
@@ -118,7 +125,8 @@ class CalculateJourneyRoutesDataMock(
         val pageSize = 30
         var currentPage: Page<DbJourney>
         do {
-            currentPage = Measurer.addToDbFind { journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize)) }
+            currentPage = Measurer.addToDbFind { journeyJpaRepository
+                .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest.of(0, pageSize)) }
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
@@ -135,7 +143,13 @@ class CalculateJourneyRoutesDataMock(
                 physicalStopJpaRepository.saveAll(newPhysicalStops)
                 routeJpaRepository.saveAll(newRoutes)
                 routeStopJpaRepository.saveAll(newRouteStops)
-                journeyJpaRepository.saveAll(currentPage.content)
+                for (journey in currentPage.content) {
+                    journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
+                        journey.lineVersion.externalId,
+                        journey.journeyPatternId,
+                        journey.route!!,
+                    )
+                }
             }
         } while (currentPage.totalPages != 1)
     }

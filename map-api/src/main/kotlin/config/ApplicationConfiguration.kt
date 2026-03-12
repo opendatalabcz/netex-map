@@ -9,9 +9,6 @@ import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.domain.port.JourneyViewPort
 import cz.cvut.fit.gaierda1.domain.repository.JourneyRepository
-import cz.cvut.fit.gaierda1.domain.repository.LineVersionRepository
-import cz.cvut.fit.gaierda1.domain.repository.OperatingPeriodRepository
-import cz.cvut.fit.gaierda1.domain.repository.RouteRepository
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesMock
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateNextDayOperation
 import cz.cvut.fit.gaierda1.domain.usecase.data.ImportTimetablesData
@@ -32,12 +29,8 @@ class ApplicationConfiguration {
     @Bean fun calculateNextDayOperationData(): CalculateNextDayOperationData = CalculateNextDayOperationData()
 
     @Bean fun importTimetablesUseCase(
-        lineVersionRepository: LineVersionRepository,
-        operatingPeriodRepository: OperatingPeriodRepository,
         journeyRepository: JourneyRepository,
     ): ImportTimetablesUseCase = ImportTimetables(
-        lineVersionRepository,
-        operatingPeriodRepository,
         journeyRepository
     )
 
@@ -55,10 +48,8 @@ class ApplicationConfiguration {
 
     @Bean fun calculateJourneyRoutesMock(
         journeyRepository: JourneyRepository,
-        routeRepository: RouteRepository,
     ): CalculateJourneyRoutesMock = CalculateJourneyRoutesMock(
         journeyRepository,
-        routeRepository,
     )
 
     @Bean fun calculateJourneyRoutesDataMock(

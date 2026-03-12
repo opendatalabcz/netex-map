@@ -7,5 +7,6 @@ data class Route(
     val routeId: RouteId,
     val pointSequence: List<Point>,
     val routeStops: List<RouteStop>,
+    val totalDistance: Double,
 ) {
 }

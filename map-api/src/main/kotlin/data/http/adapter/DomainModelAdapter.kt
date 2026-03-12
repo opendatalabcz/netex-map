@@ -32,12 +32,14 @@ class DomainModelAdapter {
     fun toHttp(routeStop: RouteStop): HttpRouteStop = HttpRouteStop(
         physicalStop = toHttp(routeStop.physicalStop),
         pointSequenceIndex = routeStop.pointSequenceIndex,
+        distanceToNextStop = routeStop.distanceToNextStop,
     )
 
     fun toHttp(route: Route): HttpRoute = HttpRoute(
         routeId = route.routeId.value,
         pointSequence = route.pointSequence.map(::toHttp),
         routeStops = route.routeStops.map(::toHttp),
+        totalDistance = route.totalDistance,
     )
 
     fun toHttp(operatingPeriod: OperatingPeriod): HttpOperatingPeriod = HttpOperatingPeriod(

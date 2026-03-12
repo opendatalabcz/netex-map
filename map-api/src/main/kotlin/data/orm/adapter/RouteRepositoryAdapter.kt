@@ -24,11 +24,13 @@ open class RouteRepositoryAdapter(
         routeId = RouteId(route.externalId),
         pointSequence = geometryAdapter.toDomain(route.pointSequence),
         routeStops = route.routeStops.sortedBy { it.stopId.stopOrder }.map(::toDomain),
+        totalDistance = route.totalDistance,
     )
 
     fun toDomain(routeStop: DbRouteStop): RouteStop = RouteStop(
         physicalStop = physicalStopRepositoryAdapter.toDomain(routeStop.physicalStop),
         pointSequenceIndex = routeStop.pointSequenceIndex,
+        distanceToNextStop = routeStop.distanceToNextStop,
     )
 
     fun toDb(route: Route, relationalId: Long?, physicalStops: List<DbPhysicalStop>): DbRoute {
@@ -38,6 +40,7 @@ open class RouteRepositoryAdapter(
             externalId = route.routeId.value,
             pointSequence = geometryAdapter.toDb(route.pointSequence),
             routeStops = routeStops,
+            totalDistance = route.totalDistance,
         )
         routeStops.addAll(
             route.routeStops
@@ -52,6 +55,7 @@ open class RouteRepositoryAdapter(
         physicalStop = physicalStop,
         route = route,
         pointSequenceIndex = routeStop.pointSequenceIndex,
+        distanceToNextStop = routeStop.distanceToNextStop,
     )
 
     fun findOrMap(route: Route, physicalStopsSupplier: () -> List<DbPhysicalStop>): DbRoute {

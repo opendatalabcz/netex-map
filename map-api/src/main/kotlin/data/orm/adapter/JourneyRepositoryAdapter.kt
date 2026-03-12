@@ -262,4 +262,28 @@ open class JourneyRepositoryAdapter(
             .map(::toDomain)
             .let(pageAdapter::toDomain)
     }
+
+    override fun findAllWithDistinctJourneyPatternWithNullRoute(pageRequest: PageRequest): Page<Journey> {
+        return Measurer.addToDbFind {
+            journeyJpaRepository
+                .findAllWithDistinctJourneyPatternWithNullRoute(pageAdapter.toData(pageRequest))
+        }
+            .map(::toDomain)
+            .let(pageAdapter::toDomain)
+    }
+
+    override fun setRouteForAllByLineVersionAndJourneyPattern(
+        triplets: List<JourneyRepository.SeRouteByLineVersionAndJourneyPatternTriplet>,
+    ) {
+        val mappedRoutes = routeRepositoryAdapter.findSaveMappings(triplets.map { it.route })
+        Measurer.addToDbSave {
+            triplets.forEachIndexed { idx, triplet ->
+                journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
+                    triplet.lineVersion.lineId.value,
+                    triplet.journeyPatternId.value,
+                    mappedRoutes[idx],
+                )
+            }
+        }
+    }
 }

@@ -29,6 +29,9 @@ class DbRouteStop(
 
     @Column(nullable = false)
     val pointSequenceIndex: Int,
+
+    @Column(nullable = false)
+    val distanceToNextStop: Double,
 ): Persistable<DbRouteStopId> {
 
     @Transient
