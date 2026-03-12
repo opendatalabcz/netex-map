@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Optional
@@ -42,13 +41,12 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
         countQuery = "SELECT COUNT(DISTINCT (line_version_id, journey_pattern_id)) FROM journey WHERE route_id IS NULL")
     fun findAllWithDistinctJourneyPatternWithNullRoute(pageable: Pageable): Page<DbJourney>
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE DbJourney j SET j.route = :route " +
             "WHERE j.lineVersion.relationalId = :lineVersionId AND j.journeyPatternId = :journeyPatternId")
     fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: Long, journeyPatternId: String, route: DbRoute)
 
-    @Modifying
-    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE DbJourney j SET j.route = :route " +
             "WHERE j.journeyPatternId = :journeyPatternId AND " +
                 "j.lineVersion.externalId = :lineExternalId AND " +

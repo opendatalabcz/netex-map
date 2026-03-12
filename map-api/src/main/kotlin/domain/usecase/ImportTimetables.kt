@@ -14,16 +14,16 @@ class ImportTimetables(
         calculateJourneyRoutesUseCase: CalculateJourneyRoutesUseCase,
     ) {
         val resultList = mutableListOf<TimetableParserPort.TimetableParseResult>()
-        var i = 0
-        timetableSource.provideInput { entryContentStream ->
-            val result = timetableParser.parseTimetable(entryContentStream)
-            resultList.add(result)
-            if (++i >= 100) {
-                nextDayCalculation(calculateNextDayOperationUseCase, resultList)
-                batchSave(resultList)
-                resultList.clear()
-                i = 0
+        val inputStreamSequence = timetableSource.provideInput().iterator()
+        while (inputStreamSequence.hasNext()) {
+            for (i in 0 until 30) {
+                if (!inputStreamSequence.hasNext()) break
+                val result = timetableParser.parseTimetable(inputStreamSequence.next())
+                resultList.add(result)
             }
+            nextDayCalculation(calculateNextDayOperationUseCase, resultList)
+            batchSave(resultList)
+            resultList.clear()
         }
         nextDayCalculation(calculateNextDayOperationUseCase, resultList)
         batchSave(resultList)

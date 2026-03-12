@@ -29,8 +29,7 @@ class JourneyRepositoryPedanticAdapter(
     routeRepositoryAdapter: RouteRepositoryAdapter,
     physicalStopRepositoryAdapter: PhysicalStopRepositoryAdapter,
     pageAdapter: PageAdapter,
-    entityManager: EntityManager,
-): JourneyRepositoryAdapter(journeyJpaRepository, scheduledStopJpaRepository, operatingPeriodRepositoryAdapter, lineVersionRepositoryAdapter, routeRepositoryAdapter, physicalStopRepositoryAdapter, pageAdapter, entityManager) {
+): JourneyRepositoryAdapter(journeyJpaRepository, scheduledStopJpaRepository, operatingPeriodRepositoryAdapter, lineVersionRepositoryAdapter, routeRepositoryAdapter, physicalStopRepositoryAdapter, pageAdapter) {
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun findOrMap(

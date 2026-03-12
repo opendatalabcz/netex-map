@@ -9,11 +9,10 @@ import cz.cvut.fit.gaierda1.domain.port.TimetableParserDataPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesUseCase
 import cz.cvut.fit.gaierda1.measuring.Measurer
-import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZoneId
+import org.springframework.transaction.support.TransactionTemplate
 
 @Component
 class ImportTimetablesData(
@@ -21,9 +20,8 @@ class ImportTimetablesData(
     private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
     private val journeyJpaRepository: JourneyJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
-    private val entityManager: EntityManager,
+    private val transactionTemplate: TransactionTemplate,
 ): ImportTimetablesDataUseCase {
-    @Transactional
     override fun importTimetables(
         timetableSource: TimetableSourcePort,
         timetableParser: TimetableParserDataPort,
@@ -32,19 +30,22 @@ class ImportTimetablesData(
     ) {
         val resultList = mutableListOf<TimetableParserDataPort.TimetableParseResult>()
         val operatingPeriodBatchCache = mutableListOf<DbOperatingPeriod>()
-        var i = 0
-        timetableSource.provideInput { entryContentStream ->
-            val result = timetableParser.parseTimetable(entryContentStream, operatingPeriodBatchCache)
-            resultList.add(result)
-            if (++i >= 100) {
+        val inputStreamSequence = timetableSource.provideInput().iterator()
+        while (inputStreamSequence.hasNext()) {
+            transactionTemplate.executeWithoutResult {
+                for (i in 0 until 30) {
+                    if (!inputStreamSequence.hasNext()) break
+                    val result = timetableParser.parseTimetable(inputStreamSequence.next(), operatingPeriodBatchCache)
+                    resultList.add(result)
+                    val newOperatingPeriods = result.operatingPeriods.filter { it.relationalId == null }
+                    Measurer.savedOperatingPeriods += newOperatingPeriods.size
+                    Measurer.addToDbSave { operatingPeriodJpaRepository.saveAll(newOperatingPeriods) }
+                }
                 nextDayCalculation(calculateNextDayOperationDataUseCase, resultList)
                 batchSave(resultList, operatingPeriodBatchCache)
                 resultList.clear()
-                i = 0
             }
         }
-        nextDayCalculation(calculateNextDayOperationDataUseCase, resultList)
-        batchSave(resultList, operatingPeriodBatchCache)
         calculateJourneyRoutesUseCase.calculateRoutes()
     }
     
@@ -85,8 +86,6 @@ class ImportTimetablesData(
             lineVersionJpaRepository.saveAll(newLineVersions)
             journeyJpaRepository.saveAll(journeysOfNewLineVersions)
             scheduledStopJpaRepository.saveAll(scheduleStopsOfNewLineVersions)
-            entityManager.flush()
-            entityManager.clear()
         }
     }
 }

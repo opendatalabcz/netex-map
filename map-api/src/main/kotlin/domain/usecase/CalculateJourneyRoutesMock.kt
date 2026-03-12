@@ -20,7 +20,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-class CalculateJourneyRoutesMock(
+open class CalculateJourneyRoutesMock(
     private val journeyRepository: JourneyRepository,
 ): CalculateJourneyRoutesUseCase {
     companion object {
@@ -58,7 +58,7 @@ class CalculateJourneyRoutesMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    private fun createRoute(journey: Journey): Route {
+    protected fun createRoute(journey: Journey): Route {
         val centerOfMass = randomPoint()
         var currentPoint = randomPoint()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
