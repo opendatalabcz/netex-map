@@ -1,9 +1,12 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
+import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
+import cz.cvut.fit.gaierda1.data.orm.model.Route
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -54,4 +57,14 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
 
     @Query("SELECT j FROM Journey j JOIN FETCH j.route")
     fun findAllFetchRoutes(pageable: Pageable): Page<Journey>
+
+    @Query(nativeQuery = true, value = "SELECT DISTINCT ON (line_version_id, journey_pattern_id) * FROM journey " +
+            "WHERE route_id IS NULL " +
+            "ORDER BY line_version_id, journey_pattern_id")
+    fun findAllWithDistinctJourneyPatternWithNullRoute(pageable: Pageable): Page<Journey>
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Journey j SET j.route = :route " +
+            "WHERE j.lineVersion = :lineVersion AND j.journeyPatternId = :journeyPatternId")
+    fun setRouteForAllByLineVersionAndJourneyPattern(lineVersion: LineVersion, journeyPatternId: String, route: Route)
 }

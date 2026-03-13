@@ -37,7 +37,7 @@ class CalculateJourneyRoutesMock(
         private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
         private val CZ_BBOX = geometryFactory.createPoint(Coordinate(12.6296776, 50.7374067)) to geometryFactory.createPoint(Coordinate(18.1876545, 49.0192903))
         private const val KILOMETER_TO_DEGREE = 0.008_983
-        private const val AVG_STEP_LENGTH = KILOMETER_TO_DEGREE / 20
+        private const val STEP_LENGTH = KILOMETER_TO_DEGREE / 8
         private const val AVG_SPEED_DPM = 50.0 * KILOMETER_TO_DEGREE / 60.0
     }
 
@@ -83,14 +83,13 @@ class CalculateJourneyRoutesMock(
         var distanceFromPreviousStop = 0.0
         for (idx in sortedSchedule.indices) {
             while (cumulativeDistance < distancePrefixSum[idx]) {
-                val stepLength = javaRandom.nextExponential() * AVG_STEP_LENGTH
-                val nextCoord = Coordinate(currentCoord.x + stepLength * cos(angle), currentCoord.y + stepLength * sin(angle))
+                val nextCoord = Coordinate(currentCoord.x + STEP_LENGTH * cos(angle), currentCoord.y + STEP_LENGTH * sin(angle))
                 path.add(nextCoord)
                 val angleMean = interpolate(angle, angleBetween(centerOfMass, nextCoord), 0.1)
                 angle = javaRandom.nextGaussian(angleMean, 0.6)
                 currentCoord = nextCoord
-                cumulativeDistance += stepLength
-                distanceFromPreviousStop += stepLength
+                cumulativeDistance += STEP_LENGTH
+                distanceFromPreviousStop += STEP_LENGTH
             }
             routeMarkers.add(path.lastIndex)
             stopDistances.add(distanceFromPreviousStop)
@@ -127,7 +126,8 @@ class CalculateJourneyRoutesMock(
         val pageSize = 30
         var currentPage: Page<Journey>? = null
         do { transactionTemplate.executeWithoutResult {
-            currentPage = journeyJpaRepository.findByNullRoute(PageRequest.of(0, pageSize))
+            currentPage = journeyJpaRepository
+                .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest.of(0, pageSize))
             for (journey in currentPage.content) {
                 assignRoute(journey)
             }
@@ -137,7 +137,13 @@ class CalculateJourneyRoutesMock(
             physicalStopJpaRepository.saveAll(newPhysicalStops)
             routeJpaRepository.saveAll(newRoutes)
             routeStopJpaRepository.saveAll(newRouteStops)
-            journeyJpaRepository.saveAll(currentPage.content)
+            for (journey in currentPage.content) {
+                journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
+                    journey.lineVersion,
+                    journey.journeyPatternId,
+                    journey.route!!,
+                )
+            }
         } } while (currentPage?.hasNext() ?: false)
     }
 }
