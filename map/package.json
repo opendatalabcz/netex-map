@@ -19,7 +19,8 @@
     "leaflet": "1.x",
     "vue": "3.x",
     "vue-i18n": "11.x",
-    "vuetify": "3.x"
+    "vuetify": "3.x",
+    "wkx": "0.5.x"
   },
   "devDependencies": {
     "@tsconfig/node24": "24.x",
@@ -38,6 +39,7 @@
     "prettier": "3.8.1",
     "typescript": "5.9.x",
     "vite": "7.x",
+    "vite-plugin-node-polyfills": "0.25.X",
     "vite-plugin-vue-devtools": "8.x",
     "vite-plugin-vuetify": "2.x",
     "vue-tsc": "3.x"

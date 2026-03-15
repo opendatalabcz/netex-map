@@ -16,7 +16,7 @@ onMounted(async () => {
         attribution:
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map.value)
-    const moment = new Date('2025-11-15T12:00:00')
+    const moment = new Date('2025-11-15T05:17:00')
     const journeys = await JourneyApi.getJourneysOperatingInDay(moment)
     if (journeys) {
         renderVehicles(map.value, moment, journeys)

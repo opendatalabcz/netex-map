@@ -1,19 +1,18 @@
-import type { DaySpecificJourneyWithDates } from '@/api/model/journeysOperatingInDay'
-import type { Route } from '@/api/model/route'
+import type { MapJourneyWithDates, MapRoute } from '@/api/model/journeysOperatingInDay'
 
-type PositionedDaySpecificJourneyWithDates = DaySpecificJourneyWithDates & {
+type PositionedMapJourneyWithDates = MapJourneyWithDates & {
     position: number[] | null | undefined
     segmentIndex: number | null | undefined
 }
 
 type PositionedJourneys = {
-    startingJourneys: PositionedDaySpecificJourneyWithDates[]
-    continuingJourneys: PositionedDaySpecificJourneyWithDates[]
+    startingJourneys: PositionedMapJourneyWithDates[]
+    continuingJourneys: PositionedMapJourneyWithDates[]
 }
 
 function getRouteSegmentIndex(
     moment: Date,
-    journey: DaySpecificJourneyWithDates,
+    journey: MapJourneyWithDates,
     from: number,
 ): number | null {
     let i = Math.max(0, from)
@@ -36,16 +35,55 @@ function getRouteSegmentIndex(
     return null
 }
 
-function stopPosition(routeId: number, stopIndex: number, routeMap: Map<number, Route>): number[] {
-    const route = routeMap.get(routeId)!
-    return route.routeStops[stopIndex]!.physicalStop.position
+function stopPosition(route: MapRoute, stopIndex: number): number[] {
+    return route.pointSequence.coordinates[
+        route.routeStops[stopIndex]!.pointSequenceIndex
+    ]!
+}
+
+function distanceBetweenPoints(a: number[], b: number[]): number {
+    const dLat = b[0]! - a[0]!
+    const dLon = b[1]! - a[1]!
+    return Math.sqrt(dLat * dLat + dLon * dLon)
+}
+
+function lerp(a: number, b: number, f: number): number {
+    return a + (b - a) * f
+}
+
+function inverseLerp(a: number, b: number, c: number): number {
+    return (c - a) / (b - a)
+}
+
+function interpolatePositionBetweenStops(fraction: number, segment: number, route: MapRoute): number[] {
+    if (fraction <= 0) return stopPosition(route, segment)
+    if (fraction >= 1) return stopPosition(route, segment + 1)
+    const departureRouteStop = route.routeStops[segment]!
+    const distanceThreshold = fraction * departureRouteStop.distanceToNextStop
+    let cumulativeDistance = 0
+    let previousCumulativeDistance = 0
+    let pointIndex = departureRouteStop.pointSequenceIndex
+    while (cumulativeDistance < distanceThreshold) {
+        previousCumulativeDistance = cumulativeDistance
+        cumulativeDistance += distanceBetweenPoints(
+            route.pointSequence.coordinates[pointIndex]!,
+            route.pointSequence.coordinates[++pointIndex]!
+        )
+    }
+    const fromPoint = route.pointSequence.coordinates[pointIndex - 1]!
+    const toPoint = route.pointSequence.coordinates[pointIndex]!
+    const lerpFraction = inverseLerp(previousCumulativeDistance, cumulativeDistance, distanceThreshold)
+    return [
+        lerp(toPoint[0]!, fromPoint[0]!, lerpFraction),
+        lerp(toPoint[1]!, fromPoint[1]!, lerpFraction),
+    ]
 }
 
 function interpolateVehiclePosition(
     moment: Date,
-    journey: PositionedDaySpecificJourneyWithDates,
+    journey: PositionedMapJourneyWithDates,
     segment: number,
-    routeMap: Map<number, Route>,
+    routeMap: Map<number, MapRoute>,
 ): void {
     if (journey.routeId == null) {
         journey.position = undefined
@@ -73,26 +111,21 @@ function interpolateVehiclePosition(
     }
 
     const lerpFraction = Math.max(0, (momentTime - departureTime) / (arrivalTime - departureTime))
-    const departurePosition = stopPosition(journey.routeId, segment, routeMap)
-    const arrivalPosition = stopPosition(journey.routeId, segment + 1, routeMap)
-    journey.position = [
-        departurePosition[0]! + (arrivalPosition[0]! - departurePosition[0]!) * lerpFraction,
-        departurePosition[1]! + (arrivalPosition[1]! - departurePosition[1]!) * lerpFraction,
-    ]
+    journey.position = interpolatePositionBetweenStops(lerpFraction, segment, routeMap.get(journey.routeId)!)
     journey.segmentIndex = segment
     return
 }
 
 function calculateVehiclePositions(
     moment: Date,
-    startingJourneys: DaySpecificJourneyWithDates[],
-    continuingJourneys: DaySpecificJourneyWithDates[],
-    routeMap: Map<number, Route>,
+    startingJourneys: MapJourneyWithDates[],
+    continuingJourneys: MapJourneyWithDates[],
+    routeMap: Map<number, MapRoute>,
 ): PositionedJourneys {
     return {
         startingJourneys: startingJourneys.map((journey) => {
             const segmentIndex = getRouteSegmentIndex(moment, journey, 0)
-            const positionedJourney = journey as PositionedDaySpecificJourneyWithDates
+            const positionedJourney = journey as PositionedMapJourneyWithDates
             if (segmentIndex != null)
                 interpolateVehiclePosition(moment, positionedJourney, segmentIndex, routeMap)
             return positionedJourney
@@ -103,7 +136,7 @@ function calculateVehiclePositions(
                 journey,
                 journey.nextDayFirstStopIndex! - 1,
             )
-            const positionedJourney = journey as PositionedDaySpecificJourneyWithDates
+            const positionedJourney = journey as PositionedMapJourneyWithDates
             if (segmentIndex != null)
                 interpolateVehiclePosition(moment, positionedJourney, segmentIndex, routeMap)
             return positionedJourney
@@ -114,7 +147,7 @@ function calculateVehiclePositions(
 function recalculateVehiclePositions(
     moment: Date,
     journeys: PositionedJourneys,
-    routeMap: Map<number, Route>,
+    routeMap: Map<number, MapRoute>,
 ): void {
     journeys.startingJourneys.forEach((journey) => {
         if (journey.segmentIndex == null)
@@ -134,6 +167,6 @@ function recalculateVehiclePositions(
     })
 }
 
-export type { PositionedDaySpecificJourneyWithDates, PositionedJourneys }
+export type { PositionedMapJourneyWithDates, PositionedJourneys }
 
 export { calculateVehiclePositions, recalculateVehiclePositions }

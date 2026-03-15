@@ -3,14 +3,16 @@ import type { LineVersion, LineVersionWithDates } from '@/api/model/lineVersion'
 import type { OperatingPeriod, OperatingPeriodWithDates } from '@/api/model/operatingPeriod'
 import type { ScheduledStop, ScheduledStopWithTimes } from '@/api/model/scheduledStop'
 import type {
-    JourneysOperatingInDay,
-    DaySpecificJourney,
-    DaySpecificScheduledStop,
-    JourneysOperatingInDayWithDates,
-    DaySpecificJourneyWithDates,
-    DaySpecificScheduledStopWithDates,
+    MapJourney,
+    MapScheduledStop,
+    MapJourneyWithDates,
+    MapScheduledStopWithDates,
+    MapRawRoute,
+    MapRoute,
 } from '@/api/model/journeysOperatingInDay'
 import LocalTime from '@/util/localTime'
+import { Buffer } from 'buffer'
+import { Geometry } from 'wkx'
 
 function toLineVersionWithDates(lineVersion: LineVersion): LineVersionWithDates {
     return {
@@ -57,44 +59,37 @@ function toJourneyWithDatesAndTimes(journey: Journey): JourneyWithDatesAndTimes 
     }
 }
 
-function toDaySpecificScheduledStopWithDates(
-    daySpecificScheduledStop: DaySpecificScheduledStop,
-): DaySpecificScheduledStopWithDates {
+function toMapScheduledStopWithDates(mapScheduledStop: MapScheduledStop): MapScheduledStopWithDates {
     return {
-        name: daySpecificScheduledStop.name,
-        stopOnRequest: daySpecificScheduledStop.stopOnRequest,
         arrival:
-            daySpecificScheduledStop.arrival == null
+            mapScheduledStop.arrival == null
                 ? null
-                : new Date(daySpecificScheduledStop.arrival),
+                : new Date(mapScheduledStop.arrival),
         departure:
-            daySpecificScheduledStop.departure == null
+            mapScheduledStop.departure == null
                 ? null
-                : new Date(daySpecificScheduledStop.departure),
+                : new Date(mapScheduledStop.departure),
     }
 }
 
-function toDaySpecificJourneyWithDates(
-    daySpecificJourney: DaySpecificJourney,
-): DaySpecificJourneyWithDates {
+function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDates {
     return {
-        relationalId: daySpecificJourney.relationalId,
-        lineVersion: toLineVersionWithDates(daySpecificJourney.lineVersion),
-        routeId: daySpecificJourney.routeId,
-        schedule: daySpecificJourney.schedule.map(toDaySpecificScheduledStopWithDates),
-        nextDayFirstStopIndex: daySpecificJourney.nextDayFirstStopIndex,
+        relationalId: mapJourney.relationalId,
+        lineVersionId: mapJourney.lineVersionId,
+        routeId: mapJourney.routeId,
+        schedule: mapJourney.schedule.map(toMapScheduledStopWithDates),
+        nextDayFirstStopIndex: mapJourney.nextDayFirstStopIndex,
     }
 }
 
-function toJourneysOperatingInDayWithDates(
-    journeysOperatingInDay: JourneysOperatingInDay,
-): JourneysOperatingInDayWithDates {
+function toMapRoute(route: MapRawRoute): MapRoute {
+    const buffer = Buffer.from(route.pointSequence, 'base64')
+    const geoJson = Geometry.parse(buffer).toGeoJSON();
     return {
-        startingThisDay: journeysOperatingInDay.startingThisDay.map(toDaySpecificJourneyWithDates),
-        continuingThisDay: journeysOperatingInDay.continuingThisDay.map(
-            toDaySpecificJourneyWithDates,
-        ),
-        routes: journeysOperatingInDay.routes,
+        relationalId: route.relationalId,
+        pointSequence: geoJson as GeoJSON.LineString,
+        totalDistance: route.totalDistance,
+        routeStops: route.routeStops,
     }
 }
 
@@ -103,7 +98,7 @@ export {
     toOperatingPeriodWithDates,
     toScheduledStopWithTimes,
     toJourneyWithDatesAndTimes,
-    toDaySpecificScheduledStopWithDates,
-    toDaySpecificJourneyWithDates,
-    toJourneysOperatingInDayWithDates,
+    toMapScheduledStopWithDates,
+    toMapJourneyWithDates,
+    toMapRoute,
 }

@@ -1,53 +1,69 @@
-import type { Route } from '@/api/model/route'
-import type { LineVersion, LineVersionWithDates } from '@/api/model/lineVersion'
+type MapRouteStop = {
+    pointSequenceIndex: number
+    distanceToNextStop: number
+}
 
-type DaySpecificScheduledStop = {
-    name: string
-    stopOnRequest: boolean
+type MapRawRoute = {
+    relationalId: number
+    pointSequence: string
+    totalDistance: number
+    routeStops: MapRouteStop[]
+}
+
+type MapRoute = {
+    relationalId: number
+    pointSequence: GeoJSON.LineString
+    totalDistance: number
+    routeStops: MapRouteStop[]
+}
+
+type MapLineVersion = {
+    relationalId: number
+    publicCode: string
+    transportMode: string
+}
+
+type MapScheduledStop = {
     arrival: string | null
     departure: string | null
 }
 
-type DaySpecificJourney = {
+type MapJourney = {
     relationalId: number
-    lineVersion: LineVersion
+    lineVersionId: number
     routeId: number | null
-    schedule: DaySpecificScheduledStop[]
+    schedule: MapScheduledStop[]
     nextDayFirstStopIndex: number | null
 }
 
 type JourneysOperatingInDay = {
-    startingThisDay: DaySpecificJourney[]
-    continuingThisDay: DaySpecificJourney[]
-    routes: Route[]
+    startingThisDay: MapJourney[]
+    continuingThisDay: MapJourney[]
+    routes: MapRawRoute[]
+    lineVersions: MapLineVersion[]
 }
 
-type DaySpecificScheduledStopWithDates = {
-    name: string
-    stopOnRequest: boolean
+type MapScheduledStopWithDates = {
     arrival: Date | null
     departure: Date | null
 }
 
-type DaySpecificJourneyWithDates = {
+type MapJourneyWithDates = {
     relationalId: number
-    lineVersion: LineVersionWithDates
+    lineVersionId: number
     routeId: number | null
-    schedule: DaySpecificScheduledStopWithDates[]
+    schedule: MapScheduledStopWithDates[]
     nextDayFirstStopIndex: number | null
-}
-
-type JourneysOperatingInDayWithDates = {
-    startingThisDay: DaySpecificJourneyWithDates[]
-    continuingThisDay: DaySpecificJourneyWithDates[]
-    routes: Route[]
 }
 
 export type {
     JourneysOperatingInDay,
-    DaySpecificJourney,
-    DaySpecificScheduledStop,
-    JourneysOperatingInDayWithDates,
-    DaySpecificJourneyWithDates,
-    DaySpecificScheduledStopWithDates,
+    MapJourney,
+    MapScheduledStop,
+    MapLineVersion,
+    MapRawRoute,
+    MapRouteStop,
+    MapJourneyWithDates,
+    MapScheduledStopWithDates,
+    MapRoute,
 }

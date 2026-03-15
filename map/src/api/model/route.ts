@@ -5,6 +5,7 @@ type Route = {
     externalId: string
     pointSequence: number[][]
     routeStops: RouteStop[]
+    totalDistance: number
 }
 
 export type { Route }
