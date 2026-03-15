@@ -11,6 +11,7 @@ import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase
 import org.locationtech.jts.geom.Coordinate
 import org.springframework.stereotype.Component
 import java.time.ZonedDateTime
+import kotlin.io.encoding.Base64
 
 @Component
 class ModelConvertor {
@@ -75,27 +76,19 @@ class ModelConvertor {
         nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
     )
 
-    fun toHttp(daySpecificScheduledStop: GetJourneysOperatingInDayUseCase.DaySpecificScheduledStop): HttpDaySpecificScheduledStop = HttpDaySpecificScheduledStop(
-        name = daySpecificScheduledStop.name,
-        stopOnRequest = daySpecificScheduledStop.stopOnRequest,
-        arrival = daySpecificScheduledStop.arrival,
-        departure = daySpecificScheduledStop.departure,
-    )
-
-    fun toHttp(daySpecificJourney: GetJourneysOperatingInDayUseCase.DaySpecificJourney): HttpDaySpecificJourney = HttpDaySpecificJourney(
-        relationalId = daySpecificJourney.relationalId,
-        lineVersion = toHttp(daySpecificJourney.lineVersion),
-        routeId = daySpecificJourney.routeId,
-        schedule = daySpecificJourney.schedule.map(::toHttp),
-        nextDayFirstStopIndex = daySpecificJourney.nextDayFirstStopIndex,
+    fun toHttp(route: GetJourneysOperatingInDayUseCase.MapRoute): HttpMapRoute = HttpMapRoute(
+        relationalId = route.relationalId,
+        pointSequence = Base64.encode(route.pointSequence),
+        totalDistance = route.totalDistance,
+        routeStops = route.routeStops,
     )
 
     fun toHttp(
         journeysOperatingInDayResult: GetJourneysOperatingInDayUseCase.JourneysOperatingInDayResult,
-        latitudeFirst: Boolean,
     ): HttpJourneysOperatingInDayResult = HttpJourneysOperatingInDayResult(
-        startingThisDay = journeysOperatingInDayResult.startingThisDay.map(::toHttp),
-        continuingThisDay = journeysOperatingInDayResult.continuingThisDay.map(::toHttp),
-        routes = journeysOperatingInDayResult.routes.map { toHttp(it, latitudeFirst) },
+        startingThisDay = journeysOperatingInDayResult.startingThisDay,
+        continuingThisDay = journeysOperatingInDayResult.continuingThisDay,
+        routes = journeysOperatingInDayResult.routes.map(::toHttp),
+        lineVersions = journeysOperatingInDayResult.lineVersions
     )
 }

@@ -40,7 +40,6 @@ class JourneyView(
     @ResponseBody
     fun getJourneysOperatingInDay(
         @PathVariable day: LocalDate,
-        @RequestParam(required = false, defaultValue = "false") latitudeFirst: Boolean,
         @RequestParam(required = false, defaultValue = "UTC") timezone: String,
     ): HttpJourneysOperatingInDayResult {
         val zone = try {
@@ -49,8 +48,7 @@ class JourneyView(
             ZoneId.of("UTC")
         }
         return modelConvertor.toHttp(
-            getJourneysOperatingInDayUseCase.getJourneysOperatingInDay(day, zone),
-            latitudeFirst
+            getJourneysOperatingInDayUseCase.getJourneysOperatingInDay(day, zone)
         )
     }
 }

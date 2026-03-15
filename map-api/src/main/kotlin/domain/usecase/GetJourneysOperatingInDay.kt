@@ -1,9 +1,14 @@
 package cz.cvut.fit.gaierda1.domain.usecase
 
-import cz.cvut.fit.gaierda1.data.orm.model.Journey
-import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.JourneyMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.RouteMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.RouteStopMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopMapDto
 import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -15,17 +20,21 @@ import java.time.ZonedDateTime
 @Component
 class GetJourneysOperatingInDay(
     private val journeyJpaRepository: JourneyJpaRepository,
+    private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val routeJpaRepository: RouteJpaRepository,
+    private val routeStopJpaRepository: RouteStopJpaRepository,
+    private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
 ): GetJourneysOperatingInDayUseCase {
     private fun scheduledStopToDaySpecific(
         stopIndex: Int,
-        scheduledStop: ScheduledStop,
+        scheduledStop: ScheduledStopMapDto,
         day: LocalDate,
         zoneId: ZoneId,
         nextDayFirstStopIndex: Int?,
-    ): DaySpecificScheduledStop {
-        var arrival: ZonedDateTime? = scheduledStop.arrival?.let { ZonedDateTime.of(day, it, zoneId) }
+    ): MapScheduledStop {
         var departure: ZonedDateTime? = scheduledStop.departure?.let { ZonedDateTime.of(day, it, zoneId) }
+        var arrival: ZonedDateTime? = if (scheduledStop.departure == scheduledStop.arrival) null
+            else scheduledStop.arrival?.let { ZonedDateTime.of(day, it, zoneId) }
 
         if (nextDayFirstStopIndex != null) {
             if (stopIndex >= nextDayFirstStopIndex) {
@@ -40,28 +49,31 @@ class GetJourneysOperatingInDay(
             }
         }
 
-        return DaySpecificScheduledStop(
-            name = scheduledStop.name,
-            stopOnRequest = scheduledStop.stopOnRequest,
+        return MapScheduledStop(
             arrival = arrival,
             departure = departure,
         )
     }
 
-    private fun recomputeJourneysToSpecificDay(journeys: List<Journey>, day: LocalDate): List<DaySpecificJourney> {
-        return journeys.map { journey ->
-            val journeyTimezone = journey.operatingPeriods.first().timezone
-            DaySpecificJourney(
-                relationalId = journey.relationalId!!,
-                lineVersion = journey.lineVersion,
-                routeId = journey.route?.relationalId,
-                schedule = journey.schedule.sortedBy { it.stopId.stopOrder }.mapIndexed { idx, stop ->
-                    scheduledStopToDaySpecific(idx, stop, day, journeyTimezone, journey.nextDayFirstStopIndex)
-                },
-                nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
+    private fun recomputeJourneysToSpecificDay(
+        journeys: List<JourneyMapDto>,
+        day: LocalDate,
+        scheduleStops: Map<Long, List<ScheduledStopMapDto>>,
+    ): List<MapJourney> = journeys.map { journey -> MapJourney(
+        relationalId = journey.relationalId,
+        lineVersionId = journey.lineVersionId,
+        routeId = journey.routeId,
+        schedule = scheduleStops[journey.relationalId]!!.mapIndexed { idx, stop ->
+            scheduledStopToDaySpecific(
+                idx,
+                stop,
+                day,
+                ZoneId.of(journey.timezone),
+                journey.nextDayFirstStopIndex,
             )
-        }
-    }
+        },
+        nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
+    ) }
 
     /**
      * Returns all journeys operating in a given day.
@@ -71,19 +83,52 @@ class GetJourneysOperatingInDay(
      */
     @Transactional(readOnly = true)
     override fun getJourneysOperatingInDay(day: LocalDate, timezone: ZoneId): JourneysOperatingInDayResult {
-        val journeysForDay = journeyJpaRepository
-            .findAllOperatingInRange(ZonedDateTime.of(day, LocalTime.MIN, timezone), ZonedDateTime.of(day, LocalTime.MAX, timezone))
-        val journeysForPreviousDay = journeyJpaRepository
-            .findAllOperatingInRangeWithNextDayOperation(ZonedDateTime.of(day.minusDays(1), LocalTime.MIN, timezone), ZonedDateTime.of(day.minusDays(1), LocalTime.MAX, timezone))
+        val journeysForCurrentDay = journeyJpaRepository.findAllMapDtoOperatingInRange(
+            ZonedDateTime.of(day, LocalTime.MIN, timezone),
+            ZonedDateTime.of(day, LocalTime.MAX, timezone)
+        )
 
-        val recomputedForDay = recomputeJourneysToSpecificDay(journeysForDay, day)
-        val recomputedForPreviousDay = recomputeJourneysToSpecificDay(journeysForPreviousDay, day.minusDays(1))
-        val routes = routeJpaRepository.findAllByJourney(recomputedForDay.map { it.relationalId } + recomputedForPreviousDay.map { it.relationalId })
+        val journeysForPreviousDay = journeyJpaRepository.findAllMapDtoOperatingInRangeWithNextDayOperation(
+            ZonedDateTime.of(day.minusDays(1), LocalTime.MIN, timezone),
+            ZonedDateTime.of(day.minusDays(1), LocalTime.MAX, timezone)
+        )
+
+        val lineVersions = lineVersionJpaRepository.findAllMapDtoByLineId(
+            journeysForCurrentDay.map(JourneyMapDto::lineVersionId)
+                + journeysForPreviousDay.map(JourneyMapDto::lineVersionId)
+        )
+
+        val scheduleStops = scheduledStopJpaRepository.findAllMapDtoByJourneyId(
+            journeysForCurrentDay.map(JourneyMapDto::relationalId)
+                + journeysForPreviousDay.map(JourneyMapDto::relationalId)
+        )
+            .groupBy(ScheduledStopMapDto::journeyId)
+            .mapValues { (_, schedule) -> schedule.sortedBy(ScheduledStopMapDto::stopOrder) }
+
+        val recomputedForDay = recomputeJourneysToSpecificDay(journeysForCurrentDay, day, scheduleStops)
+        val recomputedForPreviousDay = recomputeJourneysToSpecificDay(journeysForPreviousDay, day.minusDays(1), scheduleStops)
+
+        val rawRoutes = routeJpaRepository.findAllMapDtoByRouteId(
+            journeysForCurrentDay.map(JourneyMapDto::routeId)
+                + journeysForPreviousDay.map(JourneyMapDto::routeId)
+        )
+        val routeStops = routeStopJpaRepository.findAllDtoByRouteIds(rawRoutes.map(RouteMapDto::relationalId))
+            .groupBy(RouteStopMapDto::routeId)
+            .mapValues { (_, routeStops) -> routeStops.sortedBy(RouteStopMapDto::stopOrder) }
 
         return JourneysOperatingInDayResult (
             startingThisDay = recomputedForDay,
             continuingThisDay = recomputedForPreviousDay,
-            routes = routes,
+            routes = rawRoutes.map { route -> MapRoute(
+                relationalId = route.relationalId,
+                pointSequence = ByteArray(0),
+                totalDistance = route.totalDistance,
+                routeStops = routeStops[route.relationalId]!!.map { stop -> MapRouteStop(
+                    pointSequenceIndex = stop.pointSequenceIndex,
+                    distanceToNextStop = stop.distanceToNextStop,
+                ) },
+            ) },
+            lineVersions = lineVersions,
         )
     }
 }

@@ -1,24 +1,18 @@
 package cz.cvut.fit.gaierda1.presentation.model
 
-import java.time.ZonedDateTime
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionMapDto
+import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase.*
 
-data class HttpDaySpecificScheduledStop(
-    val name: String,
-    val stopOnRequest: Boolean,
-    val arrival: ZonedDateTime?,
-    val departure: ZonedDateTime?,
-)
-
-data class HttpDaySpecificJourney(
+data class HttpMapRoute(
     val relationalId: Long,
-    val lineVersion: HttpLineVersion,
-    val routeId: Long?,
-    val schedule: List<HttpDaySpecificScheduledStop>,
-    var nextDayFirstStopIndex: Int?,
+    val pointSequence: String,
+    val totalDistance: Double,
+    val routeStops: List<MapRouteStop>,
 )
 
 data class HttpJourneysOperatingInDayResult(
-    val startingThisDay: List<HttpDaySpecificJourney>,
-    val continuingThisDay: List<HttpDaySpecificJourney>,
-    val routes: List<HttpRoute>,
+    val startingThisDay: List<MapJourney>,
+    val continuingThisDay: List<MapJourney>,
+    val routes: List<HttpMapRoute>,
+    val lineVersions: List<LineVersionMapDto>,
 )
