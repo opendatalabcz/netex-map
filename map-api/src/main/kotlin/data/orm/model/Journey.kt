@@ -47,14 +47,9 @@ class Journey(
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "journey")
     val schedule: List<ScheduledStop>,
 
-    @BatchSize(size = 30)
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "journey_operating_period",
-        joinColumns = [JoinColumn(name = "journey_id")],
-        inverseJoinColumns = [JoinColumn(name = "operating_period_id")]
-    )
-    val operatingPeriods: List<OperatingPeriod>,
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "operating_period_id", nullable = false)
+    val operatingPeriods: OperatingPeriod,
 
     var nextDayFirstStopIndex: Int?,
 ) {

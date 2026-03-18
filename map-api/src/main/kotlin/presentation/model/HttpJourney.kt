@@ -6,7 +6,7 @@ data class HttpJourney(
     val lineVersion: HttpLineVersion,
     val journeyPatternId: String,
     val schedule: List<HttpScheduledStop>,
-    val operatingPeriods: List<HttpOperatingPeriod>,
+    val operatingPeriod: HttpOperatingPeriod,
     val route: HttpRoute?,
     val nextDayFirstStopIndex: Int?,
 ) {

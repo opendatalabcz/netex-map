@@ -65,7 +65,7 @@ class JourneyAssembler(
             lineVersion = lineVersion,
             journeyPatternId = journeyPatternId,
             schedule = schedule,
-            operatingPeriods = linkOperatingPeriods(journey, registry, operatingPeriods),
+            operatingPeriods = linkOperatingPeriod(journey, registry, operatingPeriods),
             route = null,
             nextDayFirstStopIndex = null,
         )
@@ -104,21 +104,22 @@ class JourneyAssembler(
         }
     }
     
-    private fun linkOperatingPeriods(
+    private fun linkOperatingPeriod(
         journey: ServiceJourney,
         registry: NetexFileRegistry,
         operatingPeriods: Map<String, OperatingPeriod>,
-    ): List<OperatingPeriod> {
-        return journey.dayTypes.dayTypeRef.map { dayTypeRef ->
-            val dayTypeId = dayTypeRef.value.ref
-            val dayTypeAssignment = registry.dayTypeAssignmentRegistryByDayTypeId[dayTypeId]
-            checkNotNull(dayTypeAssignment) { "Day type assignment for $dayTypeId not found" }
+    ): OperatingPeriod {
+        val dayTypeRef = journey.dayTypes.dayTypeRef.firstOrNull()
+        checkNotNull(dayTypeRef) { "Journey ${journey.id} has no day type" }
 
-            val operatingPeriodId = dayTypeAssignment.operatingPeriodRef.value.ref
-            val operatingPeriod = operatingPeriods[operatingPeriodId]
-            checkNotNull(operatingPeriod) { "Operating period $operatingPeriodId not found" }
+        val dayTypeId = dayTypeRef.value.ref
+        val dayTypeAssignment = registry.dayTypeAssignmentRegistryByDayTypeId[dayTypeId]
+        checkNotNull(dayTypeAssignment) { "Day type assignment for $dayTypeId not found" }
 
-            return@map operatingPeriod
-        }
+        val operatingPeriodId = dayTypeAssignment.operatingPeriodRef.value.ref
+        val operatingPeriod = operatingPeriods[operatingPeriodId]
+        checkNotNull(operatingPeriod) { "Operating period $operatingPeriodId not found" }
+
+        return operatingPeriod
     }
 }

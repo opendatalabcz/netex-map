@@ -9,7 +9,7 @@ type Journey = {
     lineVersion: LineVersion
     journeyPatternId: string
     schedule: ScheduledStop[]
-    operatingPeriods: OperatingPeriod[]
+    operatingPeriod: OperatingPeriod
     route: Route | null
     nextDayFirstStopIndex: number | null
 }
@@ -20,7 +20,7 @@ type JourneyWithDatesAndTimes = {
     lineVersion: LineVersionWithDates
     journeyPatternId: string
     schedule: ScheduledStopWithTimes[]
-    operatingPeriods: OperatingPeriodWithDates[]
+    operatingPeriod: OperatingPeriodWithDates
     route: Route | null
     nextDayFirstStopIndex: number | null
 }

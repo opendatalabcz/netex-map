@@ -56,9 +56,11 @@ CREATE TABLE journey (
     line_version_id BIGINT NOT NULL,
     route_id BIGINT,
     next_day_first_stop_index INTEGER,
+    operating_period_id BIGINT NOT NULL,
     UNIQUE(line_version_id, external_id),
     FOREIGN KEY (line_version_id) REFERENCES line_version(relational_id) ON DELETE CASCADE,
-    FOREIGN KEY (route_id) REFERENCES route(relational_id) ON DELETE SET NULL
+    FOREIGN KEY (route_id) REFERENCES route(relational_id) ON DELETE SET NULL,
+    FOREIGN KEY (operating_period_id) REFERENCES operating_period(relational_id)
 );
 
 CREATE TABLE route_stop (
@@ -81,14 +83,6 @@ CREATE TABLE scheduled_stop (
     departure TIME,
     PRIMARY KEY (journey_id, stop_order),
     FOREIGN KEY (journey_id) REFERENCES journey(relational_id) ON DELETE CASCADE
-);
-
-CREATE TABLE journey_operating_period (
-    journey_id BIGINT NOT NULL,
-    operating_period_id BIGINT NOT NULL,
-    PRIMARY KEY (journey_id, operating_period_id),
-    FOREIGN KEY (journey_id) REFERENCES journey(relational_id) ON DELETE CASCADE,
-    FOREIGN KEY (operating_period_id) REFERENCES operating_period(relational_id)
 );
 
 -- Link sequences to their columns

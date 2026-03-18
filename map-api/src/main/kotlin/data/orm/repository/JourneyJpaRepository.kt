@@ -23,8 +23,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
             SELECT DISTINCT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, op.timezone
             FROM journey j
                 JOIN line_version lv ON j.line_version_id = lv.relational_id
-                JOIN journey_operating_period jop ON j.relational_id = jop.journey_id
-                JOIN operating_period op ON jop.operating_period_id = op.relational_id
+                JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON j.route_id = r.relational_id
             WHERE j.route_id IS NOT NULL AND (
                 TIMEZONE(lv.timezone, lv.active_from) <= :from AND TIMEZONE(lv.timezone, lv.active_to) > :from OR

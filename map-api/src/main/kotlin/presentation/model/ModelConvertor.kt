@@ -71,7 +71,7 @@ class ModelConvertor {
         lineVersion = toHttp(journey.lineVersion),
         journeyPatternId = journey.journeyPatternId,
         schedule = journey.schedule.map(::toHttp),
-        operatingPeriods = journey.operatingPeriods.map(::toHttp),
+        operatingPeriod = toHttp(journey.operatingPeriods),
         route = journey.route?.let { toHttp(it, latitudeFirst) },
         nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
     )

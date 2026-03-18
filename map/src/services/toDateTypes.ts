@@ -53,7 +53,7 @@ function toJourneyWithDatesAndTimes(journey: Journey): JourneyWithDatesAndTimes 
         lineVersion: toLineVersionWithDates(journey.lineVersion),
         journeyPatternId: journey.journeyPatternId,
         schedule: journey.schedule.map(toScheduledStopWithTimes),
-        operatingPeriods: journey.operatingPeriods.map(toOperatingPeriodWithDates),
+        operatingPeriod: toOperatingPeriodWithDates(journey.operatingPeriod),
         route: journey.route,
         nextDayFirstStopIndex: journey.nextDayFirstStopIndex,
     }
