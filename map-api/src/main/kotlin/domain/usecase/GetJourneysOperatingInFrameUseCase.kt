@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-interface GetJourneysOperatingInDayUseCase {
+interface GetJourneysOperatingInFrameUseCase {
     data class MapRouteStop(
         val pointSequenceIndex: Int,
         val distanceToNextStop: Double,
@@ -28,15 +28,22 @@ interface GetJourneysOperatingInDayUseCase {
         val lineVersionId: Long,
         val routeId: Long?,
         val schedule: List<MapScheduledStop>,
-        var nextDayFirstStopIndex: Int?,
+        val nextDayFirstStopIndex: Int?,
     )
 
-    data class JourneysOperatingInDayResult(
+    data class JourneysOperatingInFrameResult(
         val startingThisDay: List<MapJourney>,
         val continuingThisDay: List<MapJourney>,
         val routes: List<MapRoute>,
         val lineVersions: List<LineVersionMapDto>,
     )
 
-    fun getJourneysOperatingInDay(day: LocalDate, timezone: ZoneId): JourneysOperatingInDayResult
+    fun getJourneysOperatingInFrame(
+        lonMin: Double,
+        latMin: Double,
+        lonMax: Double,
+        latMax: Double,
+        day: LocalDate,
+        timezone: ZoneId,
+    ): JourneysOperatingInFrameResult
 }

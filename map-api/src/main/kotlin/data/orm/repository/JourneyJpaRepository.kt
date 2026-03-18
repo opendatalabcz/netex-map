@@ -19,19 +19,20 @@ import java.util.Optional
 @Repository
 interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     private companion object {
-        const val OPERATING_IN_RANGE_QUERY = """
+        const val OPERATING_IN_FRAME_QUERY = """
             SELECT DISTINCT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, op.timezone
             FROM journey j
                 JOIN line_version lv ON j.line_version_id = lv.relational_id
                 JOIN journey_operating_period jop ON j.relational_id = jop.journey_id
                 JOIN operating_period op ON jop.operating_period_id = op.relational_id
+                JOIN route r ON j.route_id = r.relational_id
             WHERE j.route_id IS NOT NULL AND (
                 TIMEZONE(lv.timezone, lv.active_from) <= :from AND TIMEZONE(lv.timezone, lv.active_to) > :from OR
                 TIMEZONE(lv.timezone, lv.active_from) < :to AND TIMEZONE(lv.timezone, lv.active_to) >= :to
             ) AND (
                 op.valid_days[DATE_PART('day', :from - TIMEZONE(op.timezone, op.from_date)) + 1] = true OR
                 op.valid_days[DATE_PART('day', :to - TIMEZONE(op.timezone, op.from_date)) + 1] = true
-            )
+            ) AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
         """
     }
 
@@ -53,11 +54,25 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         @Param("isDetour") isDetour: Boolean,
     ): Optional<Journey>
 
-    @Query(nativeQuery = true, value = OPERATING_IN_RANGE_QUERY)
-    fun findAllMapDtoOperatingInRange(from: ZonedDateTime, to: ZonedDateTime): List<JourneyMapDto>
+    @Query(nativeQuery = true, value = OPERATING_IN_FRAME_QUERY)
+    fun findAllMapDtoOperatingInFrame(
+        lonMin: Double,
+        latMin: Double,
+        lonMax: Double,
+        latMax: Double,
+        from: ZonedDateTime,
+        to: ZonedDateTime,
+    ): List<JourneyMapDto>
 
-    @Query(nativeQuery = true, value = "$OPERATING_IN_RANGE_QUERY AND j.next_day_first_stop_index IS NOT NULL")
-    fun findAllMapDtoOperatingInRangeWithNextDayOperation(from: ZonedDateTime, to: ZonedDateTime): List<JourneyMapDto>
+    @Query(nativeQuery = true, value = "$OPERATING_IN_FRAME_QUERY AND j.next_day_first_stop_index IS NOT NULL")
+    fun findAllMapDtoOperatingInFrameWithNextDayOperation(
+        lonMin: Double,
+        latMin: Double,
+        lonMax: Double,
+        latMax: Double,
+        from: ZonedDateTime,
+        to: ZonedDateTime,
+    ): List<JourneyMapDto>
 
     @Query("SELECT j FROM Journey j JOIN FETCH j.route")
     fun findAllFetchRoutes(pageable: Pageable): Page<Journey>

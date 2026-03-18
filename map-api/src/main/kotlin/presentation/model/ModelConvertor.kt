@@ -7,7 +7,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.data.orm.model.Route
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStop
 import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
-import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase
 import org.locationtech.jts.geom.Coordinate
 import org.springframework.stereotype.Component
 import java.time.ZonedDateTime
@@ -76,7 +76,7 @@ class ModelConvertor {
         nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
     )
 
-    fun toHttp(route: GetJourneysOperatingInDayUseCase.MapRoute): HttpMapRoute = HttpMapRoute(
+    fun toHttp(route: GetJourneysOperatingInFrameUseCase.MapRoute): HttpMapRoute = HttpMapRoute(
         relationalId = route.relationalId,
         pointSequence = Base64.encode(route.pointSequence),
         totalDistance = route.totalDistance,
@@ -84,11 +84,11 @@ class ModelConvertor {
     )
 
     fun toHttp(
-        journeysOperatingInDayResult: GetJourneysOperatingInDayUseCase.JourneysOperatingInDayResult,
+        journeysOperatingInFrameResult: GetJourneysOperatingInFrameUseCase.JourneysOperatingInFrameResult,
     ): HttpJourneysOperatingInDayResult = HttpJourneysOperatingInDayResult(
-        startingThisDay = journeysOperatingInDayResult.startingThisDay,
-        continuingThisDay = journeysOperatingInDayResult.continuingThisDay,
-        routes = journeysOperatingInDayResult.routes.map(::toHttp),
-        lineVersions = journeysOperatingInDayResult.lineVersions
+        startingThisDay = journeysOperatingInFrameResult.startingThisDay,
+        continuingThisDay = journeysOperatingInFrameResult.continuingThisDay,
+        routes = journeysOperatingInFrameResult.routes.map(::toHttp),
+        lineVersions = journeysOperatingInFrameResult.lineVersions
     )
 }

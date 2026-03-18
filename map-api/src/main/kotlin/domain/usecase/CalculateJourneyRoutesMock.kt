@@ -95,6 +95,9 @@ class CalculateJourneyRoutesMock(
             stopDistances.add(distanceFromPreviousStop)
             distanceFromPreviousStop = 0.0
         }
+        if (path.size == 1) {
+            path.add(path.first())
+        }
 
         val routeStops = mutableListOf<RouteStop>()
         val route = Route(

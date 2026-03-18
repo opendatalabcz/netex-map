@@ -3,7 +3,7 @@ package cz.cvut.fit.gaierda1.presentation.rest
 import cz.cvut.fit.gaierda1.presentation.model.HttpJourney
 import cz.cvut.fit.gaierda1.presentation.model.ModelConvertor
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
-import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase
 import cz.cvut.fit.gaierda1.presentation.model.HttpJourneysOperatingInDayResult
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -23,7 +23,7 @@ import java.time.ZoneId
 class JourneyView(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val modelConvertor: ModelConvertor,
-    private val getJourneysOperatingInDayUseCase: GetJourneysOperatingInDayUseCase,
+    private val getJourneysOperatingInFrameUseCase: GetJourneysOperatingInFrameUseCase,
 ) {
     @GetMapping
     @ResponseBody
@@ -39,6 +39,10 @@ class JourneyView(
     @GetMapping("/day/{day}")
     @ResponseBody
     fun getJourneysOperatingInDay(
+        @RequestParam lonMin: Double,
+        @RequestParam latMin: Double,
+        @RequestParam lonMax: Double,
+        @RequestParam latMax: Double,
         @PathVariable day: LocalDate,
         @RequestParam(required = false, defaultValue = "UTC") timezone: String,
     ): HttpJourneysOperatingInDayResult {
@@ -48,7 +52,9 @@ class JourneyView(
             ZoneId.of("UTC")
         }
         return modelConvertor.toHttp(
-            getJourneysOperatingInDayUseCase.getJourneysOperatingInDay(day, zone)
+            getJourneysOperatingInFrameUseCase.getJourneysOperatingInFrame(
+                lonMin, latMin, lonMax, latMax, day, zone
+            )
         )
     }
 }

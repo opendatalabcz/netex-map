@@ -1,7 +1,7 @@
 package cz.cvut.fit.gaierda1.presentation.model
 
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionMapDto
-import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInDayUseCase.*
+import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase.*
 
 data class HttpMapRoute(
     val relationalId: Long,

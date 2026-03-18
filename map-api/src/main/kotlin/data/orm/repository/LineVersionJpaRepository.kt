@@ -38,7 +38,7 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
     @Query(nativeQuery = true, value = """
         SELECT lv.relational_id, lv.public_code, lv.transport_mode
         FROM line_version lv
-        WHERE lv.relational_id IN :lineIds
+        WHERE lv.relational_id IN :ids
     """)
-    fun findAllMapDtoByLineId(lineIds: List<Long>): List<LineVersionMapDto>
+    fun findAllMapDtoByIds(ids: List<Long>): List<LineVersionMapDto>
 }
