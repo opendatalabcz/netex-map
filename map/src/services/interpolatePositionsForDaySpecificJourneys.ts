@@ -1,4 +1,4 @@
-import type { MapJourneyWithDates, MapRoute } from '@/api/model/journeysOperatingInDay'
+import type { MapJourneyWithDates, MapRoute } from '@/api/model/journeysOperatingInFrame'
 
 type PositionedMapJourneyWithDates = MapJourneyWithDates & {
     position: number[] | null | undefined

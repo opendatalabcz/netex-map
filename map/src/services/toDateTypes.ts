@@ -9,7 +9,7 @@ import type {
     MapScheduledStopWithDates,
     MapRawRoute,
     MapRoute,
-} from '@/api/model/journeysOperatingInDay'
+} from '@/api/model/journeysOperatingInFrame'
 import LocalTime from '@/util/localTime'
 import { Buffer } from 'buffer'
 import { Geometry } from 'wkx'

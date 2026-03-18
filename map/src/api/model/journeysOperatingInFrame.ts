@@ -36,7 +36,7 @@ type MapJourney = {
     nextDayFirstStopIndex: number | null
 }
 
-type JourneysOperatingInDay = {
+type JourneysOperatingInFrame = {
     startingThisDay: MapJourney[]
     continuingThisDay: MapJourney[]
     routes: MapRawRoute[]
@@ -57,7 +57,7 @@ type MapJourneyWithDates = {
 }
 
 export type {
-    JourneysOperatingInDay,
+    JourneysOperatingInFrame,
     MapJourney,
     MapScheduledStop,
     MapLineVersion,
