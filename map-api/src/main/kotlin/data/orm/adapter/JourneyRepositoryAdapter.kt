@@ -280,6 +280,10 @@ open class JourneyRepositoryAdapter(
             triplets.forEachIndexed { idx, triplet ->
                 journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
                     triplet.lineVersion.lineId.value,
+                    triplet.lineVersion.validIn.from,
+                    triplet.lineVersion.validIn.to,
+                    triplet.lineVersion.validIn.timezone,
+                    triplet.lineVersion.isDetour,
                     triplet.journeyPatternId.value,
                     mappedRoutes[idx],
                 )

@@ -58,7 +58,7 @@ class CalculateJourneyRoutesMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    private fun assignRoute(journey: Journey) {
+    private fun createRoute(journey: Journey): Route {
         val centerOfMass = randomPoint()
         var currentPoint = randomPoint()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
@@ -98,7 +98,7 @@ class CalculateJourneyRoutesMock(
             )
         }
 
-        journey.route = Route(
+        return Route(
             routeId = RouteId((++generatedId).toString()),
             pointSequence = path,
             routeStops = routeStops,
@@ -112,12 +112,10 @@ class CalculateJourneyRoutesMock(
         do {
             currentPage = journeyRepository
                 .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest(0, pageSize))
-            for (journey in currentPage.content) {
-                assignRoute(journey)
-            }
+            val newRoutes = currentPage.content.map(::createRoute)
             journeyRepository.setRouteForAllByLineVersionAndJourneyPattern(
-                currentPage.content.map { JourneyRepository.SeRouteByLineVersionAndJourneyPatternTriplet(
-                    it.lineVersion, it.journeyPatternId, it.route!!
+                currentPage.content.mapIndexed { idx, journey -> JourneyRepository.SeRouteByLineVersionAndJourneyPatternTriplet(
+                    journey.lineVersion, journey.journeyPatternId, newRoutes[idx]
                 ) }
             )
         } while (currentPage.totalPages != 1)

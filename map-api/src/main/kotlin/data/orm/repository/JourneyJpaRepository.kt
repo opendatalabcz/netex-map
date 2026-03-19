@@ -38,12 +38,32 @@ interface JourneyJpaRepository: JpaRepository<DbJourney, Long> {
 
     @Query(nativeQuery = true, value = "SELECT DISTINCT ON (line_version_id, journey_pattern_id) * FROM journey " +
             "WHERE route_id IS NULL " +
-            "ORDER BY line_version_id, journey_pattern_id")
+            "ORDER BY line_version_id, journey_pattern_id",
+        countQuery = "SELECT COUNT(DISTINCT (line_version_id, journey_pattern_id)) FROM journey WHERE route_id IS NULL")
     fun findAllWithDistinctJourneyPatternWithNullRoute(pageable: Pageable): Page<DbJourney>
 
     @Modifying
     @Transactional
     @Query("UPDATE DbJourney j SET j.route = :route " +
-            "WHERE j.lineVersion.externalId = :lineVersionId AND j.journeyPatternId = :journeyPatternId")
-    fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: String, journeyPatternId: String, route: DbRoute)
+            "WHERE j.lineVersion.relationalId = :lineVersionId AND j.journeyPatternId = :journeyPatternId")
+    fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: Long, journeyPatternId: String, route: DbRoute)
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE DbJourney j SET j.route = :route " +
+            "WHERE j.journeyPatternId = :journeyPatternId AND " +
+                "j.lineVersion.externalId = :lineExternalId AND " +
+                "j.lineVersion.validFrom = :validFrom AND " +
+                "j.lineVersion.validTo = :validTo AND " +
+                "j.lineVersion.timezone = :timezone AND " +
+                "j.lineVersion.isDetour = :isDetour")
+    fun setRouteForAllByLineVersionAndJourneyPattern(
+        lineExternalId: String,
+        validFrom: LocalDateTime,
+        validTo: LocalDateTime,
+        timezone: ZoneId,
+        isDetour: Boolean,
+        journeyPatternId: String,
+        route: DbRoute
+    )
 }

@@ -67,7 +67,7 @@ class CalculateJourneyRoutesDataMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    private fun assignRoute(journey: DbJourney) {
+    private fun createRoute(journey: DbJourney): DbRoute {
         val centerOfMass = randomCoordinate()
         var currentCoord = randomCoordinate()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
@@ -118,7 +118,7 @@ class CalculateJourneyRoutesDataMock(
                 distanceToNextStop = if (idx == routeMarkers.size - 1) 0.0 else stopDistances[idx + 1],
             ))
         }
-        journey.route = route
+        return route
     }
 
     override fun calculateRoutes() {
@@ -127,27 +127,23 @@ class CalculateJourneyRoutesDataMock(
         do {
             currentPage = Measurer.addToDbFind { journeyJpaRepository
                 .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest.of(0, pageSize)) }
-            for (journey in currentPage.content) {
-                assignRoute(journey)
-            }
-            val newRoutes = currentPage.content.mapNotNull { it.route }
+            val newRoutes = currentPage.content.map(::createRoute)
             val newRouteStops = newRoutes.flatMap { it.routeStops }
             val newPhysicalStops = newRouteStops.map { it.physicalStop }
             Measurer.savedRoutes += newRoutes.size
             Measurer.savedRouteStops += newRouteStops.size
             Measurer.savedPhysicalStops += newPhysicalStops.size
-            Measurer.savedJourneys += currentPage.content.size
             Measurer.searchedRoutes += newRoutes.size
             newRoutes.forEach { Measurer.addToDbFind { routeJpaRepository.findByExternalId(it.externalId) } }
             Measurer.addToDbSave {
                 physicalStopJpaRepository.saveAll(newPhysicalStops)
                 routeJpaRepository.saveAll(newRoutes)
                 routeStopJpaRepository.saveAll(newRouteStops)
-                for (journey in currentPage.content) {
+                for ((idx, journey) in currentPage.content.withIndex()) {
                     journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
-                        journey.lineVersion.externalId,
+                        journey.lineVersion.relationalId!!,
                         journey.journeyPatternId,
-                        journey.route!!,
+                        newRoutes[idx],
                     )
                 }
             }
