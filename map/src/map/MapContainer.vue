@@ -7,6 +7,22 @@ import { renderFrame } from '@/map/render'
 const mapContainer = ref<HTMLElement | null>(null)
 const map = shallowRef<L.Map | null>(null)
 
+const debounce = (callback: (...args: unknown[]) => void, wait: number) => {
+    let timeoutId: number | undefined = undefined;
+    return (...args: unknown[]) => {
+        window.clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+            callback(...args);
+        }, wait);
+    };
+}
+
+const moment = new Date('2025-11-15T05:17:00')
+const debounceUpdate = debounce(() => {
+    if (!map.value) return
+    renderFrame(map.value, moment)
+}, 400)
+
 onMounted(async () => {
     if (!mapContainer.value) return
     map.value = L.map(mapContainer.value, { minZoom: 8, maxZoom: 19 }).setView([49.9, 15.5], 11)
@@ -15,14 +31,9 @@ onMounted(async () => {
         attribution:
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map.value)
-    const moment = new Date('2025-11-15T05:17:00')
-    map.value.on('moveend', () => {
-        if (!map.value) return
-        renderFrame(
-            map.value,
-            moment,
-        )
-    })
+    renderFrame(map.value, moment)
+    map.value.on('move', debounceUpdate)
+    map.value.on('zoom', debounceUpdate)
 })
 
 onUnmounted(() => {
