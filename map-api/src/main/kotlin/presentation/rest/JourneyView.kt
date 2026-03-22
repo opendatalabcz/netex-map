@@ -43,6 +43,7 @@ class JourneyView(
         @RequestParam latMin: Double,
         @RequestParam lonMax: Double,
         @RequestParam latMax: Double,
+        @RequestParam zoom: Int,
         @PathVariable day: LocalDate,
         @RequestParam(required = false, defaultValue = "UTC") timezone: String,
     ): HttpJourneysOperatingInDayResult {
@@ -53,7 +54,7 @@ class JourneyView(
         }
         return modelConvertor.toHttp(
             getJourneysOperatingInFrameUseCase.getJourneysOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, day, zone
+                lonMin, latMin, lonMax, latMax, zoom, day, zone
             )
         )
     }

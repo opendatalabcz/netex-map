@@ -32,6 +32,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 op.valid_days[DATE_PART('day', :from - TIMEZONE(op.timezone, op.from_date)) + 1] = true OR
                 op.valid_days[DATE_PART('day', :to - TIMEZONE(op.timezone, op.from_date)) + 1] = true
             ) AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
+            AND r.total_distance >= :minRouteLength
         """
     }
 
@@ -59,6 +60,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         latMin: Double,
         lonMax: Double,
         latMax: Double,
+        minRouteLength: Double,
         from: ZonedDateTime,
         to: ZonedDateTime,
     ): List<JourneyMapDto>
@@ -69,6 +71,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         latMin: Double,
         lonMax: Double,
         latMax: Double,
+        minRouteLength: Double,
         from: ZonedDateTime,
         to: ZonedDateTime,
     ): List<JourneyMapDto>

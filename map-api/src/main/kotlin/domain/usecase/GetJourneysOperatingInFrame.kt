@@ -24,6 +24,7 @@ class GetJourneysOperatingInFrame(
     private val routeJpaRepository: RouteJpaRepository,
     private val routeStopJpaRepository: RouteStopJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
+    private val levelOfDetailUseCase: LevelOfDetailUseCase,
 ): GetJourneysOperatingInFrameUseCase {
     private fun scheduledStopToDaySpecific(
         stopIndex: Int,
@@ -87,19 +88,22 @@ class GetJourneysOperatingInFrame(
         latMin: Double,
         lonMax: Double,
         latMax: Double,
+        zoomLevel: Int,
         day: LocalDate,
         timezone: ZoneId,
     ): JourneysOperatingInFrameResult {
+        val minRouteLength = levelOfDetailUseCase.getMinRouteLength(zoomLevel)
+
         val journeysForCurrentDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrame(
-                lonMin, latMin, lonMax, latMax,
+                lonMin, latMin, lonMax, latMax, minRouteLength,
                 ZonedDateTime.of(day, LocalTime.MIN, timezone),
                 ZonedDateTime.of(day, LocalTime.MAX, timezone)
             )
 
         val journeysForPreviousDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrameWithNextDayOperation(
-                lonMin, latMin, lonMax, latMax,
+                lonMin, latMin, lonMax, latMax, minRouteLength,
                 ZonedDateTime.of(day.minusDays(1), LocalTime.MIN, timezone),
                 ZonedDateTime.of(day.minusDays(1), LocalTime.MAX, timezone)
             )

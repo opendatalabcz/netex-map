@@ -43,6 +43,7 @@ interface GetJourneysOperatingInFrameUseCase {
         latMin: Double,
         lonMax: Double,
         latMax: Double,
+        zoomLevel: Int,
         day: LocalDate,
         timezone: ZoneId,
     ): JourneysOperatingInFrameResult
