@@ -81,7 +81,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         FROM journey
         WHERE route_id IS NULL
         ORDER BY line_version_id, journey_pattern_id
-    """)
+    """, countQuery = "SELECT COUNT(DISTINCT (line_version_id, journey_pattern_id)) FROM journey WHERE route_id IS NULL")
     fun findAllWithDistinctJourneyPatternWithNullRoute(pageable: Pageable): Page<Journey>
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

@@ -68,7 +68,7 @@ class CalculateJourneyRoutesMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    private fun assignRoute(journey: Journey) {
+    private fun createRoute(journey: Journey): Route {
         val centerOfMass = randomCoordinate()
         var currentCoord = randomCoordinate()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
@@ -122,7 +122,7 @@ class CalculateJourneyRoutesMock(
                 distanceToNextStop = if (idx == routeMarkers.size - 1) 0.0 else stopDistances[idx + 1],
             ))
         }
-        journey.route = route
+        return route
     }
 
     override fun calculateRoutes() {
@@ -131,20 +131,17 @@ class CalculateJourneyRoutesMock(
         do { transactionTemplate.executeWithoutResult {
             currentPage = journeyJpaRepository
                 .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest.of(0, pageSize))
-            for (journey in currentPage.content) {
-                assignRoute(journey)
-            }
-            val newRoutes = currentPage.content.mapNotNull { it.route }
+            val newRoutes = currentPage.content.map(::createRoute)
             val newRouteStops = newRoutes.flatMap { it.routeStops }
             val newPhysicalStops = newRouteStops.map { it.physicalStop }
             physicalStopJpaRepository.saveAll(newPhysicalStops)
             routeJpaRepository.saveAll(newRoutes)
             routeStopJpaRepository.saveAll(newRouteStops)
-            for (journey in currentPage.content) {
+            for ((idx, journey) in currentPage.content.withIndex()) {
                 journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
                     journey.lineVersion,
                     journey.journeyPatternId,
-                    journey.route!!,
+                    newRoutes[idx],
                 )
             }
         } } while (currentPage?.hasNext() ?: false)
