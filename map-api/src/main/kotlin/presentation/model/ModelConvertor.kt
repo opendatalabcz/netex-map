@@ -1,5 +1,6 @@
 package cz.cvut.fit.gaierda1.presentation.model
 
+import cz.cvut.fit.gaierda1.data.orm.model.ActivePeriod
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.model.OperatingPeriod
@@ -10,7 +11,6 @@ import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
 import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase
 import org.locationtech.jts.geom.Coordinate
 import org.springframework.stereotype.Component
-import java.time.ZonedDateTime
 import kotlin.io.encoding.Base64
 
 @Component
@@ -46,6 +46,11 @@ class ModelConvertor {
         validDays = operatingPeriod.validDays.map { bit -> if (bit) '1' else '0' }.joinToString(""),
     )
 
+    fun toHttp(activePeriod: ActivePeriod): HttpActivePeriod = HttpActivePeriod(
+        fromDate = activePeriod.periodId.fromDate,
+        toDate = activePeriod.toDate,
+    )
+
     fun toHttp(lineVersion: LineVersion): HttpLineVersion = HttpLineVersion(
         relationalId = lineVersion.relationalId,
         externalId = lineVersion.externalId,
@@ -56,6 +61,7 @@ class ModelConvertor {
         validFrom = lineVersion.validFrom,
         validTo = lineVersion.validTo,
         isDetour = lineVersion.isDetour,
+        activePeriods = lineVersion.activePeriods.map(::toHttp),
     )
 
     fun toHttp(scheduledStop: ScheduledStop): HttpScheduledStop = HttpScheduledStop(

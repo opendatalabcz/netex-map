@@ -38,6 +38,16 @@ CREATE TABLE line_version (
     UNIQUE(external_id, valid_from, valid_to, is_detour)
 );
 
+CREATE TABLE active_period (
+    line_version_id BIGINT NOT NULL,
+    from_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    to_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY (line_version_id, from_date) INCLUDE (to_date),
+    FOREIGN KEY (line_version_id) REFERENCES line_version(relational_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_active_period_dates ON active_period(from_date, to_date);
+
 CREATE TABLE operating_period (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('operating_period_seq'),
     from_date TIMESTAMP NOT NULL,

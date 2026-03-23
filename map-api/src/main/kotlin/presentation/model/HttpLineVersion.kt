@@ -12,5 +12,6 @@ data class HttpLineVersion(
     val validFrom: OffsetDateTime,
     val validTo: OffsetDateTime,
     val isDetour: Boolean,
+    val activePeriods: List<HttpActivePeriod>,
 ) {
 }

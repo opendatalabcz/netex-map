@@ -2,12 +2,15 @@ package cz.cvut.fit.gaierda1.data.orm.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import org.hibernate.annotations.BatchSize
 import java.time.OffsetDateTime
 
 @Entity
@@ -47,8 +50,8 @@ class LineVersion(
     @Column(nullable = false)
     val validTo: OffsetDateTime,
 
-    var activeFrom: OffsetDateTime?,
-
-    var activeTo: OffsetDateTime?,
+    @BatchSize(size = 30)
+    @OneToMany(mappedBy = "lineVersion", fetch = FetchType.EAGER)
+    val activePeriods: List<ActivePeriod>,
 ){
 }

@@ -33,8 +33,7 @@ class LineVersionAssembler(
                     validFrom = validFrom,
                     validTo = validTo,
                     isDetour = isDetour,
-                    activeFrom = null,
-                    activeTo = null,
+                    activePeriods = emptyList(),
                 ) }
         }
         return lineVersions

@@ -20,10 +20,11 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
             SELECT DISTINCT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, j.timezone
             FROM journey j
                 JOIN line_version lv ON j.line_version_id = lv.relational_id
+                JOIN active_period ap ON lv.relational_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON j.route_id = r.relational_id
             WHERE j.route_id IS NOT NULL
-                AND :targetMoment BETWEEN lv.active_from AND lv.active_to
+                AND :targetMoment BETWEEN ap.from_date AND ap.to_date
                 AND op.valid_days[ 1 +
                     ((:targetMoment AT TIME ZONE j.timezone)::date - (op.from_date AT TIME ZONE j.timezone)::date)
                 ] AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
