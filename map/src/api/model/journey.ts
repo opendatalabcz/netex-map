@@ -12,6 +12,9 @@ type Journey = {
     operatingPeriod: OperatingPeriod
     route: Route | null
     nextDayFirstStopIndex: number | null
+    beginTime: string
+    endTime: string
+    timezone: string
 }
 
 type JourneyWithDatesAndTimes = {
@@ -23,6 +26,9 @@ type JourneyWithDatesAndTimes = {
     operatingPeriod: OperatingPeriodWithDates
     route: Route | null
     nextDayFirstStopIndex: number | null
+    beginTime: string
+    endTime: string
+    timezone: string
 }
 
 export type { Journey, JourneyWithDatesAndTimes }

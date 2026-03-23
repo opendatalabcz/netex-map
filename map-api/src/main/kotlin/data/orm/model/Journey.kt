@@ -7,14 +7,14 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinTable
-import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.BatchSize
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Entity
 @Table(
@@ -49,8 +49,17 @@ class Journey(
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "operating_period_id", nullable = false)
-    val operatingPeriods: OperatingPeriod,
+    val operatingPeriod: OperatingPeriod,
 
     var nextDayFirstStopIndex: Int?,
+
+    @Column(nullable = false)
+    var beginTime: LocalTime,
+
+    @Column(nullable = false)
+    var endTime: LocalTime,
+
+    @Column(nullable = false)
+    val timezone: ZoneId,
 ) {
 }

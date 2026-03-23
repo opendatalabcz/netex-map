@@ -2,7 +2,7 @@ import type { JourneysOperatingInFrame, MapJourneyWithDates, MapRawRoute, MapRou
 import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositionsForDaySpecificJourneys'
 import type { LatLngTuple } from 'leaflet'
 import { calculateVehiclePositions } from '@/services/interpolatePositionsForDaySpecificJourneys'
-import { toMapJourneyWithDates, toMapRoute } from '@/services/toDateTypes'
+import { toMapJourneyWithDates, toMapRoute } from '@/services/toDeserializedTypes'
 import L from 'leaflet'
 import JourneyApi from '@/api/journeyApi'
 
@@ -10,11 +10,17 @@ type RenderedMapJourney = PositionedMapJourneyWithDates & {
     vehicleMarker: L.CircleMarker | null
 }
 
-const positionedJourneysForCurrentDay = {
-    startingJourneys: new Map<number, RenderedMapJourney>(),
-    continuingJourneys: new Map<number, RenderedMapJourney>(),
+type CacheEntry = {
+    startingJourneys: Map<number, RenderedMapJourney>
+    continuingJourneys: Map<number, RenderedMapJourney>
+    routes: Map<number, MapRoute>
 }
-const mapRoutesForCurrentDay: Map<number, MapRoute> = new Map()
+
+const positionedJourneysForCurrentDay: CacheEntry = {
+    startingJourneys: new Map(),
+    continuingJourneys: new Map(),
+    routes: new Map(),
+}
 
 function renderRoute(map: L.Map, route: MapRoute, journey: RenderedMapJourney) {
     L.geoJSON(
@@ -60,8 +66,8 @@ function renderVehicle(map: L.Map, journey: RenderedMapJourney) {
 
 function updateRoutes(newRoutes: MapRawRoute[]) {
     for (const route of newRoutes) {
-        if (mapRoutesForCurrentDay.has(route.relationalId)) continue
-        mapRoutesForCurrentDay.set(route.relationalId, toMapRoute(route))
+        if (positionedJourneysForCurrentDay.routes.has(route.relationalId)) continue
+        positionedJourneysForCurrentDay.routes.set(route.relationalId, toMapRoute(route))
     }
 }
 
@@ -78,7 +84,7 @@ function updateJourneys(moment: Date, journeys: JourneysOperatingInFrame) {
         moment,
         journeys.startingThisDay.filter(r => !positionedJourneysForCurrentDay.startingJourneys.has(r.relationalId)).map(toMapJourneyWithDates),
         journeys.continuingThisDay.filter(r => !positionedJourneysForCurrentDay.continuingJourneys.has(r.relationalId)).map(toMapJourneyWithDates),
-        mapRoutesForCurrentDay,
+        positionedJourneysForCurrentDay.routes,
     )
     for (const journey of positionedNewJourneys.startingJourneys) {
         positionedJourneysForCurrentDay.startingJourneys.set(journey.relationalId, toRenderedJourney(journey))
@@ -89,7 +95,9 @@ function updateJourneys(moment: Date, journeys: JourneysOperatingInFrame) {
 }
 
 function renderVehicles(map: L.Map, moment: Date, journeys: JourneysOperatingInFrame) {
+    const start = Date.now()
     updateJourneys(moment, journeys)
+    console.log(Date.now() - start)
     positionedJourneysForCurrentDay.startingJourneys.forEach(j => renderVehicle(map, j))
     positionedJourneysForCurrentDay.continuingJourneys.forEach(j => renderVehicle(map, j))
 }

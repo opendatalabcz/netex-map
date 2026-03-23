@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.domain.usecase
 
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionMapDto
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -19,8 +20,8 @@ interface GetJourneysOperatingInFrameUseCase {
     )
 
     data class MapScheduledStop(
-        val arrival: ZonedDateTime?,
-        val departure: ZonedDateTime?,
+        val arrival: OffsetDateTime?,
+        val departure: OffsetDateTime?,
     )
 
     data class MapJourney(
@@ -44,7 +45,6 @@ interface GetJourneysOperatingInFrameUseCase {
         lonMax: Double,
         latMax: Double,
         zoomLevel: Int,
-        day: LocalDate,
-        timezone: ZoneId,
+        day: OffsetDateTime,
     ): JourneysOperatingInFrameResult
 }

@@ -9,7 +9,6 @@ import jakarta.persistence.Index
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 @Entity
 @Table(
@@ -23,9 +22,6 @@ class OperatingPeriod(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "operating_period_seq_gen")
     @SequenceGenerator(name = "operating_period_seq_gen", sequenceName = "operating_period_seq", allocationSize = 20)
     var relationalId: Long?,
-
-    @Column(nullable = false)
-    val timezone: ZoneId,
 
     @Column(nullable = false)
     val fromDate: LocalDateTime,

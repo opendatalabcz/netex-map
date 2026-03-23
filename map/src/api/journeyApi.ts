@@ -17,13 +17,12 @@ const JourneyApi = {
         zoom: number,
         day: Date,
     ): Promise<JourneysOperatingInFrame | null | undefined> {
-        return HttpRequestSender.get([JOURNEY_URI, 'day', day.toISOString().split('T')[0]!], {
+        return HttpRequestSender.get([JOURNEY_URI, 'day', day.toISOString()], {
             lonMin: lonMin,
             latMin: latMin,
             lonMax: lonMax,
             latMax: latMax,
             zoom: zoom,
-            timezone: 'Europe/Prague',
         })
     },
 }

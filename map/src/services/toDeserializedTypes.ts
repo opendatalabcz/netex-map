@@ -56,6 +56,9 @@ function toJourneyWithDatesAndTimes(journey: Journey): JourneyWithDatesAndTimes 
         operatingPeriod: toOperatingPeriodWithDates(journey.operatingPeriod),
         route: journey.route,
         nextDayFirstStopIndex: journey.nextDayFirstStopIndex,
+        beginTime: journey.beginTime,
+        endTime: journey.endTime,
+        timezone: journey.timezone,
     }
 }
 

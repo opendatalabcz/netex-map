@@ -1,6 +1,6 @@
 package cz.cvut.fit.gaierda1.presentation.model
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 data class HttpLineVersion(
     val relationalId: Long?,
@@ -9,8 +9,8 @@ data class HttpLineVersion(
     val name: String,
     val shortName: String,
     val transportMode: String,
-    val validFrom: ZonedDateTime,
-    val validTo: ZonedDateTime,
+    val validFrom: OffsetDateTime,
+    val validTo: OffsetDateTime,
     val isDetour: Boolean,
 ) {
 }

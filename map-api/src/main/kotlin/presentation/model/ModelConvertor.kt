@@ -41,8 +41,8 @@ class ModelConvertor {
     )
 
     fun toHttp(operatingPeriod: OperatingPeriod): HttpOperatingPeriod = HttpOperatingPeriod(
-        fromDate = ZonedDateTime.of(operatingPeriod.fromDate, operatingPeriod.timezone),
-        toDate = ZonedDateTime.of(operatingPeriod.toDate, operatingPeriod.timezone),
+        fromDate = operatingPeriod.fromDate,
+        toDate = operatingPeriod.toDate,
         validDays = operatingPeriod.validDays.map { bit -> if (bit) '1' else '0' }.joinToString(""),
     )
 
@@ -53,8 +53,8 @@ class ModelConvertor {
         name = lineVersion.name,
         shortName = lineVersion.shortName,
         transportMode = lineVersion.transportMode,
-        validFrom = ZonedDateTime.of(lineVersion.validFrom, lineVersion.timezone),
-        validTo = ZonedDateTime.of(lineVersion.validTo, lineVersion.timezone),
+        validFrom = lineVersion.validFrom,
+        validTo = lineVersion.validTo,
         isDetour = lineVersion.isDetour,
     )
 
@@ -71,9 +71,12 @@ class ModelConvertor {
         lineVersion = toHttp(journey.lineVersion),
         journeyPatternId = journey.journeyPatternId,
         schedule = journey.schedule.map(::toHttp),
-        operatingPeriod = toHttp(journey.operatingPeriods),
+        operatingPeriod = toHttp(journey.operatingPeriod),
         route = journey.route?.let { toHttp(it, latitudeFirst) },
         nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
+        beginTime = journey.beginTime,
+        endTime = journey.endTime,
+        timezone = journey.timezone,
     )
 
     fun toHttp(route: GetJourneysOperatingInFrameUseCase.MapRoute): HttpMapRoute = HttpMapRoute(

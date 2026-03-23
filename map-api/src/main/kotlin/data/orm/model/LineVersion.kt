@@ -8,14 +8,13 @@ import jakarta.persistence.Id
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.OffsetDateTime
 
 @Entity
 @Table(
     name = "line_version",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["external_id", "valid_from", "valid_to", "timezone", "is_detour"])
+        UniqueConstraint(columnNames = ["external_id", "valid_from", "valid_to", "is_detour"])
     ]
 )
 class LineVersion(
@@ -43,16 +42,13 @@ class LineVersion(
     val isDetour: Boolean,
 
     @Column(nullable = false)
-    val validFrom: LocalDateTime,
+    val validFrom: OffsetDateTime,
 
     @Column(nullable = false)
-    val validTo: LocalDateTime,
+    val validTo: OffsetDateTime,
 
-    var activeFrom: LocalDateTime?,
+    var activeFrom: OffsetDateTime?,
 
-    var activeTo: LocalDateTime?,
-
-    @Column(nullable = false)
-    val timezone: ZoneId,
+    var activeTo: OffsetDateTime?,
 ){
 }

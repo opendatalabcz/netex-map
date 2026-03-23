@@ -1,5 +1,4 @@
 type OperatingPeriod = {
-    timezone: string
     fromDate: string
     toDate: string
     validDays: string

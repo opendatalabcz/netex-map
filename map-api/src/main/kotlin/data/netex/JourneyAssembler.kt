@@ -10,6 +10,8 @@ import org.rutebanken.netex.model.ScheduledStopPoint
 import org.rutebanken.netex.model.ServiceJourney
 import org.rutebanken.netex.model.StopPointInJourneyPattern
 import org.springframework.stereotype.Component
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Component
 class JourneyAssembler(
@@ -21,6 +23,7 @@ class JourneyAssembler(
         operatingPeriods: Map<String, OperatingPeriod>,
     ): Map<String, Journey> {
         val journeys = mutableMapOf<String, Journey>()
+        val zoneId = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone)
         for (journey in registry.serviceJourneyRegistry.values) {
             val journeyPatternId = journey.journeyPatternRef.value.ref
             val patternRegistryValue = registry.serviceJourneyPatternRegistry[journeyPatternId]
@@ -36,7 +39,6 @@ class JourneyAssembler(
                     lineExternalId = lineVersion.externalId,
                     validFrom = lineVersion.validFrom,
                     validTo = lineVersion.validTo,
-                    timezone = lineVersion.timezone,
                     isDetour = lineVersion.isDetour,
                 ).orElseGet { assembleJourney(
                     journey = journey,
@@ -44,7 +46,8 @@ class JourneyAssembler(
                     lineVersion = lineVersion,
                     registry = registry,
                     stopPointInJourneyPatternRegistry = patternRegistryValue.stopPointInJourneyPatternRegistry,
-                    operatingPeriods = operatingPeriods
+                    operatingPeriods = operatingPeriods,
+                    timezone = zoneId
                 ) }
         }
         return journeys
@@ -57,17 +60,22 @@ class JourneyAssembler(
         registry: NetexFileRegistry,
         stopPointInJourneyPatternRegistry: Map<String, StopPointInJourneyPattern>,
         operatingPeriods: Map<String, OperatingPeriod>,
+        timezone: ZoneId,
     ): Journey {
         val schedule = mutableListOf<ScheduledStop>()
+        val operatingPeriod = linkOperatingPeriod(journey, registry, operatingPeriods)
         val savedJourney = Journey(
             relationalId = null,
             externalId = journey.id,
             lineVersion = lineVersion,
             journeyPatternId = journeyPatternId,
             schedule = schedule,
-            operatingPeriods = linkOperatingPeriod(journey, registry, operatingPeriods),
+            operatingPeriod = operatingPeriod,
             route = null,
             nextDayFirstStopIndex = null,
+            timezone = timezone,
+            beginTime = LocalTime.MIN,
+            endTime = LocalTime.MIN,
         )
         schedule.addAll(assembleScheduledStops(
             serviceJourney = journey,
@@ -75,6 +83,8 @@ class JourneyAssembler(
             stopPointInJourneyPatternRegistry = stopPointInJourneyPatternRegistry,
             scheduledStopPointRegistry = registry.scheduledStopPointRegistry
         ))
+        savedJourney.beginTime = schedule.first().run { arrival ?: departure!! }
+        savedJourney.endTime = schedule.last().run { departure ?: arrival!! }
         return savedJourney
     }
     
@@ -84,24 +94,25 @@ class JourneyAssembler(
         stopPointInJourneyPatternRegistry: Map<String, StopPointInJourneyPattern>,
         scheduledStopPointRegistry: Map<String, ScheduledStopPoint>,
     ): List<ScheduledStop> {
-        return serviceJourney.passingTimes.timetabledPassingTime.mapIndexed { index, timetabledPassingTime ->
-            val stopPointInJourneyPatternId = timetabledPassingTime.pointInJourneyPatternRef.value.ref
-            val stopPointInJourneyPattern = stopPointInJourneyPatternRegistry[stopPointInJourneyPatternId]
-            checkNotNull(stopPointInJourneyPattern) { "Stop point in journey pattern $stopPointInJourneyPatternId not found" }
+        return serviceJourney.passingTimes.timetabledPassingTime
+            .map { timetabledPassingTime ->
+                val stopPointInJourneyPatternId = timetabledPassingTime.pointInJourneyPatternRef.value.ref
+                val stopPointInJourneyPattern = stopPointInJourneyPatternRegistry[stopPointInJourneyPatternId]
+                checkNotNull(stopPointInJourneyPattern) { "Stop point in journey pattern $stopPointInJourneyPatternId not found" }
 
-            val scheduledStopPointId = stopPointInJourneyPattern.scheduledStopPointRef.value.ref
-            val scheduledStopPoint = scheduledStopPointRegistry[scheduledStopPointId]
-            checkNotNull(scheduledStopPoint) { "Scheduled stop point $scheduledStopPointId not found" }
+                val scheduledStopPointId = stopPointInJourneyPattern.scheduledStopPointRef.value.ref
+                val scheduledStopPoint = scheduledStopPointRegistry[scheduledStopPointId]
+                checkNotNull(scheduledStopPoint) { "Scheduled stop point $scheduledStopPointId not found" }
 
-            return@mapIndexed ScheduledStop(
-                stopId = ScheduledStopId(savedJourney.relationalId, index),
-                stopOnRequest = stopPointInJourneyPattern.isRequestStop ?: false,
-                name = scheduledStopPoint.name.value,
-                journey = savedJourney,
-                arrival = timetabledPassingTime.arrivalTime,
-                departure = timetabledPassingTime.departureTime,
-            )
-        }
+                return@map ScheduledStop(
+                    stopId = ScheduledStopId(savedJourney.relationalId, stopPointInJourneyPattern.order.toInt()),
+                    stopOnRequest = stopPointInJourneyPattern.isRequestStop ?: false,
+                    name = scheduledStopPoint.name.value,
+                    journey = savedJourney,
+                    arrival = timetabledPassingTime.arrivalTime,
+                    departure = timetabledPassingTime.departureTime,
+                )
+            }.sortedBy { it.stopId.stopOrder }
     }
     
     private fun linkOperatingPeriod(

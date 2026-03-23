@@ -1,5 +1,6 @@
 package cz.cvut.fit.gaierda1.domain.usecase
 
+import cz.cvut.fit.gaierda1.domain.misc.atOffset
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
@@ -13,9 +14,9 @@ import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 @Component
 class GetJourneysOperatingInFrame(
@@ -30,12 +31,12 @@ class GetJourneysOperatingInFrame(
         stopIndex: Int,
         scheduledStop: ScheduledStopMapDto,
         day: LocalDate,
-        zoneId: ZoneId,
+        journeyTimezone: ZoneId,
         nextDayFirstStopIndex: Int?,
     ): MapScheduledStop {
-        var departure: ZonedDateTime? = scheduledStop.departure?.let { ZonedDateTime.of(day, it, zoneId) }
-        var arrival: ZonedDateTime? = if (scheduledStop.departure == scheduledStop.arrival) null
-            else scheduledStop.arrival?.let { ZonedDateTime.of(day, it, zoneId) }
+        var departure: OffsetDateTime? = scheduledStop.departure?.let { LocalDateTime.of(day, it).atOffset(journeyTimezone) }
+        var arrival: OffsetDateTime? = if (scheduledStop.departure == scheduledStop.arrival) null
+            else scheduledStop.arrival?.let { LocalDateTime.of(day, it).atOffset(journeyTimezone) }
 
         if (nextDayFirstStopIndex != null) {
             if (stopIndex >= nextDayFirstStopIndex) {
@@ -58,7 +59,7 @@ class GetJourneysOperatingInFrame(
 
     private fun recomputeJourneysToSpecificDay(
         journeys: List<JourneyMapDto>,
-        day: LocalDate,
+        day: OffsetDateTime,
         scheduleStops: Map<Long, List<ScheduledStopMapDto>>,
     ): List<MapJourney> = journeys.map { journey -> MapJourney(
         relationalId = journey.relationalId,
@@ -68,7 +69,7 @@ class GetJourneysOperatingInFrame(
             scheduledStopToDaySpecific(
                 idx,
                 stop,
-                day,
+                day.toLocalDate(),
                 ZoneId.of(journey.timezone),
                 journey.nextDayFirstStopIndex,
             )
@@ -89,23 +90,18 @@ class GetJourneysOperatingInFrame(
         lonMax: Double,
         latMax: Double,
         zoomLevel: Int,
-        day: LocalDate,
-        timezone: ZoneId,
+        day: OffsetDateTime,
     ): JourneysOperatingInFrameResult {
         val minRouteLength = levelOfDetailUseCase.getMinRouteLength(zoomLevel)
 
         val journeysForCurrentDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, minRouteLength,
-                ZonedDateTime.of(day, LocalTime.MIN, timezone),
-                ZonedDateTime.of(day, LocalTime.MAX, timezone)
+                lonMin, latMin, lonMax, latMax, minRouteLength, day
             )
 
         val journeysForPreviousDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrameWithNextDayOperation(
-                lonMin, latMin, lonMax, latMax, minRouteLength,
-                ZonedDateTime.of(day.minusDays(1), LocalTime.MIN, timezone),
-                ZonedDateTime.of(day.minusDays(1), LocalTime.MAX, timezone)
+                lonMin, latMin, lonMax, latMax, minRouteLength, day.minusDays(1)
             )
 
         val lineVersions = lineVersionJpaRepository.findAllMapDtoByIds(

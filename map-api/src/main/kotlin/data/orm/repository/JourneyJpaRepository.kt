@@ -9,30 +9,25 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import java.util.Optional
 
 @Repository
 interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     private companion object {
         const val OPERATING_IN_FRAME_QUERY = """
-            SELECT DISTINCT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, op.timezone
+            SELECT DISTINCT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, j.timezone
             FROM journey j
                 JOIN line_version lv ON j.line_version_id = lv.relational_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON j.route_id = r.relational_id
-            WHERE j.route_id IS NOT NULL AND (
-                TIMEZONE(lv.timezone, lv.active_from) <= :from AND TIMEZONE(lv.timezone, lv.active_to) > :from OR
-                TIMEZONE(lv.timezone, lv.active_from) < :to AND TIMEZONE(lv.timezone, lv.active_to) >= :to
-            ) AND (
-                op.valid_days[DATE_PART('day', :from - TIMEZONE(op.timezone, op.from_date)) + 1] = true OR
-                op.valid_days[DATE_PART('day', :to - TIMEZONE(op.timezone, op.from_date)) + 1] = true
-            ) AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
-            AND r.total_distance >= :minRouteLength
+            WHERE j.route_id IS NOT NULL
+                AND :targetMoment BETWEEN lv.active_from AND lv.active_to
+                AND op.valid_days[ 1 +
+                    ((:targetMoment AT TIME ZONE j.timezone)::date - (op.from_date AT TIME ZONE j.timezone)::date)
+                ] AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
+                AND r.total_distance >= :minRouteLength
         """
     }
 
@@ -42,16 +37,14 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
             j.lineVersion.externalId = :lineExternalId AND
             j.lineVersion.validFrom = :validFrom AND
             j.lineVersion.validTo = :validTo AND
-            j.lineVersion.timezone = :timezone AND
             j.lineVersion.isDetour = :isDetour
     """)
     fun findByExternalIdAndLineIdAndValidRange(
-        @Param("externalId") externalId: String,
-        @Param("lineExternalId") lineExternalId: String,
-        @Param("validFrom") validFrom: LocalDateTime,
-        @Param("validTo") validTo: LocalDateTime,
-        @Param("timezone") timezone: ZoneId,
-        @Param("isDetour") isDetour: Boolean,
+        externalId: String,
+        lineExternalId: String,
+        validFrom: OffsetDateTime,
+        validTo: OffsetDateTime,
+        isDetour: Boolean,
     ): Optional<Journey>
 
     @Query(nativeQuery = true, value = OPERATING_IN_FRAME_QUERY)
@@ -61,8 +54,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         lonMax: Double,
         latMax: Double,
         minRouteLength: Double,
-        from: ZonedDateTime,
-        to: ZonedDateTime,
+        targetMoment: OffsetDateTime,
     ): List<JourneyMapDto>
 
     @Query(nativeQuery = true, value = "$OPERATING_IN_FRAME_QUERY AND j.next_day_first_stop_index IS NOT NULL")
@@ -72,8 +64,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         lonMax: Double,
         latMax: Double,
         minRouteLength: Double,
-        from: ZonedDateTime,
-        to: ZonedDateTime,
+        targetMoment: OffsetDateTime,
     ): List<JourneyMapDto>
 
     @Query("SELECT j FROM Journey j JOIN FETCH j.route")

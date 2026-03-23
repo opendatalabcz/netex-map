@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.util.Optional
 
@@ -18,14 +19,12 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         WHERE lv.externalId = :lineExternalId AND
             lv.validFrom = :validFrom AND
             lv.validTo = :validTo AND
-            lv.timezone = :timezone AND
             lv.isDetour = :isDetour
     """)
     fun findByLineIdAndValidRange(
         lineExternalId: String,
-        validFrom: LocalDateTime,
-        validTo: LocalDateTime,
-        timezone: ZoneId,
+        validFrom: OffsetDateTime,
+        validTo: OffsetDateTime,
         isDetour: Boolean,
     ): Optional<LineVersion>
 

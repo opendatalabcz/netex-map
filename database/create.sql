@@ -31,17 +31,15 @@ CREATE TABLE line_version (
     short_name TEXT NOT NULL,
     transport_mode TEXT NOT NULL,
     is_detour BOOLEAN NOT NULL,
-    valid_from TIMESTAMP NOT NULL,
-    valid_to TIMESTAMP NOT NULL,
-    active_from TIMESTAMP,
-    active_to TIMESTAMP,
-    timezone TEXT NOT NULL,
-    UNIQUE(external_id, valid_from, valid_to, timezone, is_detour)
+    valid_from TIMESTAMP WITH TIME ZONE NOT NULL,
+    valid_to TIMESTAMP WITH TIME ZONE NOT NULL,
+    active_from TIMESTAMP WITH TIME ZONE,
+    active_to TIMESTAMP WITH TIME ZONE,
+    UNIQUE(external_id, valid_from, valid_to, is_detour)
 );
 
 CREATE TABLE operating_period (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('operating_period_seq'),
-    timezone TEXT NOT NULL,
     from_date TIMESTAMP NOT NULL,
     to_date TIMESTAMP NOT NULL,
     valid_days BOOLEAN[] NOT NULL
@@ -57,6 +55,9 @@ CREATE TABLE journey (
     route_id BIGINT,
     next_day_first_stop_index INTEGER,
     operating_period_id BIGINT NOT NULL,
+    begin_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    timezone TEXT NOT NULL,
     UNIQUE(line_version_id, external_id),
     FOREIGN KEY (line_version_id) REFERENCES line_version(relational_id) ON DELETE CASCADE,
     FOREIGN KEY (route_id) REFERENCES route(relational_id) ON DELETE SET NULL,

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import java.time.DateTimeException
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
 
 @RestController
@@ -44,17 +45,11 @@ class JourneyView(
         @RequestParam lonMax: Double,
         @RequestParam latMax: Double,
         @RequestParam zoom: Int,
-        @PathVariable day: LocalDate,
-        @RequestParam(required = false, defaultValue = "UTC") timezone: String,
+        @PathVariable day: OffsetDateTime,
     ): HttpJourneysOperatingInDayResult {
-        val zone = try {
-            ZoneId.of(timezone)
-        } catch (e: DateTimeException) {
-            ZoneId.of("UTC")
-        }
         return modelConvertor.toHttp(
             getJourneysOperatingInFrameUseCase.getJourneysOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, zoom, day, zone
+                lonMin, latMin, lonMax, latMax, zoom, day
             )
         )
     }

@@ -9,8 +9,7 @@ import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.OffsetDateTime
 
 @Component
 class ImportTimetables(
@@ -56,9 +55,8 @@ class ImportTimetables(
     private data class LineVersionDomainKey(
         val externalId: String,
         val isDetour: Boolean,
-        val validFrom: LocalDateTime,
-        val validTo: LocalDateTime,
-        val timezone: ZoneId,
+        val validFrom: OffsetDateTime,
+        val validTo: OffsetDateTime,
     )
 
     private fun batchSave(
@@ -67,7 +65,7 @@ class ImportTimetables(
     ) {
         val newLineVersions = resultList
             .flatMap { it.lineVersions.filter { it.relationalId == null } }
-            .distinctBy { LineVersionDomainKey(it.externalId, it.isDetour, it.validFrom, it.validTo, it.timezone) }
+            .distinctBy { LineVersionDomainKey(it.externalId, it.isDetour, it.validFrom, it.validTo) }
         val journeysOfNewLineVersions = resultList.flatMap { it.journeys.filter { newLineVersions.contains(it.lineVersion) } }
         val scheduleStopsOfNewLineVersions = journeysOfNewLineVersions.flatMap { it.schedule }
         operatingPeriodJpaRepository.saveAll(operatingPeriodBatchCache)
