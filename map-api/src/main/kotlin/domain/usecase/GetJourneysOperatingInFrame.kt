@@ -90,18 +90,18 @@ class GetJourneysOperatingInFrame(
         lonMax: Double,
         latMax: Double,
         zoomLevel: Int,
-        day: OffsetDateTime,
+        dateTime: OffsetDateTime,
     ): JourneysOperatingInFrameResult {
         val minRouteLength = levelOfDetailUseCase.getMinRouteLength(zoomLevel)
 
         val journeysForCurrentDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, minRouteLength, day
+                lonMin, latMin, lonMax, latMax, minRouteLength, dateTime
             )
 
         val journeysForPreviousDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrameWithNextDayOperation(
-                lonMin, latMin, lonMax, latMax, minRouteLength, day.minusDays(1)
+                lonMin, latMin, lonMax, latMax, minRouteLength, dateTime
             )
 
         val lineVersions = lineVersionJpaRepository.findAllMapDtoByIds(
@@ -115,8 +115,8 @@ class GetJourneysOperatingInFrame(
         ).groupBy(ScheduledStopMapDto::journeyId)
             .mapValues { (_, schedule) -> schedule.sortedBy(ScheduledStopMapDto::stopOrder) }
 
-        val recomputedForDay = recomputeJourneysToSpecificDay(journeysForCurrentDay, day, scheduleStops)
-        val recomputedForPreviousDay = recomputeJourneysToSpecificDay(journeysForPreviousDay, day.minusDays(1), scheduleStops)
+        val recomputedForDay = recomputeJourneysToSpecificDay(journeysForCurrentDay, dateTime, scheduleStops)
+        val recomputedForPreviousDay = recomputeJourneysToSpecificDay(journeysForPreviousDay, dateTime.minusDays(1), scheduleStops)
 
         val rawRoutes = routeJpaRepository.findAllMapDtoByRouteId(
             journeysForCurrentDay.map(JourneyMapDto::routeId)

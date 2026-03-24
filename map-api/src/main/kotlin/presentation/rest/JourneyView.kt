@@ -14,10 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
-import java.time.DateTimeException
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneId
 
 @RestController
 @RequestMapping("/journey")
@@ -37,7 +34,7 @@ class JourneyView(
             .map { modelConvertor.toHttp(it, latitudeFirst) }
     }
 
-    @GetMapping("/day/{day}")
+    @GetMapping("/date-hour/{dateTime}")
     @ResponseBody
     fun getJourneysOperatingInDay(
         @RequestParam lonMin: Double,
@@ -45,11 +42,11 @@ class JourneyView(
         @RequestParam lonMax: Double,
         @RequestParam latMax: Double,
         @RequestParam zoom: Int,
-        @PathVariable day: OffsetDateTime,
+        @PathVariable dateTime: OffsetDateTime,
     ): HttpJourneysOperatingInDayResult {
         return modelConvertor.toHttp(
             getJourneysOperatingInFrameUseCase.getJourneysOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, zoom, day
+                lonMin, latMin, lonMax, latMax, zoom, dateTime
             )
         )
     }

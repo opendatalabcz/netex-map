@@ -95,9 +95,7 @@ function updateJourneys(moment: Date, journeys: JourneysOperatingInFrame) {
 }
 
 function renderVehicles(map: L.Map, moment: Date, journeys: JourneysOperatingInFrame) {
-    const start = Date.now()
     updateJourneys(moment, journeys)
-    console.log(Date.now() - start)
     positionedJourneysForCurrentDay.startingJourneys.forEach(j => renderVehicle(map, j))
     positionedJourneysForCurrentDay.continuingJourneys.forEach(j => renderVehicle(map, j))
 }

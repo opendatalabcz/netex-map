@@ -17,7 +17,7 @@ const JourneyApi = {
         zoom: number,
         day: Date,
     ): Promise<JourneysOperatingInFrame | null | undefined> {
-        return HttpRequestSender.get([JOURNEY_URI, 'day', day.toISOString()], {
+        return HttpRequestSender.get([JOURNEY_URI, 'date-hour', day.toISOString()], {
             lonMin: lonMin,
             latMin: latMin,
             lonMax: lonMax,
