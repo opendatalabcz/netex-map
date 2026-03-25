@@ -29,11 +29,11 @@ type MapJourney = {
     routeId: number | null
     schedule: MapScheduledStop[]
     nextDayFirstStopIndex: number | null
+    fromPreviousDay: boolean
 }
 
 type JourneysOperatingInFrame = {
-    startingThisDay: MapJourney[]
-    continuingThisDay: MapJourney[]
+    journeys: MapJourney[]
     routes: MapRawRoute[]
     lineVersions: MapLineVersion[]
 }
@@ -49,6 +49,7 @@ type MapJourneyWithDates = {
     routeId: number | null
     schedule: MapScheduledStopWithDates[]
     nextDayFirstStopIndex: number | null
+    fromPreviousDay: boolean
 }
 
 export type {

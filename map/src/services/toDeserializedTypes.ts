@@ -62,16 +62,12 @@ function toJourneyWithDatesAndTimes(journey: Journey): JourneyWithDatesAndTimes 
     }
 }
 
-function toMapScheduledStopWithDates(mapScheduledStop: MapScheduledStop): MapScheduledStopWithDates {
+function toMapScheduledStopWithDates(
+    mapScheduledStop: MapScheduledStop,
+): MapScheduledStopWithDates {
     return {
-        arrival:
-            mapScheduledStop.arrival == null
-                ? null
-                : new Date(mapScheduledStop.arrival),
-        departure:
-            mapScheduledStop.departure == null
-                ? null
-                : new Date(mapScheduledStop.departure),
+        arrival: mapScheduledStop.arrival == null ? null : new Date(mapScheduledStop.arrival),
+        departure: mapScheduledStop.departure == null ? null : new Date(mapScheduledStop.departure),
     }
 }
 
@@ -82,12 +78,13 @@ function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDates {
         routeId: mapJourney.routeId,
         schedule: mapJourney.schedule.map(toMapScheduledStopWithDates),
         nextDayFirstStopIndex: mapJourney.nextDayFirstStopIndex,
+        fromPreviousDay: mapJourney.fromPreviousDay,
     }
 }
 
 function toMapRoute(route: MapRawRoute): MapRoute {
     const buffer = Buffer.from(route.pointSequence, 'base64')
-    const geoJson = Geometry.parse(buffer).toGeoJSON();
+    const geoJson = Geometry.parse(buffer).toGeoJSON()
     return {
         relationalId: route.relationalId,
         pointSequence: geoJson as GeoJSON.LineString,

@@ -27,7 +27,7 @@ class GetJourneysOperatingInFrame(
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
     private val levelOfDetailUseCase: LevelOfDetailUseCase,
 ): GetJourneysOperatingInFrameUseCase {
-    private fun scheduledStopToDaySpecific(
+    private fun scheduledStopToMap(
         stopIndex: Int,
         scheduledStop: ScheduledStopMapDto,
         day: LocalDate,
@@ -57,16 +57,17 @@ class GetJourneysOperatingInFrame(
         )
     }
 
-    private fun recomputeJourneysToSpecificDay(
+    private fun recomputeJourneysToMap(
         journeys: List<JourneyMapDto>,
         day: OffsetDateTime,
         scheduleStops: Map<Long, List<ScheduledStopMapDto>>,
+        fromPreviousDay: Boolean,
     ): List<MapJourney> = journeys.map { journey -> MapJourney(
         relationalId = journey.relationalId,
         lineVersionId = journey.lineVersionId,
         routeId = journey.routeId,
         schedule = scheduleStops[journey.relationalId]!!.mapIndexed { idx, stop ->
-            scheduledStopToDaySpecific(
+            scheduledStopToMap(
                 idx,
                 stop,
                 day.toLocalDate(),
@@ -75,6 +76,7 @@ class GetJourneysOperatingInFrame(
             )
         },
         nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
+        fromPreviousDay = fromPreviousDay,
     ) }
 
     /**
@@ -115,8 +117,8 @@ class GetJourneysOperatingInFrame(
         ).groupBy(ScheduledStopMapDto::journeyId)
             .mapValues { (_, schedule) -> schedule.sortedBy(ScheduledStopMapDto::stopOrder) }
 
-        val recomputedForDay = recomputeJourneysToSpecificDay(journeysForCurrentDay, dateTime, scheduleStops)
-        val recomputedForPreviousDay = recomputeJourneysToSpecificDay(journeysForPreviousDay, dateTime.minusDays(1), scheduleStops)
+        val recomputedForDay = recomputeJourneysToMap(journeysForCurrentDay, dateTime, scheduleStops, false)
+        val recomputedForPreviousDay = recomputeJourneysToMap(journeysForPreviousDay, dateTime.minusDays(1), scheduleStops, true)
 
         val rawRoutes = routeJpaRepository.findAllMapDtoByRouteId(
             journeysForCurrentDay.map(JourneyMapDto::routeId)
@@ -130,8 +132,7 @@ class GetJourneysOperatingInFrame(
             }
 
         return JourneysOperatingInFrameResult (
-            startingThisDay = recomputedForDay,
-            continuingThisDay = recomputedForPreviousDay,
+            journeys = recomputedForDay + recomputedForPreviousDay,
             routes = rawRoutes.map { route -> MapRoute(
                 relationalId = route.relationalId,
                 pointSequence = route.pointSequence,

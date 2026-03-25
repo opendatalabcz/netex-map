@@ -11,8 +11,7 @@ data class HttpMapRoute(
 )
 
 data class HttpJourneysOperatingInDayResult(
-    val startingThisDay: List<MapJourney>,
-    val continuingThisDay: List<MapJourney>,
+    val journeys: List<MapJourney>,
     val routes: List<HttpMapRoute>,
     val lineVersions: List<LineVersionMapDto>,
 )

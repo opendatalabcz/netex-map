@@ -22,11 +22,11 @@ interface GetJourneysOperatingInFrameUseCase {
         val routeId: Long?,
         val schedule: List<MapScheduledStop>,
         val nextDayFirstStopIndex: Int?,
+        val fromPreviousDay: Boolean,
     )
 
     data class JourneysOperatingInFrameResult(
-        val startingThisDay: List<MapJourney>,
-        val continuingThisDay: List<MapJourney>,
+        val journeys: List<MapJourney>,
         val routes: List<MapRoute>,
         val lineVersions: List<LineVersionMapDto>,
     )
