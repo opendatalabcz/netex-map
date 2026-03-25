@@ -7,7 +7,7 @@ data class HttpMapRoute(
     val relationalId: Long,
     val pointSequence: String,
     val totalDistance: Double,
-    val routeStops: List<MapRouteStop>,
+    val routeStops: List<Double>,
 )
 
 data class HttpJourneysOperatingInDayResult(

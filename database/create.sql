@@ -78,8 +78,7 @@ CREATE TABLE route_stop (
     route_id BIGINT NOT NULL,
     stop_order INTEGER NOT NULL,
     physical_stop_id BIGINT NOT NULL,
-    point_sequence_index INTEGER NOT NULL,
-    distance_to_next_stop DOUBLE PRECISION NOT NULL,
+    route_fraction DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (route_id, stop_order),
     FOREIGN KEY (route_id) REFERENCES route(relational_id) ON DELETE CASCADE,
     FOREIGN KEY (physical_stop_id) REFERENCES physical_stop(relational_id)

@@ -1,20 +1,15 @@
-type MapRouteStop = {
-    pointSequenceIndex: number
-    distanceToNextStop: number
-}
-
 type MapRawRoute = {
     relationalId: number
     pointSequence: string
     totalDistance: number
-    routeStops: MapRouteStop[]
+    routeStops: number[]
 }
 
 type MapRoute = {
     relationalId: number
     pointSequence: GeoJSON.LineString
     totalDistance: number
-    routeStops: MapRouteStop[]
+    routeStops: number[]
 }
 
 type MapLineVersion = {
@@ -62,7 +57,6 @@ export type {
     MapScheduledStop,
     MapLineVersion,
     MapRawRoute,
-    MapRouteStop,
     MapJourneyWithDates,
     MapScheduledStopWithDates,
     MapRoute,

@@ -4,16 +4,11 @@ import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionMapDto
 import java.time.OffsetDateTime
 
 interface GetJourneysOperatingInFrameUseCase {
-    data class MapRouteStop(
-        val pointSequenceIndex: Int,
-        val distanceToNextStop: Double,
-    )
-
     data class MapRoute(
         val relationalId: Long,
         val pointSequence: ByteArray,
         val totalDistance: Double,
-        val routeStops: List<MapRouteStop>,
+        val routeStops: List<Double>,
     )
 
     data class MapScheduledStop(

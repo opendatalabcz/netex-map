@@ -1,7 +1,7 @@
-import type { JourneysOperatingInFrame, MapJourneyWithDates, MapRawRoute, MapRoute } from '@/api/model/journeysOperatingInFrame'
+import type { JourneysOperatingInFrame, MapRawRoute, MapRoute } from '@/api/model/journeysOperatingInFrame'
 import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositionsForDaySpecificJourneys'
 import type { LatLngTuple } from 'leaflet'
-import { calculateVehiclePositions } from '@/services/interpolatePositionsForDaySpecificJourneys'
+import { calculateVehiclePositions, getPositionFromRouteFractions } from '@/services/interpolatePositionsForDaySpecificJourneys'
 import { toMapJourneyWithDates, toMapRoute } from '@/services/toDeserializedTypes'
 import L from 'leaflet'
 import JourneyApi from '@/api/journeyApi'
@@ -29,27 +29,27 @@ function renderRoute(map: L.Map, route: MapRoute, journey: RenderedMapJourney) {
             style: { color: 'red' }
         }
     ).addTo(map)
-    route.routeStops.forEach((stop, idx) => {
-        const pointCoordinates = route.pointSequence.coordinates[stop.pointSequenceIndex]!
-        L.circleMarker(
-            [pointCoordinates[1], pointCoordinates[0]] as LatLngTuple,
-            {
-                radius: 4,
-                color: 'red',
-                fillColor: 'white',
-                fillOpacity: 1,
-                weight: 3,
-            }
-        ).addTo(map)
-        .addEventListener('click', () => {
-            console.log(journey.schedule[idx])
+    getPositionFromRouteFractions(route.routeStops, route.pointSequence.coordinates, route.totalDistance)
+        .forEach((pointCoordinates, idx) => {
+            L.circleMarker(
+                [pointCoordinates[1], pointCoordinates[0]] as LatLngTuple,
+                {
+                    radius: 4,
+                    color: 'red',
+                    fillColor: 'white',
+                    fillOpacity: 1,
+                    weight: 3,
+                }
+            ).addTo(map)
+            .addEventListener('click', () => {
+                console.log(journey.schedule[idx])
+            })
         })
-    })
 }
 
 function renderVehicle(map: L.Map, journey: RenderedMapJourney) {
     if (journey.position == null) return
-    // renderRoute(map, mapRoutesForCurrentDay.get(journey.routeId!)!, journey)
+    renderRoute(map, positionedJourneysForCurrentDay.routes.get(journey.routeId!)!, journey)
     if (journey.vehicleMarker) {
         journey.vehicleMarker.setLatLng([journey.position[1], journey.position[0]] as LatLngTuple)
         return

@@ -124,7 +124,10 @@ class GetJourneysOperatingInFrame(
         )
         val routeStops = routeStopJpaRepository.findAllDtoByRouteIds(rawRoutes.map(RouteMapDto::relationalId))
             .groupBy(RouteStopMapDto::routeId)
-            .mapValues { (_, routeStops) -> routeStops.sortedBy(RouteStopMapDto::stopOrder) }
+            .mapValues { (_, routeStops) -> routeStops
+                .sortedBy(RouteStopMapDto::stopOrder)
+                .map(RouteStopMapDto::routeFraction)
+            }
 
         return JourneysOperatingInFrameResult (
             startingThisDay = recomputedForDay,
@@ -133,10 +136,7 @@ class GetJourneysOperatingInFrame(
                 relationalId = route.relationalId,
                 pointSequence = route.pointSequence,
                 totalDistance = route.totalDistance,
-                routeStops = routeStops[route.relationalId]!!.map { stop -> MapRouteStop(
-                    pointSequenceIndex = stop.pointSequenceIndex,
-                    distanceToNextStop = stop.distanceToNextStop,
-                ) },
+                routeStops = routeStops[route.relationalId]!!,
             ) },
             lineVersions = lineVersions,
         )

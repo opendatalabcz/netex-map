@@ -28,8 +28,7 @@ class ModelConvertor {
 
     fun toHttp(routeStop: RouteStop, latitudeFirst: Boolean): HttpRouteStop = HttpRouteStop(
         physicalStop = toHttp(routeStop.physicalStop, latitudeFirst),
-        pointSequenceIndex = routeStop.pointSequenceIndex,
-        distanceToNextStop = routeStop.distanceToNextStop,
+        routeFraction = routeStop.routeFraction,
     )
 
     fun toHttp(route: Route, latitudeFirst: Boolean): HttpRoute = HttpRoute(

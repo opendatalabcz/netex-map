@@ -74,29 +74,23 @@ class CalculateJourneyRoutesMock(
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
         val javaRandom = java.util.Random()
         val path = mutableListOf(currentCoord)
-        val routeMarkers = mutableListOf<Int>()
-        val stopDistances = mutableListOf<Double>()
+        val routeMarkers = mutableListOf(0)
+        val stopDistances = mutableListOf(0.0)
         val sortedSchedule = journey.schedule.sortedBy { it.stopId.stopOrder }
 
         val distancePrefixSum = stopDistancesPrefixSum(sortedSchedule)
         var cumulativeDistance = 0.0
-        var distanceFromPreviousStop = 0.0
-        for (idx in sortedSchedule.indices) {
-            while (cumulativeDistance < distancePrefixSum[idx]) {
+        for (idx in 1 until sortedSchedule.size) {
+             do {
                 val nextCoord = Coordinate(currentCoord.x + STEP_LENGTH * cos(angle), currentCoord.y + STEP_LENGTH * sin(angle))
                 path.add(nextCoord)
                 val angleMean = interpolate(angle, angleBetween(centerOfMass, nextCoord), 0.1)
                 angle = javaRandom.nextGaussian(angleMean, 0.6)
                 currentCoord = nextCoord
                 cumulativeDistance += STEP_LENGTH
-                distanceFromPreviousStop += STEP_LENGTH
-            }
+            } while (cumulativeDistance < distancePrefixSum[idx])
             routeMarkers.add(path.lastIndex)
-            stopDistances.add(distanceFromPreviousStop)
-            distanceFromPreviousStop = 0.0
-        }
-        if (path.size == 1) {
-            path.add(path.first())
+            stopDistances.add(cumulativeDistance)
         }
 
         val routeStops = mutableListOf<RouteStop>()
@@ -118,8 +112,7 @@ class CalculateJourneyRoutesMock(
                     position = geometryFactory.createPoint(path[marker]),
                     tags = emptyMap(),
                 ),
-                pointSequenceIndex = marker,
-                distanceToNextStop = if (idx == routeMarkers.size - 1) 0.0 else stopDistances[idx + 1],
+                routeFraction = stopDistances[idx] / cumulativeDistance,
             ))
         }
         return route
