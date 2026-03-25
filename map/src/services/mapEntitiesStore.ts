@@ -8,7 +8,7 @@ import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositi
 import { toMapRoute, toMapScheduledStopWithDates } from '@/services/toDeserializedTypes'
 
 type RenderedMapJourney = PositionedMapJourneyWithDates & {
-    vehicleMarker: L.CircleMarker | null
+    vehicleMarker: L.Marker | null
 }
 
 type StoreEntry = {
@@ -27,6 +27,7 @@ function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
         fromPreviousDay: journey.fromPreviousDay,
         position: null,
         segmentIndex: null,
+        azimuth: null,
         vehicleMarker: null,
     }
 }

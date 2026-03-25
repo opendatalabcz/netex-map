@@ -3,6 +3,12 @@ import type { MapJourneyWithDates, MapRoute } from '@/api/model/journeysOperatin
 type PositionedMapJourneyWithDates = MapJourneyWithDates & {
     position: number[] | null | undefined
     segmentIndex: number | null | undefined
+    azimuth: number | null | undefined
+}
+
+type InterpolationData = {
+    position: number[]
+    azimuth?: number | undefined
 }
 
 function getRouteSegmentIndex(
@@ -31,8 +37,8 @@ function getRouteSegmentIndex(
 }
 
 function distanceBetweenPoints(a: number[], b: number[]): number {
-    const dLat = b[0]! - a[0]!
-    const dLon = b[1]! - a[1]!
+    const dLon = b[0]! - a[0]!
+    const dLat = b[1]! - a[1]!
     return Math.sqrt(dLat * dLat + dLon * dLon)
 }
 
@@ -44,22 +50,41 @@ function inverseLerp(a: number, b: number, c: number): number {
     return (c - a) / (b - a)
 }
 
-function getPositionFromRouteFractions(
+function calculateAzimuth(a: number[], b: number[]): number {
+    const dLon = b[0]! - a[0]!
+    const dLat = b[1]! - a[1]!
+    const cosLat = Math.cos((a[1]! * Math.PI) / 180)
+    const angle = Math.atan2(dLon * cosLat, dLat) * (180 / Math.PI)
+    return (angle + 360) % 360
+}
+
+function getInterpolationDataFromRouteFractions(
     routeFractions: number[],
     pointSequence: number[][],
     totalRouteDistance: number,
-): number[][] {
-    const result: number[][] = []
+    includeAzimuth: boolean = false,
+): InterpolationData[] {
+    const result: InterpolationData[] = []
     let cumulativeDistance = 0
     let previousCumulativeDistance = 0
     let pointIndex = 0
     for (const routeFraction of routeFractions) {
         if (routeFraction <= 0) {
-            result.push(pointSequence[0]!)
+            const first = pointSequence[0]!
+            const second = pointSequence[1]!
+            result.push({
+                position: first,
+                azimuth: includeAzimuth ? calculateAzimuth(first, second) : undefined,
+            })
             continue
         }
         if (routeFraction >= 1) {
-            result.push(pointSequence[pointSequence.length - 1]!)
+            const last = pointSequence[pointSequence.length - 1]!
+            const secondLast = pointSequence[pointSequence.length - 2]!
+            result.push({
+                position: last,
+                azimuth: includeAzimuth ? calculateAzimuth(secondLast, last) : undefined,
+            })
             continue
         }
         const distanceThreshold = routeFraction * totalRouteDistance
@@ -77,19 +102,26 @@ function getPositionFromRouteFractions(
             cumulativeDistance,
             distanceThreshold,
         )
-        result.push([
-            lerp(fromPoint[0]!, toPoint[0]!, lerpFraction),
-            lerp(fromPoint[1]!, toPoint[1]!, lerpFraction),
-        ])
+        result.push({
+            position: [
+                lerp(fromPoint[0]!, toPoint[0]!, lerpFraction),
+                lerp(fromPoint[1]!, toPoint[1]!, lerpFraction),
+            ],
+            azimuth: includeAzimuth ? calculateAzimuth(fromPoint, toPoint) : undefined,
+        })
     }
     return result
 }
 
-function getPositionFromRouteFraction(routeFraction: number, route: MapRoute): number[] {
-    return getPositionFromRouteFractions(
+function getInterpolationDataFromRouteFraction(
+    routeFraction: number,
+    route: MapRoute,
+): InterpolationData {
+    return getInterpolationDataFromRouteFractions(
         [routeFraction],
         route.pointSequence.coordinates,
         route.totalDistance,
+        true,
     )[0]!
 }
 
@@ -97,11 +129,11 @@ function interpolatePositionBetweenStops(
     timeFraction: number,
     segment: number,
     route: MapRoute,
-): number[] {
+): InterpolationData {
     const departureStopFraction = route.routeStops[segment]!
     const arrivalStopFraction = route.routeStops[segment + 1]!
     const distanceThreshold = lerp(departureStopFraction, arrivalStopFraction, timeFraction)
-    return getPositionFromRouteFraction(distanceThreshold, route)
+    return getInterpolationDataFromRouteFraction(distanceThreshold, route)
 }
 
 function interpolateVehiclePosition(
@@ -136,11 +168,13 @@ function interpolateVehiclePosition(
     }
 
     const lerpFraction = Math.max(0, (momentTime - departureTime) / (arrivalTime - departureTime))
-    journey.position = interpolatePositionBetweenStops(
+    const interpolationData = interpolatePositionBetweenStops(
         lerpFraction,
         segment,
         routeMap.get(journey.routeId)!,
     )
+    journey.position = interpolationData.position
+    journey.azimuth = interpolationData.azimuth
     journey.segmentIndex = segment
     return
 }
@@ -158,10 +192,10 @@ function recalculateVehiclePosition(
         interpolateVehiclePosition(moment, journey, journey.segmentIndex, routeMap)
 }
 
-export type { PositionedMapJourneyWithDates }
+export type { PositionedMapJourneyWithDates, InterpolationData }
 
 export {
     recalculateVehiclePosition,
-    getPositionFromRouteFraction,
-    getPositionFromRouteFractions,
+    getInterpolationDataFromRouteFraction,
+    getInterpolationDataFromRouteFractions,
 }
