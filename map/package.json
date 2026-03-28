@@ -15,14 +15,15 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "@mdi/font": "7.x",
+    "@fontsource/roboto": "5.x",
     "leaflet": "1.x",
     "vue": "3.x",
     "vue-i18n": "11.x",
-    "vuetify": "3.x",
+    "vuetify": "4.x",
     "wkx": "0.5.x"
   },
   "devDependencies": {
+    "@mdi/font": "7.x",
     "@tsconfig/node24": "24.x",
     "@types/leaflet": "1.X",
     "@types/node": "24.x",
@@ -38,6 +39,7 @@
     "oxlint": "1.47.x",
     "prettier": "3.8.1",
     "typescript": "5.9.x",
+    "unplugin-fonts": "1.x",
     "vite": "7.x",
     "vite-plugin-node-polyfills": "0.25.X",
     "vite-plugin-vue-devtools": "8.x",
