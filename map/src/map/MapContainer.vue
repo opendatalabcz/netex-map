@@ -1,47 +1,42 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, shallowRef } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { MapEntitiesRenderer } from '@/services/mapEntitiesRenderer'
+import { MapEntitiesStore } from '@/services/mapEntitiesStore'
+import { debounce } from '@/util/debounce'
+import { MapEntitiesRetriever } from '@/services/mapEntitiesRetriever'
 
 const mapContainer = ref<HTMLElement | null>(null)
-const map = shallowRef<L.Map | null>(null)
+let map: L.Map | null = null
 let mapEntitiesRenderer: MapEntitiesRenderer | null = null
-
-const debounce = (callback: (...args: unknown[]) => void, wait: number) => {
-    let timeoutId: number | undefined = undefined
-    return (...args: unknown[]) => {
-        window.clearTimeout(timeoutId)
-        timeoutId = window.setTimeout(() => {
-            callback(...args)
-        }, wait)
-    }
-}
+const mapEntitiesStore = new MapEntitiesStore()
+const mapEntitiesRetriever = new MapEntitiesRetriever(mapEntitiesStore)
 
 const moment = new Date('2025-11-15T05:17:00')
-const debounceUpdate = debounce(() => {
-    if (!mapEntitiesRenderer) return
+const debounceUpdate = debounce(async () => {
+    if (!mapEntitiesRenderer || !map) return
+    await mapEntitiesRetriever.fetchFrame(map.getBounds(), map.getZoom(), moment)
     mapEntitiesRenderer.renderFrame(moment)
 }, 400)
 
 onMounted(async () => {
     if (!mapContainer.value) return
-    map.value = L.map(mapContainer.value, { minZoom: 8, maxZoom: 19 }).setView([49.9, 15.5], 11)
-    mapEntitiesRenderer = new MapEntitiesRenderer(map.value)
+    map = L.map(mapContainer.value, { minZoom: 8, maxZoom: 19 }).setView([49.9, 15.5], 10)
+    mapEntitiesRenderer = new MapEntitiesRenderer(map, mapEntitiesStore)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution:
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map.value)
+    }).addTo(map)
+    await mapEntitiesRetriever.fetchFrame(map.getBounds(), map.getZoom(), moment)
     mapEntitiesRenderer.renderFrame(moment)
-    map.value.on('move', debounceUpdate)
-    map.value.on('zoom', debounceUpdate)
+    map.on('move', debounceUpdate)
+    map.on('zoom', debounceUpdate)
 })
 
 onUnmounted(() => {
-    if (map.value) {
-        map.value.remove()
-    }
+    map?.remove()
 })
 </script>
 

@@ -9,6 +9,7 @@ import { toMapRoute, toMapScheduledStopWithDates } from '@/services/toDeserializ
 
 type RenderedMapJourney = PositionedMapJourneyWithDates & {
     vehicleMarker: L.Marker | null
+    color: string | null
 }
 
 type StoreEntry = {
@@ -29,6 +30,7 @@ function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
         segmentIndex: null,
         azimuth: null,
         vehicleMarker: null,
+        color: null,
     }
 }
 

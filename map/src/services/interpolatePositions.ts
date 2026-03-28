@@ -140,7 +140,7 @@ function interpolateVehiclePosition(
     moment: Date,
     journey: PositionedMapJourneyWithDates,
     segment: number,
-    routeMap: Map<number, MapRoute>,
+    routeMap: MapRoute,
 ): void {
     if (journey.routeId == null) {
         journey.position = undefined
@@ -168,11 +168,7 @@ function interpolateVehiclePosition(
     }
 
     const lerpFraction = Math.max(0, (momentTime - departureTime) / (arrivalTime - departureTime))
-    const interpolationData = interpolatePositionBetweenStops(
-        lerpFraction,
-        segment,
-        routeMap.get(journey.routeId)!,
-    )
+    const interpolationData = interpolatePositionBetweenStops(lerpFraction, segment, routeMap)
     journey.position = interpolationData.position
     journey.azimuth = interpolationData.azimuth
     journey.segmentIndex = segment
@@ -182,7 +178,7 @@ function interpolateVehiclePosition(
 function recalculateVehiclePosition(
     moment: Date,
     journey: PositionedMapJourneyWithDates,
-    routeMap: Map<number, MapRoute>,
+    routeMap: MapRoute,
 ): void {
     if (journey.segmentIndex == null)
         journey.segmentIndex = journey.fromPreviousDay
