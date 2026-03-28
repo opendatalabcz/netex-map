@@ -13,7 +13,7 @@ services:
       - ${DB_HOST_PORT}:5432
     volumes:
       - data-db:/var/lib/postgresql
-      - ${DB_CREATE_SCRIPT_HOST_PATH}:/docker-entrypoint-initdb.d/create.sql
+      - ${DB_INIT_SCRIPTS_HOST_PATH}:/docker-entrypoint-initdb.d/
     logging:
       driver: local
       options:
