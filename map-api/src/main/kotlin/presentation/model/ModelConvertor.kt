@@ -52,7 +52,6 @@ class ModelConvertor {
 
     fun toHttp(lineVersion: LineVersion): HttpLineVersion = HttpLineVersion(
         relationalId = lineVersion.relationalId,
-        externalId = lineVersion.externalId,
         publicCode = lineVersion.publicCode,
         name = lineVersion.name,
         shortName = lineVersion.shortName,

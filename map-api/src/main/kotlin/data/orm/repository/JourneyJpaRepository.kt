@@ -83,14 +83,14 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     @Query("""
         SELECT j FROM Journey j
         WHERE j.externalId = :externalId AND
-            j.lineVersion.externalId = :lineExternalId AND
+            j.lineVersion.publicCode = :publicCode AND
             j.lineVersion.validFrom = :validFrom AND
             j.lineVersion.validTo = :validTo AND
             j.lineVersion.isDetour = :isDetour
     """)
     fun findByExternalIdAndLineIdAndValidRange(
         externalId: String,
-        lineExternalId: String,
+        publicCode: String,
         validFrom: OffsetDateTime,
         validTo: OffsetDateTime,
         isDetour: Boolean,

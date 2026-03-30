@@ -17,7 +17,7 @@ import java.time.OffsetDateTime
 @Table(
     name = "line_version",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["external_id", "valid_from", "valid_to", "is_detour"])
+        UniqueConstraint(columnNames = ["public_code", "valid_from", "valid_to", "is_detour"])
     ]
 )
 class LineVersion(
@@ -25,9 +25,6 @@ class LineVersion(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "line_version_seq_gen")
     @SequenceGenerator(name = "line_version_seq_gen", sequenceName = "line_version_seq", allocationSize = 20)
     var relationalId: Long?,
-
-    @Column(nullable = false)
-    val externalId: String,
 
     @Column(nullable = false)
     val publicCode: String,

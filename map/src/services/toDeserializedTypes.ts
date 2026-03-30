@@ -17,7 +17,6 @@ import { Geometry } from 'wkx'
 function toLineVersionWithDates(lineVersion: LineVersion): LineVersionWithDates {
     return {
         relationalId: lineVersion.relationalId,
-        externalId: lineVersion.externalId,
         publicCode: lineVersion.publicCode,
         name: lineVersion.name,
         shortName: lineVersion.shortName,

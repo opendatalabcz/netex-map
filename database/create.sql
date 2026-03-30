@@ -27,7 +27,6 @@ CREATE INDEX idx_route_point_sequence ON route USING GIST(point_sequence);
 
 CREATE TABLE line_version (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('line_version_seq'),
-    external_id TEXT NOT NULL,
     public_code TEXT NOT NULL,
     name TEXT NOT NULL,
     short_name TEXT NOT NULL,
@@ -37,7 +36,7 @@ CREATE TABLE line_version (
     valid_to TIMESTAMP WITH TIME ZONE NOT NULL,
     active_from TIMESTAMP WITH TIME ZONE,
     active_to TIMESTAMP WITH TIME ZONE,
-    UNIQUE(external_id, valid_from, valid_to, is_detour)
+    UNIQUE(public_code, valid_from, valid_to, is_detour)
 );
 
 CREATE TABLE active_period (

@@ -53,7 +53,7 @@ class ImportTimetables(
     }
 
     private data class LineVersionDomainKey(
-        val externalId: String,
+        val publicCode: String,
         val isDetour: Boolean,
         val validFrom: OffsetDateTime,
         val validTo: OffsetDateTime,
@@ -65,7 +65,7 @@ class ImportTimetables(
     ) {
         val newLineVersions = resultList
             .flatMap { it.lineVersions.filter { it.relationalId == null } }
-            .distinctBy { LineVersionDomainKey(it.externalId, it.isDetour, it.validFrom, it.validTo) }
+            .distinctBy { LineVersionDomainKey(it.publicCode, it.isDetour, it.validFrom, it.validTo) }
         val journeysOfNewLineVersions = resultList.flatMap { it.journeys.filter { newLineVersions.contains(it.lineVersion) } }
         val scheduleStopsOfNewLineVersions = journeysOfNewLineVersions.flatMap { it.schedule }
         operatingPeriodJpaRepository.saveAll(operatingPeriodBatchCache)

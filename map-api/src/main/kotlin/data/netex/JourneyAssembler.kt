@@ -36,7 +36,7 @@ class JourneyAssembler(
             journeys[journey.id] = journeyJpaRepository
                 .findByExternalIdAndLineIdAndValidRange(
                     externalId = journey.id,
-                    lineExternalId = lineVersion.externalId,
+                    publicCode = lineVersion.publicCode,
                     validFrom = lineVersion.validFrom,
                     validTo = lineVersion.validTo,
                     isDetour = lineVersion.isDetour,

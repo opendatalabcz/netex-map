@@ -16,13 +16,13 @@ import java.util.Optional
 interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
     @Query("""
         SELECT lv FROM LineVersion lv
-        WHERE lv.externalId = :lineExternalId AND
+        WHERE lv.publicCode = :publicCode AND
             lv.validFrom = :validFrom AND
             lv.validTo = :validTo AND
             lv.isDetour = :isDetour
     """)
-    fun findByLineIdAndValidRange(
-        lineExternalId: String,
+    fun findByDomainId(
+        publicCode: String,
         validFrom: OffsetDateTime,
         validTo: OffsetDateTime,
         isDetour: Boolean,

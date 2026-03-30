@@ -18,14 +18,13 @@ class LineVersionAssembler(
             val validTo = line.validBetween.first().toDate.atOffset(zoneId)
             val isDetour = line.keyList.keyValue.first { it.key == "JdfDetourTimetable" }?.value == "1"
             lineVersions[line.id] = lineVersionJpaRepository
-                .findByLineIdAndValidRange(
-                    lineExternalId = line.id,
+                .findByDomainId(
+                    publicCode = line.publicCode,
                     validFrom = validFrom,
                     validTo = validTo,
                     isDetour = isDetour,
                 ).orElseGet { LineVersion(
                     relationalId = null,
-                    externalId = line.id,
                     publicCode = line.publicCode,
                     name = line.name.value,
                     shortName = line.shortName.value,

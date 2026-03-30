@@ -1,6 +1,5 @@
 type LineVersion = {
     relationalId: number
-    externalId: string
     publicCode: string
     name: string
     shortName: string
@@ -12,7 +11,6 @@ type LineVersion = {
 
 type LineVersionWithDates = {
     relationalId: number
-    externalId: string
     publicCode: string
     name: string
     shortName: string

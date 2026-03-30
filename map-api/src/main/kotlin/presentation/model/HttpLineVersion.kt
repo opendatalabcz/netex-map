@@ -4,7 +4,6 @@ import java.time.OffsetDateTime
 
 data class HttpLineVersion(
     val relationalId: Long?,
-    val externalId: String,
     val publicCode: String,
     val name: String,
     val shortName: String,
