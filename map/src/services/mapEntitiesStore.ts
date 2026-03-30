@@ -5,33 +5,36 @@ import type {
     MapRoute,
 } from '@/api/model/journeysOperatingInFrame'
 import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositions'
-import { toMapRoute, toMapScheduledStopWithDates } from '@/services/toDeserializedTypes'
+import { toMapJourneyWithDates, toMapRoute } from '@/services/toDeserializedTypes'
 
 type RenderedMapJourney = PositionedMapJourneyWithDates & {
     vehicleMarker: L.Marker | null
     color: string | null
 }
 
+type RenderedMapRoute = MapRoute & {
+    featureGroup: L.FeatureGroup | null
+    color: string | null
+}
+
 type StoreEntry = {
     journeys: Map<number, RenderedMapJourney>
-    routes: Map<number, MapRoute>
+    routes: Map<number, RenderedMapRoute>
     lineVersions: Map<number, MapLineVersion>
 }
 
 function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
-    return {
-        relationalId: journey.relationalId,
-        lineVersionId: journey.lineVersionId,
-        routeId: journey.routeId,
-        schedule: journey.schedule.map(toMapScheduledStopWithDates),
-        nextDayFirstStopIndex: journey.nextDayFirstStopIndex,
-        fromPreviousDay: journey.fromPreviousDay,
-        position: null,
-        segmentIndex: null,
-        azimuth: null,
-        vehicleMarker: null,
-        color: null,
-    }
+    const res = toMapJourneyWithDates(journey) as RenderedMapJourney
+    res.vehicleMarker = null
+    res.color = null
+    return res
+}
+
+function toRenderedRoute(route: MapRawRoute): RenderedMapRoute {
+    const res = toMapRoute(route) as RenderedMapRoute
+    res.featureGroup = null
+    res.color = null
+    return res
 }
 
 export class MapEntitiesStore {
@@ -54,7 +57,7 @@ export class MapEntitiesStore {
     addRoutes(newRoutes: MapRawRoute[]) {
         for (const route of newRoutes) {
             if (this.store.routes.has(route.relationalId)) continue
-            this.store.routes.set(route.relationalId, toMapRoute(route))
+            this.store.routes.set(route.relationalId, toRenderedRoute(route))
         }
     }
 
@@ -73,6 +76,6 @@ export class MapEntitiesStore {
     }
 }
 
-export type { RenderedMapJourney }
+export type { RenderedMapJourney, RenderedMapRoute }
 
-export { toRenderedJourney }
+export { toRenderedJourney, toRenderedRoute }

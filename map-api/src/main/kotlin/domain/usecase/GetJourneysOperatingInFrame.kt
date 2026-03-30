@@ -131,14 +131,16 @@ class GetJourneysOperatingInFrame(
                 .map(RouteStopMapDto::routeFraction)
             }
 
+        val recomputedRoutes = rawRoutes.map { route -> MapRoute(
+            relationalId = route.relationalId,
+            pointSequence = route.pointSequence,
+            totalDistance = route.totalDistance,
+            routeStops = routeStops[route.relationalId]!!,
+        ) }
+
         return JourneysOperatingInFrameResult (
             journeys = recomputedForDay + recomputedForPreviousDay,
-            routes = rawRoutes.map { route -> MapRoute(
-                relationalId = route.relationalId,
-                pointSequence = route.pointSequence,
-                totalDistance = route.totalDistance,
-                routeStops = routeStops[route.relationalId]!!,
-            ) },
+            routes = recomputedRoutes,
             lineVersions = lineVersions,
         )
     }

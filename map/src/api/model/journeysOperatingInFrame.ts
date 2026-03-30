@@ -26,7 +26,7 @@ type MapScheduledStop = {
 type MapJourney = {
     relationalId: number
     lineVersionId: number
-    routeId: number | null
+    routeId: number
     schedule: MapScheduledStop[]
     nextDayFirstStopIndex: number | null
     fromPreviousDay: boolean
@@ -46,7 +46,7 @@ type MapScheduledStopWithDates = {
 type MapJourneyWithDates = {
     relationalId: number
     lineVersionId: number
-    routeId: number | null
+    routeId: number
     schedule: MapScheduledStopWithDates[]
     nextDayFirstStopIndex: number | null
     fromPreviousDay: boolean

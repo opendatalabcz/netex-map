@@ -19,7 +19,7 @@ interface GetJourneysOperatingInFrameUseCase {
     data class MapJourney(
         val relationalId: Long,
         val lineVersionId: Long,
-        val routeId: Long?,
+        val routeId: Long,
         val schedule: List<MapScheduledStop>,
         val nextDayFirstStopIndex: Int?,
         val fromPreviousDay: Boolean,
