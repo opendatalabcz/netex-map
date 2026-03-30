@@ -70,14 +70,14 @@ class ModelConvertor {
         departure = scheduledStop.departure,
     )
 
-    fun toHttp(journey: Journey, latitudeFirst: Boolean): HttpJourney = HttpJourney(
+    fun toHttp(journey: Journey, includeRoute: Boolean, latitudeFirst: Boolean): HttpJourney = HttpJourney(
         relationalId = journey.relationalId,
         externalId = journey.externalId,
         lineVersion = toHttp(journey.lineVersion),
         journeyPatternId = journey.journeyPatternId,
         schedule = journey.schedule.map(::toHttp),
         operatingPeriod = toHttp(journey.operatingPeriod),
-        route = journey.route?.let { toHttp(it, latitudeFirst) },
+        route = if (includeRoute) journey.route?.let { toHttp(it, latitudeFirst) } else null,
         nextDayFirstStopIndex = journey.nextDayFirstStopIndex,
         beginTime = journey.beginTime,
         endTime = journey.endTime,

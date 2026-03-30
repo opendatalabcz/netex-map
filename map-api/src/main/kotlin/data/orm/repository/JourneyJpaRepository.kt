@@ -116,8 +116,8 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         targetMoment: OffsetDateTime,
     ): List<JourneyMapDto>
 
-    @Query("SELECT j FROM Journey j JOIN FETCH j.route")
-    fun findAllFetchRoutes(pageable: Pageable): Page<Journey>
+    @Query("SELECT j FROM Journey j JOIN FETCH j.route WHERE j.relationalId = :journeyId")
+    fun findByIdFetchRoute(journeyId: Long): Optional<Journey>
 
     @Query(nativeQuery = true, value = """
         SELECT DISTINCT ON (line_version_id, journey_pattern_id) *
