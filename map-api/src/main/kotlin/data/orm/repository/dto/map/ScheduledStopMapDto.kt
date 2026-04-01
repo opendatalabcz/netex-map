@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.orm.repository.dto
+package cz.cvut.fit.gaierda1.data.orm.repository.dto.map
 
 import java.time.LocalTime
 

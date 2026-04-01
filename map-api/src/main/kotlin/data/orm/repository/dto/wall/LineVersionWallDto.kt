@@ -1,0 +1,10 @@
+package cz.cvut.fit.gaierda1.data.orm.repository.dto.wall
+
+data class LineVersionWallDto(
+    val relationalId: Long,
+    val publicCode: String,
+    val name: String,
+    val shortName: String,
+    val transportMode: String,
+    val isDetour: Boolean,
+)

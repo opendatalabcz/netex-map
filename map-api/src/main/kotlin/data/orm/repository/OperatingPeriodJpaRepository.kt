@@ -1,6 +1,7 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.OperatingPeriod
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.OperatingPeriodWallDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -19,4 +20,12 @@ interface OperatingPeriodJpaRepository: JpaRepository<OperatingPeriod, Long> {
         toDate: LocalDateTime,
         validDays: List<Boolean>,
     ): Optional<OperatingPeriod>
+
+    @Query(nativeQuery = true, value = """
+        SELECT DISTINCT op.relational_id, op.from_date, op.to_date, op.valid_days
+        FROM operating_period op
+            JOIN journey j ON j.operating_period_id = op.relational_id
+        WHERE j.relational_id IN :journeyIds
+    """)
+    fun findAllWallDtoByJourneyIds(journeyIds: List<Long>): List<OperatingPeriodWallDto>
 }

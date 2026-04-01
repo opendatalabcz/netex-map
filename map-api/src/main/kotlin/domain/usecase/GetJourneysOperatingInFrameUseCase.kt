@@ -1,6 +1,6 @@
 package cz.cvut.fit.gaierda1.domain.usecase
 
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.LineVersionMapDto
 import java.time.OffsetDateTime
 
 interface GetJourneysOperatingInFrameUseCase {

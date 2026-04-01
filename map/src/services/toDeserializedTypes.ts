@@ -10,6 +10,18 @@ import type {
     MapRawRoute,
     MapRoute,
 } from '@/api/model/journeysOperatingInFrame'
+import type {
+    WallScheduledStop,
+    WallActivePeriod,
+    WallLineVersion,
+    WallOperatingPeriod,
+    WallTimetable,
+    WallScheduledStopWithTimes,
+    WallActivePeriodWithDates,
+    WallLineVersionWithDates,
+    WallOperatingPeriodWithDates,
+    WallTimetableWithDates,
+} from '@/api/model/wallTimetable'
 import LocalTime from '@/util/localTime'
 import { Buffer } from 'buffer'
 import { Geometry } from 'wkx'
@@ -92,6 +104,55 @@ function toMapRoute(route: MapRawRoute): MapRoute {
     }
 }
 
+function toWallScheduledStopWithTimes(wallScheduledStop: WallScheduledStop): WallScheduledStopWithTimes {
+    return {
+        name: wallScheduledStop.name,
+        stopOnRequest: wallScheduledStop.stopOnRequest,
+        arrival: wallScheduledStop.arrival == null ? null : LocalTime.parse(wallScheduledStop.arrival),
+        departure: wallScheduledStop.departure == null ? null : LocalTime.parse(wallScheduledStop.departure),
+    }
+}
+
+function toWallActivePeriodWithDates(wallActivePeriod: WallActivePeriod): WallActivePeriodWithDates {
+    return {
+        fromDate: new Date(wallActivePeriod.fromDate),
+        toDate: new Date(wallActivePeriod.toDate),
+    }
+}
+
+function toWallLineVersionWithDates(wallLineVersion: WallLineVersion): WallLineVersionWithDates {
+    return {
+        relationalId: wallLineVersion.relationalId,
+        publicCode: wallLineVersion.publicCode,
+        name: wallLineVersion.name,
+        shortName: wallLineVersion.shortName,
+        transportMode: wallLineVersion.transportMode,
+        isDetour: wallLineVersion.isDetour,
+        activePeriods: wallLineVersion.activePeriods.map(toWallActivePeriodWithDates),
+    }
+}
+
+function toWallOperatingPeriodWithDates(wallOperatingPeriod: WallOperatingPeriod): WallOperatingPeriodWithDates {
+    return {
+        operatingDays: wallOperatingPeriod.operatingDays,
+        operationExceptions: new Map([
+            ['ALSO_OPERATES', wallOperatingPeriod.operationExceptions.ALSO_OPERATES.map(day => new Date(day))],
+            ['DOES_NOT_OPERATE', wallOperatingPeriod.operationExceptions.DOES_NOT_OPERATE.map(day => new Date(day))],
+        ]),
+        journeys: new Map(
+            Object.entries(wallOperatingPeriod.journeys)
+                .map(([id, stops]) => [Number.parseInt(id), stops.map(toScheduledStopWithTimes)])
+        ),
+    }
+}
+
+function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWithDates {
+    return {
+        lineVersion: toWallLineVersionWithDates(wallTimetable.lineVersion),
+        operatingPeriods: wallTimetable.operatingPeriods.map(toWallOperatingPeriodWithDates),
+    }
+}
+
 export {
     toLineVersionWithDates,
     toOperatingPeriodWithDates,
@@ -100,4 +161,8 @@ export {
     toMapScheduledStopWithDates,
     toMapJourneyWithDates,
     toMapRoute,
+    toWallScheduledStopWithTimes,
+    toWallActivePeriodWithDates,
+    toWallOperatingPeriodWithDates,
+    toWallTimetableWithDates,
 }

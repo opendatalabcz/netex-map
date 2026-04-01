@@ -92,7 +92,7 @@ class ModelConvertor {
 
     fun toHttp(
         journeysOperatingInFrameResult: GetJourneysOperatingInFrameUseCase.JourneysOperatingInFrameResult,
-    ): HttpJourneysOperatingInDayResult = HttpJourneysOperatingInDayResult(
+    ): HttpJourneysOperatingInFrameResult = HttpJourneysOperatingInFrameResult(
         journeys = journeysOperatingInFrameResult.journeys,
         routes = journeysOperatingInFrameResult.routes.map(::toHttp),
         lineVersions = journeysOperatingInFrameResult.lineVersions,

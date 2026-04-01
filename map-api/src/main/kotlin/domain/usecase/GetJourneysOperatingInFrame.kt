@@ -6,10 +6,10 @@ import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.JourneyMapDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.RouteMapDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.RouteStopMapDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.JourneyMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.RouteMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.RouteStopMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.ScheduledStopMapDto
 import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional

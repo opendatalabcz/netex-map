@@ -1,15 +1,14 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.LineVersionMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.LineVersionWallDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.util.Optional
 
 @Repository
@@ -40,4 +39,11 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         WHERE lv.relational_id IN :ids
     """)
     fun findAllMapDtoByIds(ids: List<Long>): List<LineVersionMapDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT lv.relational_id, lv.public_code, lv.name, lv.short_name, lv.transport_mode, lv.is_detour
+        FROM line_version lv
+        WHERE lv.relational_id = :id
+    """)
+    fun findWallDtoById(id: Long): Optional<LineVersionWallDto>
 }

@@ -3,7 +3,8 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.model.Route
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.JourneyMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.JourneyMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -133,4 +134,11 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         WHERE j.lineVersion = :lineVersion AND j.journeyPatternId = :journeyPatternId
     """)
     fun setRouteForAllByLineVersionAndJourneyPattern(lineVersion: LineVersion, journeyPatternId: String, route: Route)
+
+    @Query(nativeQuery = true, value = """
+        SELECT j.relational_id, j.operating_period_id
+        FROM journey j
+        WHERE j.line_version_id = :lineVersionId
+    """)
+    fun findAllWallDtoByLineVersionId(lineVersionId: Long): List<JourneyWallDto>
 }
