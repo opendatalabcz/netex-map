@@ -25,30 +25,22 @@ class ConstructWallTimetable(
         operatingPeriod: OperatingPeriodWallDto,
     ): Pair<WallOperatingDays, Map<WallOperationExceptionType, List<LocalDate>>> {
         // Scan for day type occurrences
-        val dayTypeCounter = Array(7) { 0 }
+        val dayTypeOperatingCounter = Array(7) { 0 }
+        val dayTypeNonOperatingCounter = Array(7) { 0 }
         var currentDayOfWeekValue = operatingPeriod.fromDate.dayOfWeek.value - 1
         for (i in 0 until operatingPeriod.validDays.size) {
             if (operatingPeriod.validDays[i]) {
-                dayTypeCounter[currentDayOfWeekValue] += 1
+                dayTypeOperatingCounter[currentDayOfWeekValue] += 1
+            } else {
+                dayTypeNonOperatingCounter[currentDayOfWeekValue] += 1
             }
             currentDayOfWeekValue = (currentDayOfWeekValue + 1) % 7
         }
 
-        // Group by occurrence count (occurrence count, number of days with that occurrence count)
-        // and find the most common occurrence count
-        val mostCommonOccurrenceCount = dayTypeCounter
-            .filter { it != 0 }
-            .groupBy { it }
-            .mapValues { (_, v) -> v.size }
-            .maxBy { it.value }
-            .key
-
         // Find common operating days
         val commonDays = mutableListOf<Int>()
-        for ((idx, count) in dayTypeCounter.withIndex()) {
-            if (count == 0) continue
-            val exceptionCountByIncluding = mostCommonOccurrenceCount - count
-            if (exceptionCountByIncluding <= count) {
+        for (idx in 0 until 7) {
+            if (dayTypeOperatingCounter[idx] >= dayTypeNonOperatingCounter[idx]) {
                 commonDays.add(idx)
             }
         }
