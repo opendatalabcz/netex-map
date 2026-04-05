@@ -33,10 +33,6 @@ class Journey(
     @Column(nullable = false)
     val journeyNumber: String,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "route_id")
-    var route: Route?,
-
     @BatchSize(size = 30)
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "journey")
     var schedule: List<ScheduledStop>,

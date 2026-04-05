@@ -147,13 +147,6 @@ class CalculateJourneyRoutesMock(
             entityManager.flush()
 
             for (journey in currentPage.content) {
-                journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
-                    journey.lineVersionId,
-                    journey.patternNumber,
-                    newRoutesMap[journey.relationalId]!!.relationalId!!,
-                )
-            }
-            for (journey in currentPage.content) {
                 journeyPatternJpaRepository.setRouteForJourneyPatternById(
                     journey.lineVersionId,
                     journey.patternNumber,

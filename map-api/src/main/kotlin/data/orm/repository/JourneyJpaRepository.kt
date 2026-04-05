@@ -7,7 +7,6 @@ import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.time.OffsetDateTime
@@ -17,7 +16,7 @@ import java.util.Optional
 interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     private companion object {
         const val OPERATING_IN_FRAME_QUERY = """
-            SELECT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, j.timezone
+            SELECT j.relational_id, j.line_version_id, jp.route_id, j.next_day_first_stop_index, j.timezone
             FROM journey j
                 CROSS JOIN LATERAL ( SELECT
                     (:targetMoment)::timestamptz AT TIME ZONE j.timezone as local_target_moment
@@ -36,7 +35,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 JOIN active_period ap ON jp.line_version_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON jp.route_id = r.relational_id
-            WHERE j.route_id IS NOT NULL
+            WHERE jp.route_id IS NOT NULL
                 AND journey_start_moment < target_end_moment
                 AND journey_end_moment > target_start_moment
                 AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
@@ -47,7 +46,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 ]
         """
         const val OPERATING_IN_FRAME_FOR_PREVIOUS_DAY_QUERY = """
-            SELECT j.relational_id, j.line_version_id, j.route_id, j.next_day_first_stop_index, j.timezone
+            SELECT j.relational_id, j.line_version_id, jp.route_id, j.next_day_first_stop_index, j.timezone
             FROM journey j
                 CROSS JOIN LATERAL ( SELECT
                     (:targetMoment)::timestamptz AT TIME ZONE j.timezone as local_target_moment,
@@ -67,7 +66,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 JOIN active_period ap ON jp.line_version_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON jp.route_id = r.relational_id
-            WHERE j.route_id IS NOT NULL
+            WHERE jp.route_id IS NOT NULL
                 AND j.next_day_first_stop_index IS NOT NULL
                 AND journey_start_moment < target_end_moment
                 AND journey_end_moment > target_start_moment
@@ -117,19 +116,18 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     ): List<JourneyMapDto>
 
     @Query(nativeQuery = true, value = """
-        SELECT DISTINCT ON (line_version_id, pattern_number) relational_id, line_version_id, pattern_number
-        FROM journey
-        WHERE route_id IS NULL
-        ORDER BY line_version_id, pattern_number
-    """, countQuery = "SELECT COUNT(DISTINCT (line_version_id, pattern_number)) FROM journey WHERE route_id IS NULL")
-    fun findAllDistinctJourneyPatternDtoWithNullRoute(pageable: Pageable): Page<JourneyByDistinctJourneyPatternDto>
-
-    @Modifying
-    @Query(nativeQuery = true, value = """
-        UPDATE journey SET route_id = :routeId
-        WHERE line_version_id = :lineVersionId AND pattern_number = :patternNumber
+        SELECT DISTINCT ON (j.line_version_id, j.pattern_number) j.relational_id, j.line_version_id, j.pattern_number
+        FROM journey j
+            JOIN journey_pattern jp ON jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number
+        WHERE jp.route_id IS NULL
+        ORDER BY j.line_version_id, j.pattern_number
+    """, countQuery = """
+        SELECT COUNT(DISTINCT (j.line_version_id, j.pattern_number))
+        FROM journey j
+            JOIN journey_pattern jp ON jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number
+        WHERE jp.route_id IS NULL
     """)
-    fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: Long, patternNumber: Int, routeId: Long)
+    fun findAllDistinctJourneyPatternDtoWithNullRoute(pageable: Pageable): Page<JourneyByDistinctJourneyPatternDto>
 
     @Query(nativeQuery = true, value = """
         SELECT

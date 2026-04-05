@@ -87,7 +87,6 @@ class JourneyAssembler(
             journeyNumber = journey.name.value,
             schedule = schedule,
             operatingPeriod = operatingPeriod,
-            route = null,
             nextDayFirstStopIndex = null,
             timezone = timezone,
             beginTime = LocalTime.MIN,
