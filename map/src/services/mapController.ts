@@ -7,12 +7,11 @@ import {
 } from '@/services/mapEntitiesStore'
 import { recalculateVehiclePosition } from '@/services/interpolatePositions'
 import { debounce } from '@/util/debounce'
-import type { WallTimetable } from '@/api/model/wallTimetable'
-import LineVersionApi from '@/api/lineVersionApi'
+import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 
 type FocusedJourney = {
     journeyId: number
-    wallTimetable: WallTimetable | null
+    journeyDetails: JourneyDetailsWithTimes | null
     mapRoute: RenderedMapRoute
 }
 
@@ -24,7 +23,8 @@ export class MapController {
     private moment: Date
     private momentListeners: ((moment: Date) => void)[] = []
     private focusedJourney: FocusedJourney | null = null
-    private focusedWallTimetableListeners: ((focused: WallTimetable | null) => void)[] = []
+    private focusedJourneyDetailsListeners: ((focused: JourneyDetailsWithTimes | null) => void)[] =
+        []
 
     constructor(
         initialMoment: Date,
@@ -56,11 +56,11 @@ export class MapController {
     }
     debouncedReRender = debounce(() => this.reRender(), 400)
 
-    private async fetchFocusedWallTimetable(lineVersionId: number) {
-        const timetable = await LineVersionApi.getLineVersionWallTimetable(lineVersionId)
-        if (timetable == null || this.focusedJourney == null) return
-        this.focusedJourney.wallTimetable = timetable
-        this.focusedWallTimetableListeners.forEach((listener) => listener(timetable))
+    private async fetchJourneyDetails(journeyId: number) {
+        const details = await this.retriever.fetchJourneyDetails(journeyId)
+        if (details == null || this.focusedJourney == null) return
+        this.focusedJourney.journeyDetails = details
+        this.focusedJourneyDetailsListeners.forEach((listener) => listener(details))
     }
 
     onJourneyClick(journey: RenderedMapJourney, route: RenderedMapRoute) {
@@ -75,11 +75,11 @@ export class MapController {
         }
         this.focusedJourney = {
             journeyId: journey.relationalId,
-            wallTimetable: null,
+            journeyDetails: null,
             mapRoute: route,
         }
-        if (this.focusedJourney.wallTimetable == null) {
-            this.fetchFocusedWallTimetable(journey.lineVersionId)
+        if (this.focusedJourney.journeyDetails == null) {
+            this.fetchJourneyDetails(journey.relationalId)
         }
         if (renderRoute) {
             this.renderer!.renderRoute(route)
@@ -94,8 +94,8 @@ export class MapController {
 
     clearFocusedJourney() {
         if (this.focusedJourney == null) return
-        if (this.focusedJourney.wallTimetable != null) {
-            this.focusedWallTimetableListeners.forEach((listener) => listener(null))
+        if (this.focusedJourney.journeyDetails != null) {
+            this.focusedJourneyDetailsListeners.forEach((listener) => listener(null))
         }
         this.renderer!.clearRenderedRoute(this.focusedJourney.mapRoute)
         this.focusedJourney = null
@@ -133,11 +133,11 @@ export class MapController {
         this.momentListeners = this.momentListeners.filter((l) => l !== listener)
     }
 
-    addFocusedJourneyListener(listener: (focused: WallTimetable | null) => void) {
-        this.focusedWallTimetableListeners.push(listener)
+    addFocusedJourneyListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
+        this.focusedJourneyDetailsListeners.push(listener)
     }
-    removeFocusedJourneyListener(listener: (focused: WallTimetable | null) => void) {
-        this.focusedWallTimetableListeners = this.focusedWallTimetableListeners.filter(
+    removeFocusedJourneyListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
+        this.focusedJourneyDetailsListeners = this.focusedJourneyDetailsListeners.filter(
             (l) => l !== listener,
         )
     }

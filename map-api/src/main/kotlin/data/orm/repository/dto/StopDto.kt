@@ -1,6 +1,6 @@
-package cz.cvut.fit.gaierda1.data.orm.repository.dto.wall
+package cz.cvut.fit.gaierda1.data.orm.repository.dto
 
-data class StopWallDto(
+data class StopDto(
     val relationalId: Long,
     val name: String,
     val bistro: Boolean,

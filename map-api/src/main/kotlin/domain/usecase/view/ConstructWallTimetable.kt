@@ -102,7 +102,7 @@ class ConstructWallTimetable(
                 tariffZone = it.tariffZone,
                 stopId = it.stopId,
             ) }
-        val stops = stopJpaRepository.findAllWallDtoByStopIds(
+        val stops = stopJpaRepository.findAllDtoByStopIds(
             tariffStops.map(WallTariffStop::stopId)
         )
 

@@ -1,6 +1,7 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.JourneyDetailsDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.JourneyByDistinctJourneyPatternDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.JourneyMapDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
@@ -145,4 +146,23 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         WHERE j.line_version_id = :lineVersionId
     """)
     fun findAllWallDtoByLineVersionId(lineVersionId: Long): List<JourneyWallDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            j.line_version_id,
+            j.pattern_number,
+            jp.route_id,
+            j.requires_ordering,
+            j.baggage_storage,
+            j.cycles_allowed,
+            j.low_floor_access,
+            j.reservation_compulsory,
+            j.reservation_possible,
+            j.snacks_on_board,
+            j.unaccompanied_minor_assistance
+        FROM journey j
+            LEFT OUTER JOIN journey_pattern jp ON jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number
+        WHERE j.relational_id = :journeyId
+    """)
+    fun findDetailsDtoByJourneyId(journeyId: Long): Optional<JourneyDetailsDto>
 }

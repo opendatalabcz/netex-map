@@ -1,7 +1,7 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.Stop
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.StopWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -28,5 +28,5 @@ interface StopJpaRepository: JpaRepository<Stop, Long> {
         FROM stop s
         WHERE s.relational_id IN :stopIds
     """)
-    fun findAllWallDtoByStopIds(stopIds: List<Long>): List<StopWallDto>
+    fun findAllDtoByStopIds(stopIds: List<Long>): List<StopDto>
 }

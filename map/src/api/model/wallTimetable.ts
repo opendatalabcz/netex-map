@@ -115,7 +115,7 @@ export type WallJourneyPattern = {
     patternNumber: number
     direction: JourneyDirection
     stops: WallJourneyPatternStop[]
-    transportBans: number[][]
+    transportBans: number[][] | null
     routeId: number
 }
 

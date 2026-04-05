@@ -1,5 +1,9 @@
 import JourneyApi from '@/api/journeyApi'
+import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import type { MapEntitiesStore } from '@/services/mapEntitiesStore'
+import LineVersionApi from '@/api/lineVersionApi'
+import { toJourneyDetailsWithTimes, toWallTimetableWithDates } from './toDeserializedTypes'
+import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 
 export class MapEntitiesRetriever {
     mapEntriesStore: MapEntitiesStore
@@ -21,5 +25,21 @@ export class MapEntitiesRetriever {
 
         this.mapEntriesStore.addRoutes(frame.routes)
         this.mapEntriesStore.addJourneys(frame.journeys)
+    }
+
+    async fetchWallTimetable(
+        lineVersionId: number,
+    ): Promise<WallTimetableWithDates | null | undefined> {
+        const timetable = await LineVersionApi.getLineVersionWallTimetable(lineVersionId)
+        if (timetable == null) return null
+        return toWallTimetableWithDates(timetable)
+    }
+
+    async fetchJourneyDetails(
+        journeyId: number,
+    ): Promise<JourneyDetailsWithTimes | null | undefined> {
+        const details = await JourneyApi.getJourneyDetails(journeyId)
+        if (details == null) return null
+        return toJourneyDetailsWithTimes(details)
     }
 }

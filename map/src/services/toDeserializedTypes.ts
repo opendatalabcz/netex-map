@@ -1,4 +1,10 @@
 import type {
+    JourneyDetails,
+    JourneyDetailsScheduledStop,
+    JourneyDetailsScheduledStopWithTimes,
+    JourneyDetailsWithTimes,
+} from '@/api/model/journeyDetails'
+import type {
     MapJourney,
     MapScheduledStop,
     MapJourneyWithDates,
@@ -24,7 +30,7 @@ import LocalTime from '@/util/localTime'
 import { Buffer } from 'buffer'
 import { Geometry } from 'wkx'
 
-function toMapScheduledStopWithDates(
+export function toMapScheduledStopWithDates(
     mapScheduledStop: MapScheduledStop,
 ): MapScheduledStopWithDates {
     return {
@@ -33,7 +39,7 @@ function toMapScheduledStopWithDates(
     }
 }
 
-function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDates {
+export function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDates {
     return {
         relationalId: mapJourney.relationalId,
         lineVersionId: mapJourney.lineVersionId,
@@ -44,7 +50,7 @@ function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDates {
     }
 }
 
-function toMapRoute(route: MapRawRoute): MapRoute {
+export function toMapRoute(route: MapRawRoute): MapRoute {
     const buffer = Buffer.from(route.pointSequence, 'base64')
     const geoJson = Geometry.parse(buffer).toGeoJSON()
     return {
@@ -55,7 +61,7 @@ function toMapRoute(route: MapRawRoute): MapRoute {
     }
 }
 
-function toWallScheduledStopWithTimes(
+export function toWallScheduledStopWithTimes(
     wallScheduledStop: WallScheduledStop,
 ): WallScheduledStopWithTimes {
     return {
@@ -68,7 +74,7 @@ function toWallScheduledStopWithTimes(
     }
 }
 
-function toWallActivePeriodWithDates(
+export function toWallActivePeriodWithDates(
     wallActivePeriod: WallActivePeriod,
 ): WallActivePeriodWithDates {
     return {
@@ -77,7 +83,9 @@ function toWallActivePeriodWithDates(
     }
 }
 
-function toWallLineVersionWithDates(wallLineVersion: WallLineVersion): WallLineVersionWithDates {
+export function toWallLineVersionWithDates(
+    wallLineVersion: WallLineVersion,
+): WallLineVersionWithDates {
     return {
         relationalId: wallLineVersion.relationalId,
         publicCode: wallLineVersion.publicCode,
@@ -93,7 +101,7 @@ function toWallLineVersionWithDates(wallLineVersion: WallLineVersion): WallLineV
     }
 }
 
-function toWallJourneyWithDates(wallJourney: WallJourney): WallJourneyWithTimes {
+export function toWallJourneyWithDates(wallJourney: WallJourney): WallJourneyWithTimes {
     return {
         relationalId: wallJourney.relationalId,
         schedule: wallJourney.schedule.map(toWallScheduledStopWithTimes),
@@ -108,7 +116,7 @@ function toWallJourneyWithDates(wallJourney: WallJourney): WallJourneyWithTimes 
     }
 }
 
-function toWallOperatingPeriodWithDates(
+export function toWallOperatingPeriodWithDates(
     wallOperatingPeriod: WallOperatingPeriod,
 ): WallOperatingPeriodWithDates {
     return {
@@ -129,7 +137,7 @@ function toWallOperatingPeriodWithDates(
     }
 }
 
-function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWithDates {
+export function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWithDates {
     return {
         lineVersion: toWallLineVersionWithDates(wallTimetable.lineVersion),
         operatingPeriods: wallTimetable.operatingPeriods.map(toWallOperatingPeriodWithDates),
@@ -137,12 +145,44 @@ function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWi
     }
 }
 
-export {
-    toMapScheduledStopWithDates,
-    toMapJourneyWithDates,
-    toMapRoute,
-    toWallScheduledStopWithTimes,
-    toWallActivePeriodWithDates,
-    toWallOperatingPeriodWithDates,
-    toWallTimetableWithDates,
+export function toJourneyDetailsScheduledStopWithTimes(
+    journeyDetailsScheduledStop: JourneyDetailsScheduledStop,
+): JourneyDetailsScheduledStopWithTimes {
+    return {
+        arrival: LocalTime.parse(journeyDetailsScheduledStop.arrival),
+        departure: LocalTime.parse(journeyDetailsScheduledStop.departure),
+        distanceToNextStop: journeyDetailsScheduledStop.distanceToNextStop,
+        forBoarding: journeyDetailsScheduledStop.forBoarding,
+        forAlighting: journeyDetailsScheduledStop.forAlighting,
+        requiresOrdering: journeyDetailsScheduledStop.requiresOrdering,
+        stopOnRequest: journeyDetailsScheduledStop.stopOnRequest,
+        tariffZone: journeyDetailsScheduledStop.tariffZone,
+        name: journeyDetailsScheduledStop.name,
+        bistro: journeyDetailsScheduledStop.bistro,
+        borderCrossing: journeyDetailsScheduledStop.borderCrossing,
+        displaysForVisuallyImpaired: journeyDetailsScheduledStop.displaysForVisuallyImpaired,
+        lowFloorAccess: journeyDetailsScheduledStop.lowFloorAccess,
+        parkAndRidePark: journeyDetailsScheduledStop.parkAndRidePark,
+        suitableForHeavilyDisabled: journeyDetailsScheduledStop.suitableForHeavilyDisabled,
+        toilet: journeyDetailsScheduledStop.toilet,
+        wheelChairAccessToilet: journeyDetailsScheduledStop.wheelChairAccessToilet,
+        otherTransportModes: journeyDetailsScheduledStop.otherTransportModes,
+    }
+}
+
+export function toJourneyDetailsWithTimes(journeyDetails: JourneyDetails): JourneyDetailsWithTimes {
+    return {
+        relationalId: journeyDetails.relationalId,
+        routeId: journeyDetails.routeId,
+        stops: journeyDetails.stops.map(toJourneyDetailsScheduledStopWithTimes),
+        transportBans: journeyDetails.transportBans,
+        requiresOrdering: journeyDetails.requiresOrdering,
+        baggageStorage: journeyDetails.baggageStorage,
+        cyclesAllowed: journeyDetails.cyclesAllowed,
+        lowFloorAccess: journeyDetails.lowFloorAccess,
+        reservationCompulsory: journeyDetails.reservationCompulsory,
+        reservationPossible: journeyDetails.reservationPossible,
+        snacksOnBoard: journeyDetails.snacksOnBoard,
+        unaccompaniedMinorAssistance: journeyDetails.unaccompaniedMinorAssistance,
+    }
 }
