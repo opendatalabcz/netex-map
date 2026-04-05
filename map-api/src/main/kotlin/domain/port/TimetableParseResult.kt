@@ -129,10 +129,10 @@ class TimetableParseResult {
         val key = JourneyDomainKey(
             journeyNumber = journey.journeyNumber,
             lineVersionKey = LineVersionDomainKey(
-                publicCode = journey.lineVersion.publicCode,
-                isDetour = journey.lineVersion.isDetour,
-                validFrom = journey.lineVersion.validFrom,
-                validTo = journey.lineVersion.validTo,
+                publicCode = journey.journeyPattern.lineVersion.publicCode,
+                isDetour = journey.journeyPattern.lineVersion.isDetour,
+                validFrom = journey.journeyPattern.lineVersion.validFrom,
+                validTo = journey.journeyPattern.lineVersion.validTo,
             )
         )
         _journeys[key] = journey

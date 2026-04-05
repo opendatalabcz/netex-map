@@ -32,10 +32,10 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                     date_trunc('hour', local_target_moment) as target_start_moment,
                     date_trunc('hour', local_target_moment) + interval '1 hour' as target_end_moment
                 )
-                JOIN line_version lv ON j.line_version_id = lv.relational_id
-                JOIN active_period ap ON lv.relational_id = ap.line_version_id
+                JOIN journey_pattern jp on (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
+                JOIN active_period ap ON jp.line_version_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
-                JOIN route r ON j.route_id = r.relational_id
+                JOIN route r ON jp.route_id = r.relational_id
             WHERE j.route_id IS NOT NULL
                 AND journey_start_moment < target_end_moment
                 AND journey_end_moment > target_start_moment
@@ -63,10 +63,10 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                     date_trunc('hour', local_target_moment) as target_start_moment,
                     date_trunc('hour', local_target_moment) + interval '1 hour' as target_end_moment
                 )
-                JOIN line_version lv ON j.line_version_id = lv.relational_id
-                JOIN active_period ap ON lv.relational_id = ap.line_version_id
+                JOIN journey_pattern jp on (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
+                JOIN active_period ap ON jp.line_version_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
-                JOIN route r ON j.route_id = r.relational_id
+                JOIN route r ON jp.route_id = r.relational_id
             WHERE j.route_id IS NOT NULL
                 AND j.next_day_first_stop_index IS NOT NULL
                 AND journey_start_moment < target_end_moment
@@ -83,10 +83,10 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     @Query("""
         SELECT j.relationalId FROM Journey j
         WHERE j.journeyNumber = :journeyNumber AND
-            j.lineVersion.publicCode = :publicCode AND
-            j.lineVersion.validFrom = :validFrom AND
-            j.lineVersion.validTo = :validTo AND
-            j.lineVersion.isDetour = :isDetour
+            j.journeyPattern.lineVersion.publicCode = :publicCode AND
+            j.journeyPattern.lineVersion.validFrom = :validFrom AND
+            j.journeyPattern.lineVersion.validTo = :validTo AND
+            j.journeyPattern.lineVersion.isDetour = :isDetour
     """)
     fun findIdByJourneyNumberAndLinePublicCodeAndValidRangeAndDetour(
         journeyNumber: String,
@@ -115,9 +115,6 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         minRouteLength: Double,
         targetMoment: OffsetDateTime,
     ): List<JourneyMapDto>
-
-    @Query("SELECT j FROM Journey j JOIN FETCH j.route WHERE j.relationalId = :journeyId")
-    fun findByIdFetchRoute(journeyId: Long): Optional<Journey>
 
     @Query(nativeQuery = true, value = """
         SELECT DISTINCT ON (line_version_id, pattern_number) relational_id, line_version_id, pattern_number

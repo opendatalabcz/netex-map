@@ -91,7 +91,7 @@ class ImportTimetables(
         val journeyPatternsOfNewLineVersions = parseResult.journeyPatterns.filter { it.patternId.lineVersionId == null }
         val journeyPatternStopsOfNewLineVersions = journeyPatternsOfNewLineVersions.flatMap { it.patternStops }
         val transportBansOfNewLineVersions = journeyPatternsOfNewLineVersions.flatMap { it.transportBans }
-        val journeysOfNewLineVersions = parseResult.journeys.filter { it.lineVersion.relationalId == null }
+        val journeysOfNewLineVersions = parseResult.journeys.filter { it.journeyPattern.lineVersion.relationalId == null }
         val scheduleStopsOfNewLineVersions = journeysOfNewLineVersions.flatMap { it.schedule }
         val newOperatingPeriodsOfNewLineVersions = journeysOfNewLineVersions
             .map { it.operatingPeriod }
@@ -124,7 +124,6 @@ class ImportTimetables(
         }
         withinRegionTransportBanJpaRepository.saveAll(transportBansOfNewLineVersions)
         journeysOfNewLineVersions.forEach {
-            it.lineVersion = entityManager.getReference(LineVersion::class.java, it.lineVersion.relationalId)
             it.operatingPeriod = entityManager.getReference(OperatingPeriod::class.java, it.operatingPeriod.relationalId)
             it.journeyPattern = entityManager.getReference(JourneyPattern::class.java, it.journeyPattern.patternId)
         }

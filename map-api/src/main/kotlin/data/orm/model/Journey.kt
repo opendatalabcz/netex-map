@@ -33,10 +33,6 @@ class Journey(
     @Column(nullable = false)
     val journeyNumber: String,
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "line_version_id", nullable = false)
-    var lineVersion: LineVersion,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id")
     var route: Route?,
@@ -49,13 +45,10 @@ class Journey(
     @JoinColumn(name = "operating_period_id", nullable = false)
     var operatingPeriod: OperatingPeriod,
 
-    @Column(name = "pattern_number", nullable = false)
-    val patternNumber: Int,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns(
-        JoinColumn(name = "line_version_id", referencedColumnName = "line_version_id", nullable = false, insertable = false, updatable = false),
-        JoinColumn(name = "pattern_number", referencedColumnName = "pattern_number", nullable = false, insertable = false, updatable = false),
+        JoinColumn(name = "line_version_id", referencedColumnName = "line_version_id", nullable = false),
+        JoinColumn(name = "pattern_number", referencedColumnName = "pattern_number", nullable = false),
     )
     var journeyPattern: JourneyPattern,
 

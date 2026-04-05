@@ -2,7 +2,6 @@ package cz.cvut.fit.gaierda1.data.netex
 
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import cz.cvut.fit.gaierda1.data.orm.model.JourneyPattern
-import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.model.OperatingPeriod
 import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStopId
@@ -59,7 +58,6 @@ class JourneyAssembler(
                 journey = journey,
                 journeyPattern = journeyPattern,
                 journeyPatternKey = journeyPatternKey,
-                lineVersion = lineVersion,
                 registry = registry,
                 operatingPeriods = operatingPeriods,
                 timezone = zoneId,
@@ -75,7 +73,6 @@ class JourneyAssembler(
 
     private fun assembleJourney(
         journey: ServiceJourney,
-        lineVersion: LineVersion,
         journeyPattern: JourneyPattern,
         journeyPatternKey: String,
         registry: NetexFileRegistry,
@@ -88,7 +85,6 @@ class JourneyAssembler(
         val assembledJourney = Journey(
             relationalId = null,
             journeyNumber = journey.name.value,
-            lineVersion = lineVersion,
             schedule = schedule,
             operatingPeriod = operatingPeriod,
             route = null,
@@ -96,7 +92,6 @@ class JourneyAssembler(
             timezone = timezone,
             beginTime = LocalTime.MIN,
             endTime = LocalTime.MIN,
-            patternNumber = journeyPattern.patternId.patternNumber,
             journeyPattern = journeyPattern,
             requiresOrdering = journey.flexibleServiceProperties?.isCancellationPossible ?: false,
             baggageStorage = serviceFacilitySet?.luggageCarriageFacilityList?.contains(

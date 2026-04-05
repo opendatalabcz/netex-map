@@ -151,7 +151,6 @@ CREATE TABLE journey (
     end_time TIME NOT NULL,
     timezone TEXT NOT NULL,
     UNIQUE(line_version_id, journey_number),
-    FOREIGN KEY (line_version_id) REFERENCES line_version(relational_id) ON DELETE CASCADE,
     FOREIGN KEY (route_id) REFERENCES route(relational_id) ON DELETE SET NULL,
     FOREIGN KEY (operating_period_id) REFERENCES operating_period(relational_id),
     FOREIGN KEY (line_version_id, pattern_number) REFERENCES journey_pattern(line_version_id, pattern_number) ON DELETE CASCADE
