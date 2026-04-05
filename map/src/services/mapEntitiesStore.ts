@@ -1,9 +1,4 @@
-import type {
-    MapJourney,
-    MapLineVersion,
-    MapRawRoute,
-    MapRoute,
-} from '@/api/model/journeysOperatingInFrame'
+import type { MapJourney, MapRawRoute, MapRoute } from '@/api/model/journeysOperatingInFrame'
 import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositions'
 import { toMapJourneyWithDates, toMapRoute } from '@/services/toDeserializedTypes'
 

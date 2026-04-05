@@ -12,12 +12,6 @@ type MapRoute = {
     routeStops: number[]
 }
 
-type MapLineVersion = {
-    relationalId: number
-    publicCode: string
-    transportMode: string
-}
-
 type MapScheduledStop = {
     arrival: string | null
     departure: string | null
@@ -55,7 +49,6 @@ export type {
     JourneysOperatingInFrame,
     MapJourney,
     MapScheduledStop,
-    MapLineVersion,
     MapRawRoute,
     MapJourneyWithDates,
     MapScheduledStopWithDates,

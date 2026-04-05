@@ -1,7 +1,3 @@
-import type { Journey, JourneyWithDatesAndTimes } from '@/api/model/journey'
-import type { LineVersion, LineVersionWithDates } from '@/api/model/lineVersion'
-import type { OperatingPeriod, OperatingPeriodWithDates } from '@/api/model/operatingPeriod'
-import type { ScheduledStop, ScheduledStopWithTimes } from '@/api/model/scheduledStop'
 import type {
     MapJourney,
     MapScheduledStop,
@@ -25,50 +21,6 @@ import type {
 import LocalTime from '@/util/localTime'
 import { Buffer } from 'buffer'
 import { Geometry } from 'wkx'
-
-function toLineVersionWithDates(lineVersion: LineVersion): LineVersionWithDates {
-    return {
-        relationalId: lineVersion.relationalId,
-        publicCode: lineVersion.publicCode,
-        name: lineVersion.name,
-        shortName: lineVersion.shortName,
-        transportMode: lineVersion.transportMode,
-        validFrom: new Date(lineVersion.validFrom),
-        validTo: new Date(lineVersion.validTo),
-        isDetour: lineVersion.isDetour,
-    }
-}
-
-function toOperatingPeriodWithDates(operatingPeriod: OperatingPeriod): OperatingPeriodWithDates {
-    return {
-        fromDate: new Date(operatingPeriod.fromDate),
-        toDate: new Date(operatingPeriod.toDate),
-        validDays: operatingPeriod.validDays,
-    }
-}
-
-function toScheduledStopWithTimes(scheduledStop: ScheduledStop): ScheduledStopWithTimes {
-    return {
-        arrival: scheduledStop.arrival == null ? null : LocalTime.parse(scheduledStop.arrival),
-        departure:
-            scheduledStop.departure == null ? null : LocalTime.parse(scheduledStop.departure),
-    }
-}
-
-function toJourneyWithDatesAndTimes(journey: Journey): JourneyWithDatesAndTimes {
-    return {
-        relationalId: journey.relationalId,
-        journeyNumber: journey.journeyNumber,
-        lineVersion: toLineVersionWithDates(journey.lineVersion),
-        schedule: journey.schedule.map(toScheduledStopWithTimes),
-        operatingPeriod: toOperatingPeriodWithDates(journey.operatingPeriod),
-        route: journey.route,
-        nextDayFirstStopIndex: journey.nextDayFirstStopIndex,
-        beginTime: journey.beginTime,
-        endTime: journey.endTime,
-        timezone: journey.timezone,
-    }
-}
 
 function toMapScheduledStopWithDates(
     mapScheduledStop: MapScheduledStop,
@@ -171,10 +123,6 @@ function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWi
 }
 
 export {
-    toLineVersionWithDates,
-    toOperatingPeriodWithDates,
-    toScheduledStopWithTimes,
-    toJourneyWithDatesAndTimes,
     toMapScheduledStopWithDates,
     toMapJourneyWithDates,
     toMapRoute,

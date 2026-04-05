@@ -1,7 +1,5 @@
 import JourneyApi from '@/api/journeyApi'
-import type { JourneyWithDatesAndTimes } from '@/api/model/journey'
 import type { MapEntitiesStore } from '@/services/mapEntitiesStore'
-import { toJourneyWithDatesAndTimes } from './toDeserializedTypes'
 
 export class MapEntitiesRetriever {
     mapEntriesStore: MapEntitiesStore
@@ -23,11 +21,5 @@ export class MapEntitiesRetriever {
 
         this.mapEntriesStore.addRoutes(frame.routes)
         this.mapEntriesStore.addJourneys(frame.journeys)
-    }
-
-    async fetchJourney(journeyId: number): Promise<JourneyWithDatesAndTimes | null> {
-        const journey = await JourneyApi.getJourneyById(journeyId)
-        if (journey == null) return null
-        return toJourneyWithDatesAndTimes(journey)
     }
 }

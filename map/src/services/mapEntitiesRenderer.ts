@@ -106,8 +106,7 @@ export class MapEntitiesRenderer {
 
     renderVehicle(journey: RenderedMapJourney) {
         if (journey.position == null || journey.azimuth == null) return
-        if (journey.color == null)
-            journey.color = this.getColor(journey.routeId!)
+        if (journey.color == null) journey.color = this.getColor(journey.routeId!)
         if (journey.vehicleMarker) {
             journey.vehicleMarker.setLatLng([
                 journey.position[1],
