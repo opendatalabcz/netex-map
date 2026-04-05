@@ -176,6 +176,7 @@ export function toJourneyDetailsWithTimes(journeyDetails: JourneyDetails): Journ
         routeId: journeyDetails.routeId,
         stops: journeyDetails.stops.map(toJourneyDetailsScheduledStopWithTimes),
         transportBans: journeyDetails.transportBans,
+        lineVersion: journeyDetails.lineVersion,
         requiresOrdering: journeyDetails.requiresOrdering,
         baggageStorage: journeyDetails.baggageStorage,
         cyclesAllowed: journeyDetails.cyclesAllowed,

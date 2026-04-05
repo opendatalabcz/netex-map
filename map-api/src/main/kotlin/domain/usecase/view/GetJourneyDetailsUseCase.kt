@@ -1,5 +1,7 @@
 package cz.cvut.fit.gaierda1.domain.usecase.view
 
+import cz.cvut.fit.gaierda1.data.orm.model.LineType
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.OperatorDto
 import java.time.LocalTime
 
 interface GetJourneyDetailsUseCase {
@@ -23,11 +25,22 @@ interface GetJourneyDetailsUseCase {
         val wheelChairAccessToilet: Boolean,
         val otherTransportModes: String?,
     )
+    data class JourneyDetailsLineVersion(
+        val relationalId: Long,
+        val publicCode: String,
+        val name: String,
+        val shortName: String,
+        val transportMode: String,
+        val lineType: LineType,
+        val isDetour: Boolean,
+        val operator: OperatorDto,
+    )
     data class JourneyDetails(
         val relationalId: Long,
         val routeId: Long?,
         val stops: List<JourneyDetailsScheduledStop>,
         val transportBans: List<List<Int>>?,
+        val lineVersion: JourneyDetailsLineVersion,
         val requiresOrdering: Boolean,
         val baggageStorage: Boolean,
         val cyclesAllowed: Boolean,

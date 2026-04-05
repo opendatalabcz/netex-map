@@ -1,6 +1,6 @@
-package cz.cvut.fit.gaierda1.data.orm.repository.dto.wall
+package cz.cvut.fit.gaierda1.data.orm.repository.dto
 
-data class LineVersionWallDto(
+data class LineVersionDto(
     val relationalId: Long,
     val publicCode: String,
     val name: String,

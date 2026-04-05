@@ -42,11 +42,33 @@ export type JourneyDetailsScheduledStopWithTimes = {
     otherTransportModes: string | null
 }
 
+export type JourneyDetailsOperator = {
+    relationalId: number
+    publicCode: string
+    legalName: string
+    phone: string
+    email: string
+    url: string
+    addressLine: string
+}
+
+export type JourneyDetailsLineVersion = {
+    relationalId: number
+    publicCode: string
+    name: string
+    shortName: string
+    transportMode: string
+    lineType: string
+    isDetour: boolean
+    operator: JourneyDetailsOperator
+}
+
 export type JourneyDetails = {
     relationalId: number
     routeId: number | null
     stops: JourneyDetailsScheduledStop[]
     transportBans: number[][] | null
+    lineVersion: JourneyDetailsLineVersion
     requiresOrdering: boolean
     baggageStorage: boolean
     cyclesAllowed: boolean
@@ -62,6 +84,7 @@ export type JourneyDetailsWithTimes = {
     routeId: number | null
     stops: JourneyDetailsScheduledStopWithTimes[]
     transportBans: number[][] | null
+    lineVersion: JourneyDetailsLineVersion
     requiresOrdering: boolean
     baggageStorage: boolean
     cyclesAllowed: boolean

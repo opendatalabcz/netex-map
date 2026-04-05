@@ -1,7 +1,10 @@
 package cz.cvut.fit.gaierda1.domain.usecase.view
 
+import cz.cvut.fit.gaierda1.data.orm.model.LineType
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyPatternStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.OperatorJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.TariffStopJpaRepository
@@ -22,9 +25,13 @@ class GetJourneyDetails(
     private val stopJpaRepository: StopJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
     private val withinRegionTransportBanJpaRepository: WithinRegionTransportBanJpaRepository,
+    private val lineVersionJpaRepository: LineVersionJpaRepository,
+    private val operatorJpaRepository: OperatorJpaRepository,
 ): GetJourneyDetailsUseCase {
     override fun getJourneyDetails(journeyId: Long): JourneyDetails? {
         val journey = journeyJpaRepository.findDetailsDtoByJourneyId(journeyId).orElse(null) ?: return null
+        val lineVersion = lineVersionJpaRepository.findDtoById(journey.lineVersionId).orElse(null) ?: return null
+        val operator = operatorJpaRepository.findDtoByOperatorId(lineVersion.operatorId).orElse(null) ?: return null
         val scheduledStops = scheduledStopJpaRepository
             .findAllJourneyDetailsDtoByJourneyId(journeyId)
             .sortedBy(ScheduledStopJourneyDetailsDto::stopOrder)
@@ -67,11 +74,23 @@ class GetJourneyDetails(
             )
         }
 
+        val reconstructedLineVersion = JourneyDetailsLineVersion(
+            relationalId = lineVersion.relationalId,
+            publicCode = lineVersion.publicCode,
+            name = lineVersion.name,
+            shortName = lineVersion.shortName,
+            transportMode = lineVersion.transportMode,
+            lineType = LineType.fromJdfCode(lineVersion.lineType),
+            isDetour = lineVersion.isDetour,
+            operator = operator,
+        )
+
         return JourneyDetails(
             relationalId = journeyId,
             routeId = journey.routeId,
             stops = reconstructedStops,
             transportBans = withinRegionTransportBans.values.toList(),
+            lineVersion = reconstructedLineVersion,
             requiresOrdering = journey.requiresOrdering,
             baggageStorage = journey.baggageStorage,
             cyclesAllowed = journey.cyclesAllowed,

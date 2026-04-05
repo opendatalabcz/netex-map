@@ -1,7 +1,7 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.LineVersionWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -46,5 +46,5 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         FROM line_version lv
         WHERE lv.relational_id = :id
     """)
-    fun findWallDtoById(id: Long): Optional<LineVersionWallDto>
+    fun findDtoById(id: Long): Optional<LineVersionDto>
 }
