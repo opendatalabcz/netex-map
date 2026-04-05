@@ -1,14 +1,13 @@
-package cz.cvut.fit.gaierda1.domain.usecase
+package cz.cvut.fit.gaierda1.domain.usecase.view
 
 import cz.cvut.fit.gaierda1.data.orm.repository.ActivePeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.OperatingPeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.OperatingPeriodWallDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.ScheduledStopWallDto
-import cz.cvut.fit.gaierda1.domain.usecase.ConstructWallTimetableUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -23,7 +22,7 @@ class ConstructWallTimetable(
 ): ConstructWallTimetableUseCase {
     private fun reconstructWallOperatingPeriod(
         operatingPeriod: OperatingPeriodWallDto,
-    ): Pair<WallOperatingDays, Map<WallOperationExceptionType, List<LocalDate>>> {
+    ): Pair<ConstructWallTimetableUseCase.WallOperatingDays, Map<ConstructWallTimetableUseCase.WallOperationExceptionType, List<LocalDate>>> {
         // Scan for day type occurrences
         val dayTypeOperatingCounter = Array(7) { 0 }
         val dayTypeNonOperatingCounter = Array(7) { 0 }
@@ -46,9 +45,9 @@ class ConstructWallTimetable(
         }
 
         // Find operating exceptions
-        val operatingExceptions = mutableMapOf<WallOperationExceptionType, MutableList<LocalDate>>(
-            WallOperationExceptionType.ALSO_OPERATES to mutableListOf(),
-            WallOperationExceptionType.DOES_NOT_OPERATE to mutableListOf(),
+        val operatingExceptions = mutableMapOf<ConstructWallTimetableUseCase.WallOperationExceptionType, MutableList<LocalDate>>(
+            ConstructWallTimetableUseCase.WallOperationExceptionType.ALSO_OPERATES to mutableListOf(),
+            ConstructWallTimetableUseCase.WallOperationExceptionType.DOES_NOT_OPERATE to mutableListOf(),
         )
         currentDayOfWeekValue = operatingPeriod.fromDate.dayOfWeek.value - 1
         val firstDate = operatingPeriod.fromDate.toLocalDate()
@@ -56,14 +55,14 @@ class ConstructWallTimetable(
             val currentDayOfWeekIsCommon = commonDays.contains(currentDayOfWeekValue)
             val operatesThisDay = operatingPeriod.validDays[i]
             if (operatesThisDay xor currentDayOfWeekIsCommon) {
-                val exceptionType = if (operatesThisDay) WallOperationExceptionType.DOES_NOT_OPERATE
-                                    else WallOperationExceptionType.ALSO_OPERATES
+                val exceptionType = if (operatesThisDay) ConstructWallTimetableUseCase.WallOperationExceptionType.DOES_NOT_OPERATE
+                                    else ConstructWallTimetableUseCase.WallOperationExceptionType.ALSO_OPERATES
                 operatingExceptions[exceptionType]!!.add(firstDate.plusDays(i.toLong()))
             }
             currentDayOfWeekValue = (currentDayOfWeekValue + 1) % 7
         }
 
-        return WallOperatingDays(
+        return ConstructWallTimetableUseCase.WallOperatingDays(
             monday = commonDays.contains(0),
             tuesday = commonDays.contains(1),
             wednesday = commonDays.contains(2),
@@ -75,7 +74,7 @@ class ConstructWallTimetable(
     }
 
     @Transactional(readOnly = true)
-    override fun constructWallTimetable(lineVersionId: Long): WallTimetable? {
+    override fun constructWallTimetable(lineVersionId: Long): ConstructWallTimetableUseCase.WallTimetable? {
         val lineVersion = lineVersionJpaRepository.findWallDtoById(lineVersionId).orElse(null) ?: return null
         val activePeriods = activePeriodJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
         val journeys = journeyJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
@@ -83,16 +82,16 @@ class ConstructWallTimetable(
             journeys.map(JourneyWallDto::relationalId)
         )
         val scheduledStops = scheduledStopJpaRepository
-            .findAllWallDtoByJourneyIds(journeys.map(JourneyWallDto::relationalId))
-            .groupBy(ScheduledStopWallDto::journeyId)
+            .findAllDtoByJourneyIds(journeys.map(JourneyWallDto::relationalId))
+            .groupBy(ScheduledStopDto::journeyId)
             .mapValues { (_, routeStops) -> routeStops
-                .sortedBy(ScheduledStopWallDto::stopOrder)
-                .map { WallScheduledStop(
-                    name = it.name,
-                    stopOnRequest = it.stopOnRequest,
-                    arrival = if (it.arrival == it.departure) null else it.arrival,
-                    departure = it.departure,
-                ) }
+                .sortedBy(ScheduledStopDto::stopOrder)
+                .map {
+                    ConstructWallTimetableUseCase.WallScheduledStop(
+                        arrival = if (it.arrival == it.departure) null else it.arrival,
+                        departure = it.departure,
+                    )
+                }
             }
 
         val journeysByOperatingPeriod = journeys
@@ -106,7 +105,7 @@ class ConstructWallTimetable(
         val reconstructedOperatingPeriods = operatingPeriods.map { wallDto ->
             reconstructWallOperatingPeriod(wallDto)
                 .let { operatingPeriodPair ->
-                    WallOperatingPeriod(
+                    ConstructWallTimetableUseCase.WallOperatingPeriod(
                         operatingPeriodPair.first,
                         operatingPeriodPair.second,
                         journeysByOperatingPeriod[wallDto.relationalId]!!
@@ -114,7 +113,7 @@ class ConstructWallTimetable(
                 }
         }
 
-        val reconstructedLineVersion = WallLineVersion(
+        val reconstructedLineVersion = ConstructWallTimetableUseCase.WallLineVersion(
             relationalId = lineVersion.relationalId,
             publicCode = lineVersion.publicCode,
             name = lineVersion.name,
@@ -124,7 +123,7 @@ class ConstructWallTimetable(
             activePeriods = activePeriods,
         )
 
-        return WallTimetable(
+        return ConstructWallTimetableUseCase.WallTimetable(
             lineVersion = reconstructedLineVersion,
             operatingPeriods = reconstructedOperatingPeriods,
         )

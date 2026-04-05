@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
@@ -20,7 +21,7 @@ import java.time.ZoneId
 @Table(
     name = "journey",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["line_version_id", "external_id"])
+        UniqueConstraint(columnNames = ["line_version_id", "journey_number"])
     ]
 )
 class Journey(
@@ -30,14 +31,11 @@ class Journey(
     var relationalId: Long?,
 
     @Column(nullable = false)
-    val externalId: String,
-
-    @Column(nullable = false)
-    val journeyPatternId: String,
+    val journeyNumber: String,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "line_version_id", nullable = false)
-    val lineVersion: LineVersion,
+    var lineVersion: LineVersion,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id")
@@ -45,11 +43,45 @@ class Journey(
 
     @BatchSize(size = 30)
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "journey")
-    val schedule: List<ScheduledStop>,
+    var schedule: List<ScheduledStop>,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "operating_period_id", nullable = false)
-    val operatingPeriod: OperatingPeriod,
+    var operatingPeriod: OperatingPeriod,
+
+    @Column(name = "pattern_number", nullable = false)
+    val patternNumber: Int,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumns(
+        JoinColumn(name = "line_version_id", referencedColumnName = "line_version_id", nullable = false, insertable = false, updatable = false),
+        JoinColumn(name = "pattern_number", referencedColumnName = "pattern_number", nullable = false, insertable = false, updatable = false),
+    )
+    var journeyPattern: JourneyPattern,
+
+    @Column(nullable = false)
+    val requiresOrdering: Boolean,
+
+    @Column(nullable = false)
+    val baggageStorage: Boolean,
+
+    @Column(nullable = false)
+    val cyclesAllowed: Boolean,
+
+    @Column(nullable = false)
+    val lowFloorAccess: Boolean,
+
+    @Column(nullable = false)
+    val reservationCompulsory: Boolean,
+
+    @Column(nullable = false)
+    val reservationPossible: Boolean,
+
+    @Column(nullable = false)
+    val snacksOnBoard: Boolean,
+
+    @Column(nullable = false)
+    val unaccompaniedMinorAssistance: Boolean,
 
     var nextDayFirstStopIndex: Int?,
 

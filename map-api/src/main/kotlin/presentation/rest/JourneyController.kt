@@ -4,7 +4,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import cz.cvut.fit.gaierda1.presentation.model.HttpJourney
 import cz.cvut.fit.gaierda1.presentation.model.ModelConvertor
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
-import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.view.GetJourneysOperatingInFrameUseCase
 import cz.cvut.fit.gaierda1.presentation.model.HttpJourneysOperatingInFrameResult
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping

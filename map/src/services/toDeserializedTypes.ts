@@ -49,8 +49,6 @@ function toOperatingPeriodWithDates(operatingPeriod: OperatingPeriod): Operating
 
 function toScheduledStopWithTimes(scheduledStop: ScheduledStop): ScheduledStopWithTimes {
     return {
-        name: scheduledStop.name,
-        stopOnRequest: scheduledStop.stopOnRequest,
         arrival: scheduledStop.arrival == null ? null : LocalTime.parse(scheduledStop.arrival),
         departure:
             scheduledStop.departure == null ? null : LocalTime.parse(scheduledStop.departure),
@@ -60,9 +58,8 @@ function toScheduledStopWithTimes(scheduledStop: ScheduledStop): ScheduledStopWi
 function toJourneyWithDatesAndTimes(journey: Journey): JourneyWithDatesAndTimes {
     return {
         relationalId: journey.relationalId,
-        externalId: journey.externalId,
+        journeyNumber: journey.journeyNumber,
         lineVersion: toLineVersionWithDates(journey.lineVersion),
-        journeyPatternId: journey.journeyPatternId,
         schedule: journey.schedule.map(toScheduledStopWithTimes),
         operatingPeriod: toOperatingPeriodWithDates(journey.operatingPeriod),
         route: journey.route,
@@ -104,16 +101,24 @@ function toMapRoute(route: MapRawRoute): MapRoute {
     }
 }
 
-function toWallScheduledStopWithTimes(wallScheduledStop: WallScheduledStop): WallScheduledStopWithTimes {
+function toWallScheduledStopWithTimes(
+    wallScheduledStop: WallScheduledStop,
+): WallScheduledStopWithTimes {
     return {
         name: wallScheduledStop.name,
         stopOnRequest: wallScheduledStop.stopOnRequest,
-        arrival: wallScheduledStop.arrival == null ? null : LocalTime.parse(wallScheduledStop.arrival),
-        departure: wallScheduledStop.departure == null ? null : LocalTime.parse(wallScheduledStop.departure),
+        arrival:
+            wallScheduledStop.arrival == null ? null : LocalTime.parse(wallScheduledStop.arrival),
+        departure:
+            wallScheduledStop.departure == null
+                ? null
+                : LocalTime.parse(wallScheduledStop.departure),
     }
 }
 
-function toWallActivePeriodWithDates(wallActivePeriod: WallActivePeriod): WallActivePeriodWithDates {
+function toWallActivePeriodWithDates(
+    wallActivePeriod: WallActivePeriod,
+): WallActivePeriodWithDates {
     return {
         fromDate: new Date(wallActivePeriod.fromDate),
         toDate: new Date(wallActivePeriod.toDate),
@@ -132,16 +137,28 @@ function toWallLineVersionWithDates(wallLineVersion: WallLineVersion): WallLineV
     }
 }
 
-function toWallOperatingPeriodWithDates(wallOperatingPeriod: WallOperatingPeriod): WallOperatingPeriodWithDates {
+function toWallOperatingPeriodWithDates(
+    wallOperatingPeriod: WallOperatingPeriod,
+): WallOperatingPeriodWithDates {
     return {
         operatingDays: wallOperatingPeriod.operatingDays,
         operationExceptions: new Map([
-            ['ALSO_OPERATES', wallOperatingPeriod.operationExceptions.ALSO_OPERATES.map(day => new Date(day))],
-            ['DOES_NOT_OPERATE', wallOperatingPeriod.operationExceptions.DOES_NOT_OPERATE.map(day => new Date(day))],
+            [
+                'ALSO_OPERATES',
+                wallOperatingPeriod.operationExceptions.ALSO_OPERATES.map((day) => new Date(day)),
+            ],
+            [
+                'DOES_NOT_OPERATE',
+                wallOperatingPeriod.operationExceptions.DOES_NOT_OPERATE.map(
+                    (day) => new Date(day),
+                ),
+            ],
         ]),
         journeys: new Map(
-            Object.entries(wallOperatingPeriod.journeys)
-                .map(([id, stops]) => [Number.parseInt(id), stops.map(toScheduledStopWithTimes)])
+            Object.entries(wallOperatingPeriod.journeys).map(([id, stops]) => [
+                Number.parseInt(id),
+                stops.map(toWallScheduledStopWithTimes),
+            ]),
         ),
     }
 }

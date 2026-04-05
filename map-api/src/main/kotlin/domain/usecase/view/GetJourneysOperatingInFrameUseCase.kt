@@ -1,6 +1,5 @@
-package cz.cvut.fit.gaierda1.domain.usecase
+package cz.cvut.fit.gaierda1.domain.usecase.view
 
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.LineVersionMapDto
 import java.time.OffsetDateTime
 
 interface GetJourneysOperatingInFrameUseCase {
@@ -28,7 +27,6 @@ interface GetJourneysOperatingInFrameUseCase {
     data class JourneysOperatingInFrameResult(
         val journeys: List<MapJourney>,
         val routes: List<MapRoute>,
-        val lineVersions: List<LineVersionMapDto>,
     )
 
     fun getJourneysOperatingInFrame(

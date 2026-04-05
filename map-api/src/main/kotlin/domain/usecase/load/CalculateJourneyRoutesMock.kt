@@ -1,15 +1,19 @@
-package cz.cvut.fit.gaierda1.domain.usecase
+package cz.cvut.fit.gaierda1.domain.usecase.load
 
-import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.data.orm.model.Route
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStop
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStopId
-import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.JourneyPatternJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.JourneyByDistinctJourneyPatternDto
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -28,10 +32,14 @@ import kotlin.random.Random
 @Component
 class CalculateJourneyRoutesMock(
     private val journeyJpaRepository: JourneyJpaRepository,
+    private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
+    private val journeyPatternJpaRepository: JourneyPatternJpaRepository,
     private val routeJpaRepository: RouteJpaRepository,
     private val routeStopJpaRepository: RouteStopJpaRepository,
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
     private val transactionTemplate: TransactionTemplate,
+    @PersistenceContext
+    private val entityManager: EntityManager,
 ): CalculateJourneyRoutesUseCase {
     companion object {
         private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
@@ -54,8 +62,8 @@ class CalculateJourneyRoutesMock(
         return atan2(dy, dx)
     }
 
-    private fun stopDistancesPrefixSum(stops: List<ScheduledStop>) = stops
-        .fold<ScheduledStop, Pair<ArrayList<Double>, LocalTime>?>(null) { acc, curStop ->
+    private fun stopDistancesPrefixSum(schedule: List<ScheduledStopDto>) = schedule
+        .fold<ScheduledStopDto, Pair<ArrayList<Double>, LocalTime>?>(null) { acc, curStop ->
             if (acc == null) {
                 return@fold arrayListOf(0.0) to (curStop.departure ?: curStop.arrival!!)
             }
@@ -68,7 +76,7 @@ class CalculateJourneyRoutesMock(
             return@fold acc.first to (curStop.departure ?: curStop.arrival!!)
         }!!.first
 
-    private fun createRoute(journey: Journey): Route {
+    private fun createRoute(schedule: List<ScheduledStopDto>): Route {
         val centerOfMass = randomCoordinate()
         var currentCoord = randomCoordinate()
         var angle = (Random.nextDouble() * 2 - 1.0) * PI
@@ -76,11 +84,10 @@ class CalculateJourneyRoutesMock(
         val path = mutableListOf(currentCoord)
         val routeMarkers = mutableListOf(0)
         val stopDistances = mutableListOf(0.0)
-        val sortedSchedule = journey.schedule.sortedBy { it.stopId.stopOrder }
 
-        val distancePrefixSum = stopDistancesPrefixSum(sortedSchedule)
+        val distancePrefixSum = stopDistancesPrefixSum(schedule)
         var cumulativeDistance = 0.0
-        for (idx in 1 until sortedSchedule.size) {
+        for (idx in 1 until schedule.size) {
              do {
                 val nextCoord = Coordinate(currentCoord.x + STEP_LENGTH * cos(angle), currentCoord.y + STEP_LENGTH * sin(angle))
                 path.add(nextCoord)
@@ -120,21 +127,37 @@ class CalculateJourneyRoutesMock(
 
     override fun calculateRoutes() {
         val pageSize = 30
-        var currentPage: Page<Journey>? = null
+        var currentPage: Page<JourneyByDistinctJourneyPatternDto>? = null
         do { transactionTemplate.executeWithoutResult {
             currentPage = journeyJpaRepository
-                .findAllWithDistinctJourneyPatternWithNullRoute(PageRequest.of(0, pageSize))
-            val newRoutes = currentPage.content.map(::createRoute)
+                .findAllDistinctJourneyPatternDtoWithNullRoute(PageRequest.of(0, pageSize))
+            val scheduledStops1 = scheduledStopJpaRepository
+                .findAllDtoByJourneyIds(currentPage.content.map { it.relationalId })
+            val scheduledStops = scheduledStops1
+                .groupBy { it.journeyId }
+                .mapValues { (_, stops) -> stops.sortedBy { it.stopOrder } }
+            val newRoutesMap = scheduledStops.mapValues { createRoute(it.value) }
+
+            val newRoutes = newRoutesMap.values
             val newRouteStops = newRoutes.flatMap { it.routeStops }
             val newPhysicalStops = newRouteStops.map { it.physicalStop }
             physicalStopJpaRepository.saveAll(newPhysicalStops)
             routeJpaRepository.saveAll(newRoutes)
             routeStopJpaRepository.saveAll(newRouteStops)
-            for ((idx, journey) in currentPage.content.withIndex()) {
+            entityManager.flush()
+
+            for (journey in currentPage.content) {
                 journeyJpaRepository.setRouteForAllByLineVersionAndJourneyPattern(
-                    journey.lineVersion,
-                    journey.journeyPatternId,
-                    newRoutes[idx],
+                    journey.lineVersionId,
+                    journey.patternNumber,
+                    newRoutesMap[journey.relationalId]!!.relationalId!!,
+                )
+            }
+            for (journey in currentPage.content) {
+                journeyPatternJpaRepository.setRouteForJourneyPatternById(
+                    journey.lineVersionId,
+                    journey.patternNumber,
+                    newRoutesMap[journey.relationalId]!!.relationalId!!,
                 )
             }
         } } while (currentPage?.hasNext() ?: false)

@@ -22,13 +22,13 @@ class ActivePeriod(
     @MapsId("lineVersionId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "line_version_id", nullable = false)
-    val lineVersion: LineVersion,
+    var lineVersion: LineVersion,
 
     @Column(nullable = false)
     val toDate: OffsetDateTime,
 ): Persistable<ActivePeriodId> {
     @Transient
-    private var isNewEntity: Boolean = (periodId.lineVersionId == null)
+    private var isNewEntity: Boolean = periodId.lineVersionId == null
 
     override fun getId(): ActivePeriodId = periodId
 

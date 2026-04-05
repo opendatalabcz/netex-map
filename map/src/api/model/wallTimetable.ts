@@ -1,20 +1,20 @@
-import type LocalTime from "@/util/localTime"
+import type LocalTime from '@/util/localTime'
 
 type WallScheduledStop = {
-    name: string,
-    stopOnRequest: boolean,
-    arrival: string | null,
-    departure: string | null,
+    name: string
+    stopOnRequest: boolean
+    arrival: string | null
+    departure: string | null
 }
 
 type WallOperatingDays = {
-    monday: boolean,
-    tuesday: boolean,
-    wednesday: boolean,
-    thursday: boolean,
-    friday: boolean,
-    saturday: boolean,
-    sunday: boolean,
+    monday: boolean
+    tuesday: boolean
+    wednesday: boolean
+    thursday: boolean
+    friday: boolean
+    saturday: boolean
+    sunday: boolean
 }
 
 type WallOperationExceptionType = 'ALSO_OPERATES' | 'DOES_NOT_OPERATE'
@@ -25,31 +25,31 @@ type WallActivePeriod = {
 }
 
 type WallLineVersion = {
-    relationalId: number,
-    publicCode: string,
-    name: string,
-    shortName: string,
-    transportMode: string,
-    isDetour: boolean,
-    activePeriods: WallActivePeriod[],
+    relationalId: number
+    publicCode: string
+    name: string
+    shortName: string
+    transportMode: string
+    isDetour: boolean
+    activePeriods: WallActivePeriod[]
 }
 
 type WallOperatingPeriod = {
-    operatingDays: WallOperatingDays,
-    operationExceptions: Record<WallOperationExceptionType, string[]>,
-    journeys: Record<string, WallScheduledStop[]>,
+    operatingDays: WallOperatingDays
+    operationExceptions: Record<WallOperationExceptionType, string[]>
+    journeys: Record<string, WallScheduledStop[]>
 }
 
 type WallTimetable = {
-    lineVersion: WallLineVersion,
-    operatingPeriods: WallOperatingPeriod[],
+    lineVersion: WallLineVersion
+    operatingPeriods: WallOperatingPeriod[]
 }
 
 type WallScheduledStopWithTimes = {
-    name: string,
-    stopOnRequest: boolean,
-    arrival: LocalTime | null,
-    departure: LocalTime | null,
+    name: string
+    stopOnRequest: boolean
+    arrival: LocalTime | null
+    departure: LocalTime | null
 }
 
 type WallActivePeriodWithDates = {
@@ -58,24 +58,24 @@ type WallActivePeriodWithDates = {
 }
 
 type WallLineVersionWithDates = {
-    relationalId: number,
-    publicCode: string,
-    name: string,
-    shortName: string,
-    transportMode: string,
-    isDetour: boolean,
-    activePeriods: WallActivePeriodWithDates[],
+    relationalId: number
+    publicCode: string
+    name: string
+    shortName: string
+    transportMode: string
+    isDetour: boolean
+    activePeriods: WallActivePeriodWithDates[]
 }
 
 type WallOperatingPeriodWithDates = {
-    operatingDays: WallOperatingDays,
-    operationExceptions: Map<WallOperationExceptionType, Date[]>,
-    journeys: Map<number, WallScheduledStopWithTimes[]>,
+    operatingDays: WallOperatingDays
+    operationExceptions: Map<WallOperationExceptionType, Date[]>
+    journeys: Map<number, WallScheduledStopWithTimes[]>
 }
 
 type WallTimetableWithDates = {
-    lineVersion: WallLineVersionWithDates,
-    operatingPeriods: WallOperatingPeriodWithDates[],
+    lineVersion: WallLineVersionWithDates
+    operatingPeriods: WallOperatingPeriodWithDates[]
 }
 
 export type {

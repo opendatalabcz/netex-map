@@ -6,6 +6,8 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
@@ -39,6 +41,9 @@ class LineVersion(
     val transportMode: String,
 
     @Column(nullable = false)
+    val lineType: LineType,
+
+    @Column(nullable = false)
     val isDetour: Boolean,
 
     @Column(nullable = false)
@@ -47,8 +52,16 @@ class LineVersion(
     @Column(nullable = false)
     val validTo: OffsetDateTime,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "operator_id", nullable = false)
+    var operator: Operator,
+
     @BatchSize(size = 30)
     @OneToMany(mappedBy = "lineVersion", fetch = FetchType.EAGER)
-    val activePeriods: List<ActivePeriod>,
+    var activePeriods: List<ActivePeriod>,
+
+    @BatchSize(size = 30)
+    @OneToMany(mappedBy = "lineVersion", fetch = FetchType.LAZY)
+    var tariffStops: List<TariffStop>,
 ){
 }

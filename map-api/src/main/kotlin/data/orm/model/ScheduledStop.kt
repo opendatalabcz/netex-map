@@ -1,6 +1,5 @@
 package cz.cvut.fit.gaierda1.data.orm.model
 
-import jakarta.persistence.Column
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -19,16 +18,10 @@ class ScheduledStop(
     @EmbeddedId
     val stopId: ScheduledStopId,
 
-    @Column(nullable = false)
-    val name: String,
-
-    @Column(nullable = false)
-    val stopOnRequest: Boolean,
-
     @MapsId("journeyId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "journey_id", nullable = false)
-    val journey: Journey,
+    var journey: Journey,
 
     val arrival: LocalTime?,
 
@@ -36,7 +29,7 @@ class ScheduledStop(
 ): Persistable<ScheduledStopId> {
 
     @Transient
-    private var isNewEntity: Boolean = (stopId.journeyId == null)
+    private var isNewEntity: Boolean = stopId.journeyId == null
 
     override fun getId(): ScheduledStopId = stopId
 

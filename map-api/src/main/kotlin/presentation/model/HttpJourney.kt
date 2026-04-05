@@ -5,12 +5,11 @@ import java.time.ZoneId
 
 data class HttpJourney(
     val relationalId: Long?,
-    val externalId: String,
+    val journeyNumber: String,
     val lineVersion: HttpLineVersion,
-    val journeyPatternId: String,
-    val schedule: List<HttpScheduledStop>,
-    val operatingPeriod: HttpOperatingPeriod,
     val route: HttpRoute?,
+    val operatingPeriod: HttpOperatingPeriod,
+    val schedule: List<HttpScheduledStop>,
     val nextDayFirstStopIndex: Int?,
     val beginTime: LocalTime,
     val endTime: LocalTime,

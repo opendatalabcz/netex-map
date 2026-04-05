@@ -5,9 +5,8 @@ import type { ScheduledStop, ScheduledStopWithTimes } from '@/api/model/schedule
 
 type Journey = {
     relationalId: number
-    externalId: string
+    journeyNumber: string
     lineVersion: LineVersion
-    journeyPatternId: string
     schedule: ScheduledStop[]
     operatingPeriod: OperatingPeriod
     route: Route | null
@@ -19,9 +18,8 @@ type Journey = {
 
 type JourneyWithDatesAndTimes = {
     relationalId: number
-    externalId: string
+    journeyNumber: string
     lineVersion: LineVersionWithDates
-    journeyPatternId: string
     schedule: ScheduledStopWithTimes[]
     operatingPeriod: OperatingPeriodWithDates
     route: Route | null

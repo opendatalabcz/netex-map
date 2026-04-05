@@ -6,7 +6,10 @@ const WALL_TIMETABLE_LOCATION = 'wall'
 
 const LineVersionApi = {
     getLineVersionWallTimetable(lineVersionId: number): Promise<WallTimetable | null | undefined> {
-        return HttpRequestSender.get([LINE_VERSION_URI, lineVersionId.toString(), WALL_TIMETABLE_LOCATION], null)
+        return HttpRequestSender.get(
+            [LINE_VERSION_URI, lineVersionId.toString(), WALL_TIMETABLE_LOCATION],
+            null,
+        )
     },
 }
 

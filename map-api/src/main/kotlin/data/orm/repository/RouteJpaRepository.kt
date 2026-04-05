@@ -9,8 +9,6 @@ import java.util.Optional
 
 @Repository
 interface RouteJpaRepository: JpaRepository<Route, Long> {
-    fun findByExternalId(externalId: String): Optional<Route>
-
     @Query(nativeQuery = true, value = """
         SELECT r.relational_id,
            ST_AsBinary(r.point_sequence) as wkb_geometry,

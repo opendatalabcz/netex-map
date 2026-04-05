@@ -28,7 +28,7 @@ class Route(
 
     @BatchSize(size = 30)
     @OneToMany(mappedBy = "route", fetch = FetchType.EAGER)
-    val routeStops: List<RouteStop>,
+    var routeStops: List<RouteStop>,
 
     @Column(nullable = false)
     val totalDistance: Double,

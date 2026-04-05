@@ -1,8 +1,7 @@
 package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
-import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
-import cz.cvut.fit.gaierda1.data.orm.model.Route
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.JourneyByDistinctJourneyPatternDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.JourneyMapDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
 import org.springframework.data.domain.Page
@@ -82,20 +81,20 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     }
 
     @Query("""
-        SELECT j FROM Journey j
-        WHERE j.externalId = :externalId AND
+        SELECT j.relationalId FROM Journey j
+        WHERE j.journeyNumber = :journeyNumber AND
             j.lineVersion.publicCode = :publicCode AND
             j.lineVersion.validFrom = :validFrom AND
             j.lineVersion.validTo = :validTo AND
             j.lineVersion.isDetour = :isDetour
     """)
-    fun findByExternalIdAndLineIdAndValidRange(
-        externalId: String,
+    fun findIdByJourneyNumberAndLinePublicCodeAndValidRangeAndDetour(
+        journeyNumber: String,
         publicCode: String,
         validFrom: OffsetDateTime,
         validTo: OffsetDateTime,
         isDetour: Boolean,
-    ): Optional<Journey>
+    ): Optional<Long>
 
     @Query(nativeQuery = true, value = OPERATING_IN_FRAME_QUERY)
     fun findAllMapDtoOperatingInFrame(
@@ -121,19 +120,19 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     fun findByIdFetchRoute(journeyId: Long): Optional<Journey>
 
     @Query(nativeQuery = true, value = """
-        SELECT DISTINCT ON (line_version_id, journey_pattern_id) *
+        SELECT DISTINCT ON (line_version_id, pattern_number) relational_id, line_version_id, pattern_number
         FROM journey
         WHERE route_id IS NULL
-        ORDER BY line_version_id, journey_pattern_id
-    """, countQuery = "SELECT COUNT(DISTINCT (line_version_id, journey_pattern_id)) FROM journey WHERE route_id IS NULL")
-    fun findAllWithDistinctJourneyPatternWithNullRoute(pageable: Pageable): Page<Journey>
+        ORDER BY line_version_id, pattern_number
+    """, countQuery = "SELECT COUNT(DISTINCT (line_version_id, pattern_number)) FROM journey WHERE route_id IS NULL")
+    fun findAllDistinctJourneyPatternDtoWithNullRoute(pageable: Pageable): Page<JourneyByDistinctJourneyPatternDto>
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-        UPDATE Journey j SET j.route = :route
-        WHERE j.lineVersion = :lineVersion AND j.journeyPatternId = :journeyPatternId
+    @Modifying
+    @Query(nativeQuery = true, value = """
+        UPDATE journey SET route_id = :routeId
+        WHERE line_version_id = :lineVersionId AND pattern_number = :patternNumber
     """)
-    fun setRouteForAllByLineVersionAndJourneyPattern(lineVersion: LineVersion, journeyPatternId: String, route: Route)
+    fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: Long, patternNumber: Int, routeId: Long)
 
     @Query(nativeQuery = true, value = """
         SELECT j.relational_id, j.operating_period_id

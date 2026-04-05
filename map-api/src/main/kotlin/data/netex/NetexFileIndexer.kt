@@ -2,7 +2,10 @@ package cz.cvut.fit.gaierda1.data.netex
 
 import org.rutebanken.netex.model.CompositeFrame
 import org.rutebanken.netex.model.DayTypeAssignment
+import org.rutebanken.netex.model.Direction
 import org.rutebanken.netex.model.Line
+import org.rutebanken.netex.model.Operator
+import org.rutebanken.netex.model.PassengerStopAssignment
 import org.rutebanken.netex.model.PublicationDeliveryStructure
 import org.rutebanken.netex.model.ResourceFrame
 import org.rutebanken.netex.model.ScheduledStopPoint
@@ -10,8 +13,11 @@ import org.rutebanken.netex.model.ServiceCalendarFrame
 import org.rutebanken.netex.model.ServiceFrame
 import org.rutebanken.netex.model.ServiceJourney
 import org.rutebanken.netex.model.ServiceJourneyPattern
+import org.rutebanken.netex.model.ServiceLink
 import org.rutebanken.netex.model.SiteFrame
+import org.rutebanken.netex.model.StopPlace
 import org.rutebanken.netex.model.StopPointInJourneyPattern
+import org.rutebanken.netex.model.TariffZone
 import org.rutebanken.netex.model.TimetableFrame
 import org.rutebanken.netex.model.UicOperatingPeriod
 import org.springframework.stereotype.Component
@@ -35,34 +41,52 @@ class NetexFileIndexer {
             frameDefaults = compositeFrame.frameDefaults,
             scheduledStopPointRegistry = indexScheduledStopPoints(serviceFrame),
             serviceJourneyPatternRegistry = indexServiceJourneyPatterns(serviceFrame),
+            stopPointInJourneyPatternRegistry = indexStopPointInJourneyPatterns(serviceFrame),
             serviceJourneyRegistry = indexServiceJourneys(timetableFrame),
+            directionRegistry = indexDirections(serviceFrame),
             uicOperatingPeriodRegistry = indexUicOperatingPeriods(serviceCalendarFrame),
             dayTypeAssignmentRegistryByDayTypeId = indexDayTypeAssignments(serviceCalendarFrame),
             lineRegistry = indexLines(serviceFrame),
+            operatorRegistry = indexOperators(resourceFrame),
+            stopPlaceRegistry = indexStopPlaces(siteFrame),
+            stopAssignmentRegistryByScheduledStopPointId = indexStopAssignments(serviceFrame),
+            serviceLinkRegistry = indexServiceLinks(serviceFrame),
+            tariffZoneRegistry = indexTariffZones(serviceFrame),
         )
     }
 
-    private fun indexScheduledStopPoints(serviceFrame: ServiceFrame): Map<String, ScheduledStopPoint> {
-        val scheduledStopPointRegistry = mutableMapOf<String, ScheduledStopPoint>()
-        for (scheduledStopPoint in serviceFrame.scheduledStopPoints.scheduledStopPoint) {
-            scheduledStopPointRegistry[scheduledStopPoint.id] = scheduledStopPoint
+    private fun indexScheduledStopPoints(serviceFrame: ServiceFrame): Map<String, Pair<Int, ScheduledStopPoint>> {
+        val scheduledStopPointRegistry = mutableMapOf<String, Pair<Int, ScheduledStopPoint>>()
+        for ((idx, scheduledStopPoint) in serviceFrame.scheduledStopPoints.scheduledStopPoint.withIndex()) {
+            scheduledStopPointRegistry[scheduledStopPoint.id] = idx to scheduledStopPoint
         }
         return scheduledStopPointRegistry
     }
 
-    private fun indexServiceJourneyPatterns(serviceFrame: ServiceFrame): Map<String, ServiceJourneyPatternRegistryValue> {
-        val serviceJourneyPatternRegistry = mutableMapOf<String, ServiceJourneyPatternRegistryValue>()
-        for (journeyPattern in serviceFrame.journeyPatterns.journeyPattern_OrJourneyPatternView) {
+    private fun indexServiceJourneyPatterns(serviceFrame: ServiceFrame): Map<String, Pair<Int, ServiceJourneyPattern>> {
+        val serviceJourneyPatternRegistry = mutableMapOf<String, Pair<Int, ServiceJourneyPattern>>()
+        for ((idx, journeyPattern) in serviceFrame.journeyPatterns.journeyPattern_OrJourneyPatternView.withIndex()) {
             val serviceJourneyPattern = journeyPattern.value as? ServiceJourneyPattern ?: error("Unexpected journey pattern type: ${journeyPattern.value::class}")
             val stopPointInJourneyPatternRegistry = mutableMapOf<String, StopPointInJourneyPattern>()
             for (pointInSequence in serviceJourneyPattern.pointsInSequence.pointInJourneyPatternOrStopPointInJourneyPatternOrTimingPointInJourneyPattern) {
                 val stopPointInJourneyPattern = pointInSequence as? StopPointInJourneyPattern ?: error("Unexpected point in sequence type: ${pointInSequence::class}")
                 stopPointInJourneyPatternRegistry[stopPointInJourneyPattern.id] = stopPointInJourneyPattern
             }
-            serviceJourneyPatternRegistry[serviceJourneyPattern.id] =
-                ServiceJourneyPatternRegistryValue(serviceJourneyPattern, stopPointInJourneyPatternRegistry)
+            serviceJourneyPatternRegistry[serviceJourneyPattern.id] = idx to serviceJourneyPattern
         }
         return serviceJourneyPatternRegistry
+    }
+
+    private fun indexStopPointInJourneyPatterns(serviceFrame: ServiceFrame): Map<String, StopPointInJourneyPattern> {
+        val stopPointInJourneyPatterns = mutableMapOf<String, StopPointInJourneyPattern>()
+        for (journeyPattern in serviceFrame.journeyPatterns.journeyPattern_OrJourneyPatternView) {
+            val serviceJourneyPattern = journeyPattern.value as? ServiceJourneyPattern ?: error("Unexpected journey pattern type: ${journeyPattern.value::class}")
+            for (pointInSequence in serviceJourneyPattern.pointsInSequence.pointInJourneyPatternOrStopPointInJourneyPatternOrTimingPointInJourneyPattern) {
+                val stopPointInJourneyPattern = pointInSequence as? StopPointInJourneyPattern ?: error("Unexpected point in sequence type: ${pointInSequence::class}")
+                stopPointInJourneyPatterns[stopPointInJourneyPattern.id] = stopPointInJourneyPattern
+            }
+        }
+        return stopPointInJourneyPatterns
     }
 
     private fun indexServiceJourneys(timetableFrame: TimetableFrame): Map<String, ServiceJourney> {
@@ -72,6 +96,14 @@ class NetexFileIndexer {
             serviceJourneyRegistry[serviceJourney.id] = serviceJourney
         }
         return serviceJourneyRegistry
+    }
+
+    private fun indexDirections(serviceFrame: ServiceFrame): Map<String, Direction> {
+        val directions = mutableMapOf<String, Direction>()
+        for (direction in serviceFrame.directions.direction) {
+            directions[direction.id] = direction
+        }
+        return directions
     }
 
     private fun indexUicOperatingPeriods(serviceCalendarFrame: ServiceCalendarFrame): Map<String, UicOperatingPeriod> {
@@ -98,6 +130,51 @@ class NetexFileIndexer {
             lineRegistry[line.id] = line
         }
         return lineRegistry
+    }
+
+    private fun indexOperators(resourceFrame: ResourceFrame): Map<String, Operator> {
+        val operatorRegistry = mutableMapOf<String, Operator>()
+        for (operatorElement in resourceFrame.organisations.organisation_) {
+            val operator = operatorElement.value as? Operator ?: error("Unexpected organisation type: ${operatorElement.value::class}")
+            operatorRegistry[operator.id] = operator
+        }
+        return operatorRegistry
+    }
+
+    private fun indexStopPlaces(siteFrame: SiteFrame): Map<String, StopPlace> {
+        val stopPlaceRegistry = mutableMapOf<String, StopPlace>()
+        for (stopPlaceElement in siteFrame.stopPlaces.stopPlace_) {
+            val stopPlace = stopPlaceElement.value as? StopPlace ?: error("Unexpected stop place type: ${stopPlaceElement.value::class}")
+            stopPlaceRegistry[stopPlace.id] = stopPlace
+        }
+        return stopPlaceRegistry
+    }
+
+    private fun indexStopAssignments(serviceFrame: ServiceFrame): Map<String, PassengerStopAssignment> {
+        val stopAssignmentRegistryByScheduledStopPointId = mutableMapOf<String, PassengerStopAssignment>()
+        for (stopAssignmentElement in serviceFrame.stopAssignments.stopAssignment) {
+            val stopAssignment = stopAssignmentElement.value as? PassengerStopAssignment ?: error("Unexpected stop assignment type: ${stopAssignmentElement.value::class}")
+            stopAssignmentRegistryByScheduledStopPointId[stopAssignment.scheduledStopPointRef.value.ref] = stopAssignment
+        }
+        return stopAssignmentRegistryByScheduledStopPointId
+    }
+
+    private fun indexServiceLinks(serviceFrame: ServiceFrame): Map<String, ServiceLink> {
+        val serviceLinks = mutableMapOf<String, ServiceLink>()
+        for (serviceLink in serviceFrame.serviceLinks.serviceLink) {
+            serviceLinks[serviceLink.id] = serviceLink
+        }
+        return serviceLinks
+    }
+
+    private fun indexTariffZones(serviceFrame: ServiceFrame): Map<String, TariffZone> {
+        if (serviceFrame.tariffZones == null) return emptyMap()
+        val tariffZones = mutableMapOf<String, TariffZone>()
+        for (tariffZoneElement in serviceFrame.tariffZones.tariffZone) {
+            val tariffZone = tariffZoneElement.value as? TariffZone ?: error("Unexpected tariff zone type: ${tariffZoneElement.value::class}")
+            tariffZones[tariffZone.id] = tariffZone
+        }
+        return tariffZones
     }
 
     private fun <T> Collection<T>.singleOrThrow(elementName: String): T {

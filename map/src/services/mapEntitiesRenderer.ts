@@ -32,6 +32,11 @@ export class MapEntitiesRenderer {
         this.map = map
     }
 
+    private getColor(key: number) {
+        const index = (key * 5) % colorPalette.length
+        return colorPalette[index]!
+    }
+
     clearRenderedRoute(route: RenderedMapRoute) {
         if (route.featureGroup == null) return
         route.featureGroup.remove()
@@ -41,7 +46,7 @@ export class MapEntitiesRenderer {
     renderRoute(route: RenderedMapRoute) {
         if (route.featureGroup != null) return
         if (route.color == null) {
-            route.color = colorPalette[route.relationalId % colorPalette.length]!
+            route.color = this.getColor(route.relationalId)
         }
         route.featureGroup = L.featureGroup()
         route.featureGroup.addLayer(
@@ -102,7 +107,7 @@ export class MapEntitiesRenderer {
     renderVehicle(journey: RenderedMapJourney) {
         if (journey.position == null || journey.azimuth == null) return
         if (journey.color == null)
-            journey.color = colorPalette[journey.routeId! % colorPalette.length]!
+            journey.color = this.getColor(journey.routeId!)
         if (journey.vehicleMarker) {
             journey.vehicleMarker.setLatLng([
                 journey.position[1],

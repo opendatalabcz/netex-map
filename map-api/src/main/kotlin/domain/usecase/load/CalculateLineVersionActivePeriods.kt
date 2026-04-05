@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.domain.usecase
+package cz.cvut.fit.gaierda1.domain.usecase.load
 
 import cz.cvut.fit.gaierda1.data.orm.model.ActivePeriod
 import cz.cvut.fit.gaierda1.data.orm.model.ActivePeriodId
@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.OffsetDateTime
+import kotlin.collections.iterator
 
 @Component
 class CalculateLineVersionActivePeriods(

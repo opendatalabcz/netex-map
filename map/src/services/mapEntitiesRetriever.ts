@@ -22,7 +22,6 @@ export class MapEntitiesRetriever {
         if (!frame) return
 
         this.mapEntriesStore.addRoutes(frame.routes)
-        this.mapEntriesStore.addLineVersions(frame.lineVersions)
         this.mapEntriesStore.addJourneys(frame.journeys)
     }
 

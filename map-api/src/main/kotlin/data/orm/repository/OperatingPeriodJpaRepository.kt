@@ -10,16 +10,16 @@ import java.util.Optional
 
 @Repository
 interface OperatingPeriodJpaRepository: JpaRepository<OperatingPeriod, Long> {
-    @Query("SELECT op FROM OperatingPeriod op " +
+    @Query("SELECT op.relationalId FROM OperatingPeriod op " +
         "WHERE op.fromDate = :fromDate AND " +
             "op.toDate = :toDate AND " +
             "op.validDays = :validDays"
     )
-    fun findByLineVersionIdAndValidDays(
+    fun findIdByRangeAndValidDays(
         fromDate: LocalDateTime,
         toDate: LocalDateTime,
         validDays: List<Boolean>,
-    ): Optional<OperatingPeriod>
+    ): Optional<Long>
 
     @Query(nativeQuery = true, value = """
         SELECT DISTINCT op.relational_id, op.from_date, op.to_date, op.valid_days

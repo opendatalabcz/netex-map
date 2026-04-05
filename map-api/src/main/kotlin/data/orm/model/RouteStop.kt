@@ -21,18 +21,18 @@ class RouteStop(
     @MapsId("routeId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id", nullable = false)
-    val route: Route,
+    var route: Route,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "physical_stop_id", nullable = false)
-    val physicalStop: PhysicalStop,
+    var physicalStop: PhysicalStop,
 
     @Column(nullable = false)
     val routeFraction: Double,
 ): Persistable<RouteStopId> {
 
     @Transient
-    private var isNewEntity: Boolean = (stopId.routeId == null)
+    private var isNewEntity: Boolean = stopId.routeId == null
 
     override fun getId(): RouteStopId = stopId
 

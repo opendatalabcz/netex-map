@@ -1,8 +1,8 @@
-package cz.cvut.fit.gaierda1.data.orm.repository.dto.map
+package cz.cvut.fit.gaierda1.data.orm.repository.dto
 
 import java.time.LocalTime
 
-data class ScheduledStopMapDto(
+data class ScheduledStopDto(
     val journeyId: Long,
     val stopOrder: Int,
     val arrival: LocalTime?,

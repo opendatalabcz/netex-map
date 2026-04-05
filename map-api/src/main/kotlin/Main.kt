@@ -2,10 +2,10 @@ package cz.cvut.fit.gaierda1
 
 import cz.cvut.fit.gaierda1.data.filesystem.TimetableDirectorySource
 import cz.cvut.fit.gaierda1.data.netex.TimetableParser
-import cz.cvut.fit.gaierda1.domain.usecase.ImportTimetables
-import cz.cvut.fit.gaierda1.domain.usecase.CalculateJourneyRoutesMock
-import cz.cvut.fit.gaierda1.domain.usecase.CalculateLineVersionActivePeriods
-import cz.cvut.fit.gaierda1.domain.usecase.CalculateNextDayOperation
+import cz.cvut.fit.gaierda1.domain.usecase.load.ImportTimetables
+import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateJourneyRoutesMock
+import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateLineVersionActivePeriods
+import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateNextDayOperation
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.ConfigurableApplicationContext
@@ -36,7 +36,7 @@ fun doImport(appContext: ConfigurableApplicationContext, args: Array<String>) {
     val calculateLineVersionActivePeriods = appContext.getBean(CalculateLineVersionActivePeriods::class.java)
     val importTimetables = appContext.getBean(ImportTimetables::class.java)
 
-    println("${OffsetDateTime.now()}: Begin importing $inputFileCount timetables")
+    println("${OffsetDateTime.now()}: Begin importing ${if (inputFileCount == Int.MAX_VALUE) "all" else inputFileCount} timetables")
     val importTime = measureTime {
         importTimetables.importTimetables(timetableSource, timetableParser, calculateNextDayOperation)
         calculateJourneyRoutes.calculateRoutes()

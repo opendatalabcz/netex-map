@@ -8,7 +8,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.data.orm.model.Route
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStop
 import cz.cvut.fit.gaierda1.data.orm.model.ScheduledStop
-import cz.cvut.fit.gaierda1.domain.usecase.GetJourneysOperatingInFrameUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.view.GetJourneysOperatingInFrameUseCase
 import org.locationtech.jts.geom.Coordinate
 import org.springframework.stereotype.Component
 import kotlin.io.encoding.Base64
@@ -63,17 +63,14 @@ class ModelConvertor {
     )
 
     fun toHttp(scheduledStop: ScheduledStop): HttpScheduledStop = HttpScheduledStop(
-        name = scheduledStop.name,
-        stopOnRequest = scheduledStop.stopOnRequest,
         arrival = scheduledStop.arrival,
         departure = scheduledStop.departure,
     )
 
     fun toHttp(journey: Journey, includeRoute: Boolean, latitudeFirst: Boolean): HttpJourney = HttpJourney(
         relationalId = journey.relationalId,
-        externalId = journey.externalId,
+        journeyNumber = journey.journeyNumber,
         lineVersion = toHttp(journey.lineVersion),
-        journeyPatternId = journey.journeyPatternId,
         schedule = journey.schedule.map(::toHttp),
         operatingPeriod = toHttp(journey.operatingPeriod),
         route = if (includeRoute) journey.route?.let { toHttp(it, latitudeFirst) } else null,
@@ -95,6 +92,5 @@ class ModelConvertor {
     ): HttpJourneysOperatingInFrameResult = HttpJourneysOperatingInFrameResult(
         journeys = journeysOperatingInFrameResult.journeys,
         routes = journeysOperatingInFrameResult.routes.map(::toHttp),
-        lineVersions = journeysOperatingInFrameResult.lineVersions,
     )
 }

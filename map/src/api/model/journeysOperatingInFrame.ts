@@ -35,7 +35,6 @@ type MapJourney = {
 type JourneysOperatingInFrame = {
     journeys: MapJourney[]
     routes: MapRawRoute[]
-    lineVersions: MapLineVersion[]
 }
 
 type MapScheduledStopWithDates = {

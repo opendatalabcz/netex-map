@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.domain.usecase
+package cz.cvut.fit.gaierda1.domain.usecase.view
 
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.ActivePeriodWallDto
 import java.time.LocalDate
@@ -6,8 +6,6 @@ import java.time.LocalTime
 
 interface ConstructWallTimetableUseCase {
     data class WallScheduledStop(
-        val name: String,
-        val stopOnRequest: Boolean,
         val arrival: LocalTime?,
         val departure: LocalTime?,
     )
