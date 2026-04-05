@@ -1,13 +1,25 @@
 package cz.cvut.fit.gaierda1.domain.usecase.view
 
+import cz.cvut.fit.gaierda1.data.orm.model.JourneyDirectionType
+import cz.cvut.fit.gaierda1.data.orm.model.LineType
 import cz.cvut.fit.gaierda1.data.orm.repository.ActivePeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.JourneyPatternJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.JourneyPatternStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.OperatingPeriodJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.OperatorJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.TariffStopJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.WithinRegionTransportBanJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.OperatingPeriodWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.OperatingPeriodDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyPatternStopWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.TariffStopWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.WithinRegionTransportBanWallDto
+import cz.cvut.fit.gaierda1.domain.usecase.view.ConstructWallTimetableUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -19,10 +31,16 @@ class ConstructWallTimetable(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val operatingPeriodJpaRepository: OperatingPeriodJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
+    private val operatorJpaRepository: OperatorJpaRepository,
+    private val tariffStopJpaRepository: TariffStopJpaRepository,
+    private val stopJpaRepository: StopJpaRepository,
+    private val journeyPatternJpaRepository: JourneyPatternJpaRepository,
+    private val journeyPatternStopJpaRepository: JourneyPatternStopJpaRepository,
+    private val withinRegionTransportBanJpaRepository: WithinRegionTransportBanJpaRepository,
 ): ConstructWallTimetableUseCase {
     private fun reconstructWallOperatingPeriod(
-        operatingPeriod: OperatingPeriodWallDto,
-    ): Pair<ConstructWallTimetableUseCase.WallOperatingDays, Map<ConstructWallTimetableUseCase.WallOperationExceptionType, List<LocalDate>>> {
+        operatingPeriod: OperatingPeriodDto,
+    ): Pair<WallOperatingDays, Map<WallOperationExceptionType, List<LocalDate>>> {
         // Scan for day type occurrences
         val dayTypeOperatingCounter = Array(7) { 0 }
         val dayTypeNonOperatingCounter = Array(7) { 0 }
@@ -45,9 +63,9 @@ class ConstructWallTimetable(
         }
 
         // Find operating exceptions
-        val operatingExceptions = mutableMapOf<ConstructWallTimetableUseCase.WallOperationExceptionType, MutableList<LocalDate>>(
-            ConstructWallTimetableUseCase.WallOperationExceptionType.ALSO_OPERATES to mutableListOf(),
-            ConstructWallTimetableUseCase.WallOperationExceptionType.DOES_NOT_OPERATE to mutableListOf(),
+        val operatingExceptions = mutableMapOf<WallOperationExceptionType, MutableList<LocalDate>>(
+            WallOperationExceptionType.ALSO_OPERATES to mutableListOf(),
+            WallOperationExceptionType.DOES_NOT_OPERATE to mutableListOf(),
         )
         currentDayOfWeekValue = operatingPeriod.fromDate.dayOfWeek.value - 1
         val firstDate = operatingPeriod.fromDate.toLocalDate()
@@ -55,14 +73,14 @@ class ConstructWallTimetable(
             val currentDayOfWeekIsCommon = commonDays.contains(currentDayOfWeekValue)
             val operatesThisDay = operatingPeriod.validDays[i]
             if (operatesThisDay xor currentDayOfWeekIsCommon) {
-                val exceptionType = if (operatesThisDay) ConstructWallTimetableUseCase.WallOperationExceptionType.DOES_NOT_OPERATE
-                                    else ConstructWallTimetableUseCase.WallOperationExceptionType.ALSO_OPERATES
+                val exceptionType = if (operatesThisDay) WallOperationExceptionType.DOES_NOT_OPERATE
+                                    else WallOperationExceptionType.ALSO_OPERATES
                 operatingExceptions[exceptionType]!!.add(firstDate.plusDays(i.toLong()))
             }
             currentDayOfWeekValue = (currentDayOfWeekValue + 1) % 7
         }
 
-        return ConstructWallTimetableUseCase.WallOperatingDays(
+        return WallOperatingDays(
             monday = commonDays.contains(0),
             tuesday = commonDays.contains(1),
             wednesday = commonDays.contains(2),
@@ -73,10 +91,37 @@ class ConstructWallTimetable(
         ) to operatingExceptions.filterValues { it.isNotEmpty() }
     }
 
-    @Transactional(readOnly = true)
-    override fun constructWallTimetable(lineVersionId: Long): ConstructWallTimetableUseCase.WallTimetable? {
+    private fun reconstructLineVersion(lineVersionId: Long): WallLineVersion? {
         val lineVersion = lineVersionJpaRepository.findWallDtoById(lineVersionId).orElse(null) ?: return null
+        val operator = operatorJpaRepository.findDtoByOperatorId(lineVersion.operatorId).orElse(null) ?: return null
         val activePeriods = activePeriodJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
+        val tariffStops = tariffStopJpaRepository
+            .findAllWallDtoByLineVersionId(lineVersionId)
+            .sortedBy(TariffStopWallDto::tariffOrder)
+            .map { WallTariffStop(
+                tariffZone = it.tariffZone,
+                stopId = it.stopId,
+            ) }
+        val stops = stopJpaRepository.findAllWallDtoByStopIds(
+            tariffStops.map(WallTariffStop::stopId)
+        )
+
+        return WallLineVersion(
+            relationalId = lineVersion.relationalId,
+            publicCode = lineVersion.publicCode,
+            name = lineVersion.name,
+            shortName = lineVersion.shortName,
+            transportMode = lineVersion.transportMode,
+            isDetour = lineVersion.isDetour,
+            activePeriods = activePeriods,
+            lineType = LineType.fromJdfCode(lineVersion.lineType),
+            operator = operator,
+            tariffStops = tariffStops,
+            stops = stops,
+        )
+    }
+
+    private fun reconstructOperatingPeriods(lineVersionId: Long): List<WallOperatingPeriod> {
         val journeys = journeyJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
         val operatingPeriods = operatingPeriodJpaRepository.findAllWallDtoByJourneyIds(
             journeys.map(JourneyWallDto::relationalId)
@@ -86,46 +131,82 @@ class ConstructWallTimetable(
             .groupBy(ScheduledStopDto::journeyId)
             .mapValues { (_, routeStops) -> routeStops
                 .sortedBy(ScheduledStopDto::stopOrder)
-                .map {
-                    ConstructWallTimetableUseCase.WallScheduledStop(
-                        arrival = if (it.arrival == it.departure) null else it.arrival,
-                        departure = it.departure,
-                    )
-                }
+                .map { WallScheduledStop(
+                    arrival = if (it.arrival == it.departure) null else it.arrival,
+                    departure = it.departure,
+                ) }
             }
 
         val journeysByOperatingPeriod = journeys
             .groupBy(JourneyWallDto::operatingPeriodId)
             .mapValues { (_, journeys) ->
-                journeys.associate { journey ->
-                    journey.relationalId to scheduledStops[journey.relationalId]!!
-                }
+                journeys.map { journey -> WallJourney(
+                    relationalId = journey.relationalId,
+                    schedule = scheduledStops[journey.relationalId]!!,
+                    requiresOrdering = journey.requiresOrdering,
+                    baggageStorage = journey.baggageStorage,
+                    cyclesAllowed = journey.cyclesAllowed,
+                    lowFloorAccess = journey.lowFloorAccess,
+                    reservationCompulsory = journey.reservationCompulsory,
+                    reservationPossible = journey.reservationPossible,
+                    snacksOnBoard = journey.snacksOnBoard,
+                    unaccompaniedMinorAssistance = journey.unaccompaniedMinorAssistance,
+                ) }
             }
 
-        val reconstructedOperatingPeriods = operatingPeriods.map { wallDto ->
+        return operatingPeriods.map { wallDto ->
             reconstructWallOperatingPeriod(wallDto)
                 .let { operatingPeriodPair ->
-                    ConstructWallTimetableUseCase.WallOperatingPeriod(
+                    WallOperatingPeriod(
                         operatingPeriodPair.first,
                         operatingPeriodPair.second,
-                        journeysByOperatingPeriod[wallDto.relationalId]!!
+                        journeysByOperatingPeriod[wallDto.relationalId]!!,
                     )
                 }
         }
+    }
 
-        val reconstructedLineVersion = ConstructWallTimetableUseCase.WallLineVersion(
-            relationalId = lineVersion.relationalId,
-            publicCode = lineVersion.publicCode,
-            name = lineVersion.name,
-            shortName = lineVersion.shortName,
-            transportMode = lineVersion.transportMode,
-            isDetour = lineVersion.isDetour,
-            activePeriods = activePeriods,
-        )
+    private fun reconstructJourneyPatterns(lineVersionId: Long): List<WallJourneyPattern> {
+        val journeyPatterns = journeyPatternJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
+        val journeyPatternStops = journeyPatternStopJpaRepository
+            .findAllWallDtoByLineVersionId(lineVersionId)
+            .groupBy(JourneyPatternStopWallDto::patternNumber)
+            .mapValues { (_, stops) ->
+                stops.sortedBy(JourneyPatternStopWallDto::stopOrder)
+                    .map { WallJourneyPatternStop(
+                        tariffOrder = it.tariffOrder,
+                        distanceToNextStop = it.distanceToNextStop,
+                        forBoarding = it.forBoarding,
+                        forAlighting = it.forAlighting,
+                        requiresOrdering = it.requiresOrdering,
+                        stopOnRequest = it.stopOnRequest,
+                    ) }
+            }
+        val transportBans = withinRegionTransportBanJpaRepository
+            .findAllWallDtoByLineVersionId(lineVersionId)
+            .groupBy(WithinRegionTransportBanWallDto::patternNumber)
+            .mapValues { (_, bans) ->
+                bans.groupBy { it.banGroupNumber }
+                    .mapValues { (_, bans) ->
+                        bans.map(WithinRegionTransportBanWallDto::stopOrder)
+                    }
+            }
 
-        return ConstructWallTimetableUseCase.WallTimetable(
-            lineVersion = reconstructedLineVersion,
-            operatingPeriods = reconstructedOperatingPeriods,
+        return journeyPatterns.map { journeyPattern -> WallJourneyPattern(
+            patternNumber = journeyPattern.patternNumber,
+            direction = JourneyDirectionType.fromShortCode(journeyPattern.direction),
+            stops = journeyPatternStops[journeyPattern.patternNumber]!!,
+            transportBans = transportBans[journeyPattern.patternNumber]?.values?.toList(),
+            routeId = journeyPattern.routeId,
+        ) }
+    }
+
+    @Transactional(readOnly = true)
+    override fun constructWallTimetable(lineVersionId: Long): WallTimetable? {
+        return WallTimetable(
+            lineVersion = reconstructLineVersion(lineVersionId) ?: return null,
+            operatingPeriods = reconstructOperatingPeriods(lineVersionId),
+            journeyPatterns = reconstructJourneyPatterns(lineVersionId),
         )
     }
 }

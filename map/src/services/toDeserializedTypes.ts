@@ -17,6 +17,8 @@ import type {
     WallLineVersionWithDates,
     WallOperatingPeriodWithDates,
     WallTimetableWithDates,
+    WallJourney,
+    WallJourneyWithTimes,
 } from '@/api/model/wallTimetable'
 import LocalTime from '@/util/localTime'
 import { Buffer } from 'buffer'
@@ -57,8 +59,6 @@ function toWallScheduledStopWithTimes(
     wallScheduledStop: WallScheduledStop,
 ): WallScheduledStopWithTimes {
     return {
-        name: wallScheduledStop.name,
-        stopOnRequest: wallScheduledStop.stopOnRequest,
         arrival:
             wallScheduledStop.arrival == null ? null : LocalTime.parse(wallScheduledStop.arrival),
         departure:
@@ -84,8 +84,27 @@ function toWallLineVersionWithDates(wallLineVersion: WallLineVersion): WallLineV
         name: wallLineVersion.name,
         shortName: wallLineVersion.shortName,
         transportMode: wallLineVersion.transportMode,
+        lineType: wallLineVersion.lineType,
         isDetour: wallLineVersion.isDetour,
+        operator: wallLineVersion.operator,
         activePeriods: wallLineVersion.activePeriods.map(toWallActivePeriodWithDates),
+        tariffStops: wallLineVersion.tariffStops,
+        stops: wallLineVersion.stops,
+    }
+}
+
+function toWallJourneyWithDates(wallJourney: WallJourney): WallJourneyWithTimes {
+    return {
+        relationalId: wallJourney.relationalId,
+        schedule: wallJourney.schedule.map(toWallScheduledStopWithTimes),
+        requiresOrdering: wallJourney.requiresOrdering,
+        baggageStorage: wallJourney.baggageStorage,
+        cyclesAllowed: wallJourney.cyclesAllowed,
+        lowFloorAccess: wallJourney.lowFloorAccess,
+        reservationCompulsory: wallJourney.reservationCompulsory,
+        reservationPossible: wallJourney.reservationPossible,
+        snacksOnBoard: wallJourney.snacksOnBoard,
+        unaccompaniedMinorAssistance: wallJourney.unaccompaniedMinorAssistance,
     }
 }
 
@@ -106,12 +125,7 @@ function toWallOperatingPeriodWithDates(
                 ),
             ],
         ]),
-        journeys: new Map(
-            Object.entries(wallOperatingPeriod.journeys).map(([id, stops]) => [
-                Number.parseInt(id),
-                stops.map(toWallScheduledStopWithTimes),
-            ]),
-        ),
+        journeys: wallOperatingPeriod.journeys.map(toWallJourneyWithDates),
     }
 }
 
@@ -119,6 +133,7 @@ function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWi
     return {
         lineVersion: toWallLineVersionWithDates(wallTimetable.lineVersion),
         operatingPeriods: wallTimetable.operatingPeriods.map(toWallOperatingPeriodWithDates),
+        journeyPatterns: wallTimetable.journeyPatterns,
     }
 }
 

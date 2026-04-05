@@ -34,7 +34,15 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
     fun findAllByPublicCodes(publicCodes: List<String>): List<LineVersion>
 
     @Query(nativeQuery = true, value = """
-        SELECT lv.relational_id, lv.public_code, lv.name, lv.short_name, lv.transport_mode, lv.is_detour
+        SELECT
+            lv.relational_id,
+            lv.public_code,
+            lv.name,
+            lv.short_name,
+            lv.transport_mode,
+            lv.line_type,
+            lv.is_detour,
+            lv.operator_id
         FROM line_version lv
         WHERE lv.relational_id = :id
     """)

@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.JourneyPattern
 import cz.cvut.fit.gaierda1.data.orm.model.JourneyPatternId
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyPatternWallDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -15,4 +16,11 @@ interface JourneyPatternJpaRepository: JpaRepository<JourneyPattern, JourneyPatt
         WHERE line_version_id = :lineVersionId AND pattern_number = :patternNumber
     """)
     fun setRouteForJourneyPatternById(lineVersionId: Long, patternNumber: Int, routeId: Long)
+
+    @Query(nativeQuery = true , value = """
+        SELECT jp.pattern_number, jp.direction, jp.route_id
+        FROM journey_pattern jp
+        WHERE jp.line_version_id = :lineVersionId
+    """)
+    fun findAllWallDtoByLineVersionId(lineVersionId: Long): List<JourneyPatternWallDto>
 }

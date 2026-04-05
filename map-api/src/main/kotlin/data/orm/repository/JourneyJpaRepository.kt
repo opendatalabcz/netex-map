@@ -132,7 +132,17 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     fun setRouteForAllByLineVersionAndJourneyPattern(lineVersionId: Long, patternNumber: Int, routeId: Long)
 
     @Query(nativeQuery = true, value = """
-        SELECT j.relational_id, j.operating_period_id
+        SELECT
+            j.relational_id,
+            j.operating_period_id,
+            j.requires_ordering,
+            j.baggage_storage,
+            j.cycles_allowed,
+            j.low_floor_access,
+            j.reservation_compulsory,
+            j.reservation_possible,
+            j.snacks_on_board,
+            j.unaccompanied_minor_assistance
         FROM journey j
         WHERE j.line_version_id = :lineVersionId
     """)

@@ -1,13 +1,11 @@
 import type LocalTime from '@/util/localTime'
 
-type WallScheduledStop = {
-    name: string
-    stopOnRequest: boolean
+export type WallScheduledStop = {
     arrival: string | null
     departure: string | null
 }
 
-type WallOperatingDays = {
+export type WallOperatingDays = {
     monday: boolean
     tuesday: boolean
     wednesday: boolean
@@ -17,78 +15,154 @@ type WallOperatingDays = {
     sunday: boolean
 }
 
-type WallOperationExceptionType = 'ALSO_OPERATES' | 'DOES_NOT_OPERATE'
+export type WallOperationExceptionType = 'ALSO_OPERATES' | 'DOES_NOT_OPERATE'
 
-type WallActivePeriod = {
+export type WallTariffStop = {
+    tariffZone: string | null
+    stopId: number
+}
+
+export type WallActivePeriod = {
     fromDate: string
     toDate: string
 }
 
-type WallLineVersion = {
+export type LineType =
+    | 'URBAN'
+    | 'URBAN_SUBURBAN'
+    | 'INTERNATIONAL_EXCLUDING_CABOTAGE'
+    | 'INTERNATIONAL_INCLUDING_CABOTAGE'
+    | 'DOMESTIC_INTRA_REGIONAL'
+    | 'DOMESTIC_INTER_REGIONAL'
+    | 'DOMESTIC_LONG_DISTANCE'
+
+export type WallOperator = {
+    relationalId: number
+    publicCode: string
+    legalName: string
+    phone: string
+    email: string
+    url: string
+    addressLine: string
+}
+
+export type WallStop = {
+    relationalId: number
+    name: string
+    bistro: boolean
+    borderCrossing: boolean
+    displaysForVisuallyImpaired: boolean
+    lowFloorAccess: boolean
+    parkAndRidePark: boolean
+    suitableForHeavilyDisabled: boolean
+    toilet: boolean
+    wheelChairAccessToilet: boolean
+    otherTransportModes: string | null
+}
+
+export type WallLineVersion = {
     relationalId: number
     publicCode: string
     name: string
     shortName: string
     transportMode: string
+    lineType: LineType
     isDetour: boolean
+    operator: WallOperator
     activePeriods: WallActivePeriod[]
+    tariffStops: WallTariffStop[]
+    stops: WallStop[]
 }
 
-type WallOperatingPeriod = {
+export type WallJourney = {
+    relationalId: number
+    schedule: WallScheduledStop[]
+    requiresOrdering: boolean
+    baggageStorage: boolean
+    cyclesAllowed: boolean
+    lowFloorAccess: boolean
+    reservationCompulsory: boolean
+    reservationPossible: boolean
+    snacksOnBoard: boolean
+    unaccompaniedMinorAssistance: boolean
+}
+
+export type WallJourneyWithTimes = {
+    relationalId: number
+    schedule: WallScheduledStopWithTimes[]
+    requiresOrdering: boolean
+    baggageStorage: boolean
+    cyclesAllowed: boolean
+    lowFloorAccess: boolean
+    reservationCompulsory: boolean
+    reservationPossible: boolean
+    snacksOnBoard: boolean
+    unaccompaniedMinorAssistance: boolean
+}
+
+export type WallJourneyPatternStop = {
+    tariffOrder: number
+    distanceToNextStop: number
+    forBoarding: boolean
+    forAlighting: boolean
+    requiresOrdering: boolean
+    stopOnRequest: boolean
+}
+
+export type JourneyDirection = 'OUTBOUND' | 'INBOUND' | 'CLOCKWISE' | 'ANTICLOCKWISE'
+
+export type WallJourneyPattern = {
+    patternNumber: number
+    direction: JourneyDirection
+    stops: WallJourneyPatternStop[]
+    transportBans: number[][]
+    routeId: number
+}
+
+export type WallOperatingPeriod = {
     operatingDays: WallOperatingDays
     operationExceptions: Record<WallOperationExceptionType, string[]>
-    journeys: Record<string, WallScheduledStop[]>
+    journeys: WallJourney[]
 }
 
-type WallTimetable = {
+export type WallTimetable = {
     lineVersion: WallLineVersion
     operatingPeriods: WallOperatingPeriod[]
+    journeyPatterns: WallJourneyPattern[]
 }
 
-type WallScheduledStopWithTimes = {
-    name: string
-    stopOnRequest: boolean
+export type WallScheduledStopWithTimes = {
     arrival: LocalTime | null
     departure: LocalTime | null
 }
 
-type WallActivePeriodWithDates = {
+export type WallActivePeriodWithDates = {
     fromDate: Date
     toDate: Date
 }
 
-type WallLineVersionWithDates = {
+export type WallLineVersionWithDates = {
     relationalId: number
     publicCode: string
     name: string
     shortName: string
     transportMode: string
+    lineType: LineType
     isDetour: boolean
+    operator: WallOperator
     activePeriods: WallActivePeriodWithDates[]
+    tariffStops: WallTariffStop[]
+    stops: WallStop[]
 }
 
-type WallOperatingPeriodWithDates = {
+export type WallOperatingPeriodWithDates = {
     operatingDays: WallOperatingDays
     operationExceptions: Map<WallOperationExceptionType, Date[]>
-    journeys: Map<number, WallScheduledStopWithTimes[]>
+    journeys: WallJourneyWithTimes[]
 }
 
-type WallTimetableWithDates = {
+export type WallTimetableWithDates = {
     lineVersion: WallLineVersionWithDates
     operatingPeriods: WallOperatingPeriodWithDates[]
-}
-
-export type {
-    WallScheduledStop,
-    WallOperatingDays,
-    WallOperationExceptionType,
-    WallActivePeriod,
-    WallLineVersion,
-    WallOperatingPeriod,
-    WallTimetable,
-    WallScheduledStopWithTimes,
-    WallActivePeriodWithDates,
-    WallLineVersionWithDates,
-    WallOperatingPeriodWithDates,
-    WallTimetableWithDates,
+    journeyPatterns: WallJourneyPattern[]
 }

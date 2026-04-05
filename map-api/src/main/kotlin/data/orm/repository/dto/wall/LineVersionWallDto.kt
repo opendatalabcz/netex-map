@@ -6,5 +6,7 @@ data class LineVersionWallDto(
     val name: String,
     val shortName: String,
     val transportMode: String,
+    val lineType: String,
     val isDetour: Boolean,
+    val operatorId: Long,
 )
