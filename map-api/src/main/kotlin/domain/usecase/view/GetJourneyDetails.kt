@@ -1,6 +1,7 @@
 package cz.cvut.fit.gaierda1.domain.usecase.view
 
 import cz.cvut.fit.gaierda1.data.orm.model.LineType
+import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyPatternStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
@@ -79,7 +80,7 @@ class GetJourneyDetails(
             publicCode = lineVersion.publicCode,
             name = lineVersion.name,
             shortName = lineVersion.shortName,
-            transportMode = lineVersion.transportMode,
+            transportMode = TransportMode.fromShortCode(lineVersion.transportMode),
             lineType = LineType.fromJdfCode(lineVersion.lineType),
             isDetour = lineVersion.isDetour,
             operator = operator,

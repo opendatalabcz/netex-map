@@ -38,7 +38,7 @@ class LineVersion(
     val shortName: String,
 
     @Column(nullable = false)
-    val transportMode: String,
+    val transportMode: TransportMode,
 
     @Column(nullable = false)
     val lineType: LineType,

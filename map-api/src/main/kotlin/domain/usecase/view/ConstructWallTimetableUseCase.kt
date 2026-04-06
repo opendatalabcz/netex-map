@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.domain.usecase.view
 
 import cz.cvut.fit.gaierda1.data.orm.model.JourneyDirectionType
 import cz.cvut.fit.gaierda1.data.orm.model.LineType
+import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.OperatorDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.ActivePeriodWallDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
@@ -35,7 +36,7 @@ interface ConstructWallTimetableUseCase {
         val publicCode: String,
         val name: String,
         val shortName: String,
-        val transportMode: String,
+        val transportMode: TransportMode,
         val lineType: LineType,
         val isDetour: Boolean,
         val operator: OperatorDto,

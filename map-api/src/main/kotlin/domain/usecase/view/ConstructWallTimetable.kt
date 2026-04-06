@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.domain.usecase.view
 
 import cz.cvut.fit.gaierda1.data.orm.model.JourneyDirectionType
 import cz.cvut.fit.gaierda1.data.orm.model.LineType
+import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.ActivePeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyPatternJpaRepository
@@ -111,7 +112,7 @@ class ConstructWallTimetable(
             publicCode = lineVersion.publicCode,
             name = lineVersion.name,
             shortName = lineVersion.shortName,
-            transportMode = lineVersion.transportMode,
+            transportMode = TransportMode.fromShortCode(lineVersion.transportMode),
             isDetour = lineVersion.isDetour,
             activePeriods = activePeriods,
             lineType = LineType.fromJdfCode(lineVersion.lineType),

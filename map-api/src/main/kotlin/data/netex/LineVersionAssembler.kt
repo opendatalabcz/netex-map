@@ -6,6 +6,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.Operator
 import cz.cvut.fit.gaierda1.data.orm.model.Stop
 import cz.cvut.fit.gaierda1.data.orm.model.TariffStop
 import cz.cvut.fit.gaierda1.data.orm.model.TariffStopId
+import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.domain.misc.atOffset
 import cz.cvut.fit.gaierda1.domain.port.TimetableParseResult
@@ -82,7 +83,7 @@ class LineVersionAssembler(
             publicCode = line.publicCode,
             name = line.name.value,
             shortName = line.shortName.value,
-            transportMode = line.transportMode.value(),
+            transportMode = TransportMode.fromNetexTransportMode(line.transportMode),
             lineType = lineType,
             validFrom = validFrom,
             validTo = validTo,
