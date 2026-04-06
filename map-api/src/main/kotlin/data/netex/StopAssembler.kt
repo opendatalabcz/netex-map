@@ -32,7 +32,10 @@ class StopAssembler(
                 stops[stopPlace.id] = fromCache
                 continue
             }
-            val siteFacilitySet = stopPlace.facilities?.siteFacilitySetRefOrSiteFacilitySet as? SiteFacilitySet
+            val siteFacilitySet = stopPlace.facilities?.siteFacilitySetRefOrSiteFacilitySet?.let {
+                if (it.size > 1) error("Expected at most one site facility set, found ${it.size}")
+                it.firstOrNull() as? SiteFacilitySet
+            }
             val stopId = stopJpaRepository.findIdByLinePublicCodeAndName(linePublicCode, stopPlace.name.value)
             val assembledStop = Stop(
                 relationalId = stopId.getOrNull(),

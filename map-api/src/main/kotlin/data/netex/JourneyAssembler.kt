@@ -81,7 +81,10 @@ class JourneyAssembler(
     ): Journey {
         val schedule = mutableListOf<ScheduledStop>()
         val operatingPeriod = linkOperatingPeriod(journey, registry, operatingPeriods)
-        val serviceFacilitySet = journey.facilities?.serviceFacilitySetRefOrServiceFacilitySet as? ServiceFacilitySet
+        val serviceFacilitySet = journey.facilities?.serviceFacilitySetRefOrServiceFacilitySet?.let {
+            if (it.size > 1) error("Expected at most one service facility set, found ${it.size}")
+            it.firstOrNull() as? ServiceFacilitySet
+        }
         val assembledJourney = Journey(
             relationalId = null,
             journeyNumber = journey.name.value,
