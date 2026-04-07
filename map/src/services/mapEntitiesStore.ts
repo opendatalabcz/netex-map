@@ -9,6 +9,7 @@ type RenderedMapJourney = PositionedMapJourneyWithDates & {
 
 type RenderedMapRoute = MapRoute & {
     featureGroup: L.FeatureGroup | null
+    stops: L.CircleMarker[][] | null
     color: string | null
 }
 
@@ -27,6 +28,7 @@ function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
 function toRenderedRoute(route: MapRawRoute): RenderedMapRoute {
     const res = toMapRoute(route) as RenderedMapRoute
     res.featureGroup = null
+    res.stops = null
     res.color = null
     return res
 }

@@ -1,8 +1,8 @@
 import type LocalTime from '@/util/localTime'
 
 export type JourneyDetailsScheduledStop = {
-    arrival: string
-    departure: string
+    arrival: string | null
+    departure: string | null
     distanceToNextStop: number
     forBoarding: boolean
     forAlighting: boolean
@@ -22,8 +22,8 @@ export type JourneyDetailsScheduledStop = {
 }
 
 export type JourneyDetailsScheduledStopWithTimes = {
-    arrival: LocalTime
-    departure: LocalTime
+    arrival: LocalTime | null
+    departure: LocalTime | null
     distanceToNextStop: number
     forBoarding: boolean
     forAlighting: boolean
@@ -52,13 +52,30 @@ export type JourneyDetailsOperator = {
     addressLine: string
 }
 
+export type JourneyDetailsTransportMode =
+| 'BUS'
+| 'TROLLEY_BUS'
+| 'RAIL'
+| 'FUNICULAR'
+| 'TRAM'
+| 'METRO'
+
+export type JourneyDetailsLineType =
+| 'URBAN'
+| 'URBAN_SUBURBAN'
+| 'INTERNATIONAL_EXCLUDING_CABOTAGE'
+| 'INTERNATIONAL_INCLUDING_CABOTAGE'
+| 'DOMESTIC_INTRA_REGIONAL'
+| 'DOMESTIC_INTER_REGIONAL'
+| 'DOMESTIC_LONG_DISTANCE'
+
 export type JourneyDetailsLineVersion = {
     relationalId: number
     publicCode: string
     name: string
     shortName: string
-    transportMode: string
-    lineType: string
+    transportMode: JourneyDetailsTransportMode
+    lineType: JourneyDetailsLineType
     isDetour: boolean
     operator: JourneyDetailsOperator
 }

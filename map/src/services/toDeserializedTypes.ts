@@ -149,8 +149,14 @@ export function toJourneyDetailsScheduledStopWithTimes(
     journeyDetailsScheduledStop: JourneyDetailsScheduledStop,
 ): JourneyDetailsScheduledStopWithTimes {
     return {
-        arrival: LocalTime.parse(journeyDetailsScheduledStop.arrival),
-        departure: LocalTime.parse(journeyDetailsScheduledStop.departure),
+        arrival:
+            journeyDetailsScheduledStop.arrival == null
+                ? null
+                : LocalTime.parse(journeyDetailsScheduledStop.arrival),
+        departure:
+            journeyDetailsScheduledStop.departure == null
+                ? null
+                : LocalTime.parse(journeyDetailsScheduledStop.departure),
         distanceToNextStop: journeyDetailsScheduledStop.distanceToNextStop,
         forBoarding: journeyDetailsScheduledStop.forBoarding,
         forAlighting: journeyDetailsScheduledStop.forAlighting,

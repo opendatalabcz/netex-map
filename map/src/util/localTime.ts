@@ -68,6 +68,12 @@ class LocalTime {
         const millis = this.millis
         return millis === 0 ? baseTime : baseTime + millis.toString().padStart(3)
     }
+
+    toDate() {
+        const date = new Date()
+        date.setHours(this.hour, this.minute, this.second, this.millis)
+        return date
+    }
 }
 
 export default LocalTime

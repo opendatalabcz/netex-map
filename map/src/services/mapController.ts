@@ -13,6 +13,7 @@ type FocusedJourney = {
     journeyId: number
     journeyDetails: JourneyDetailsWithTimes | null
     mapRoute: RenderedMapRoute
+    highlightedStopOrder: number | null
 }
 
 export class MapController {
@@ -61,6 +62,8 @@ export class MapController {
         if (details == null || this.focusedJourney == null) return
         this.focusedJourney.journeyDetails = details
         this.focusedJourneyDetailsListeners.forEach((listener) => listener(details))
+        if (this.renderer == null) return
+        this.renderer.bindStopNames(this.focusedJourney.mapRoute, details.stops.map((s) => s.name))
     }
 
     onJourneyClick(journey: RenderedMapJourney, route: RenderedMapRoute) {
@@ -77,10 +80,9 @@ export class MapController {
             journeyId: journey.relationalId,
             journeyDetails: null,
             mapRoute: route,
+            highlightedStopOrder: null,
         }
-        if (this.focusedJourney.journeyDetails == null) {
-            this.fetchJourneyDetails(journey.relationalId)
-        }
+        this.fetchJourneyDetails(journey.relationalId)
         if (renderRoute) {
             this.renderer!.renderRoute(route)
         }
@@ -88,17 +90,39 @@ export class MapController {
             duration: 0.5,
             easeLinearity: 0.8,
             animate: true,
-            padding: [50, 50],
+            paddingTopLeft: [20, 20],
+            paddingBottomRight: [420, 20],
         })
     }
 
-    clearFocusedJourney() {
+    clearJourneyDetails() {
         if (this.focusedJourney == null) return
         if (this.focusedJourney.journeyDetails != null) {
             this.focusedJourneyDetailsListeners.forEach((listener) => listener(null))
         }
         this.renderer!.clearRenderedRoute(this.focusedJourney.mapRoute)
         this.focusedJourney = null
+    }
+
+    highlightJourneyDetailsStop(stopOrder: number) {
+        if (this.focusedJourney == null) return
+        if (this.focusedJourney.highlightedStopOrder != null) {
+            this.renderer!.deHighlightStop(this.focusedJourney.mapRoute, this.focusedJourney.highlightedStopOrder)
+            if (this.focusedJourney.highlightedStopOrder === stopOrder) {
+                this.focusedJourney.highlightedStopOrder = null
+                return
+            }
+        }
+        this.focusedJourney.highlightedStopOrder = stopOrder
+        this.renderer!.highlightStop(this.focusedJourney.mapRoute, stopOrder)
+        const offsetStopPosition = this.focusedJourney.mapRoute.stops![stopOrder]![0]!.getLatLng().clone()
+        const mapBounds = this.map!.getBounds()
+        offsetStopPosition.lng += (mapBounds.getEast() - mapBounds.getWest()) * 0.1
+        this.map!.flyTo(offsetStopPosition, undefined,  {
+            duration: 0.5,
+            easeLinearity: 0.8,
+            animate: true,
+        })
     }
 
     /*
@@ -133,10 +157,10 @@ export class MapController {
         this.momentListeners = this.momentListeners.filter((l) => l !== listener)
     }
 
-    addFocusedJourneyListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
+    addJourneyDetailsListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
         this.focusedJourneyDetailsListeners.push(listener)
     }
-    removeFocusedJourneyListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
+    removeJourneyDetailsListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
         this.focusedJourneyDetailsListeners = this.focusedJourneyDetailsListeners.filter(
             (l) => l !== listener,
         )

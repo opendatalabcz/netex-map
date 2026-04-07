@@ -42,6 +42,41 @@ const csDatetimeFormats: Record<string, Intl.DateTimeFormatOptions> = {
     },
 }
 
-const cs = {}
+const cs = {
+    transportModes: {
+        bus: 'Autobus',
+        trolleybus: 'Trolejbus',
+        rail: 'Vlak',
+        funicular: 'Lanová dráha',
+        tram: 'Tramvaj',
+        metro: 'Metro',
+    },
+    journeyFacilities: {
+        detour: 'Spoj jede dle výlukového jízdního řádu',
+        requiresOrdering: 'Spoj na objednávku',
+        baggageStorage: 'Přeprava cestovních zavazadel',
+        cyclesAllowed: 'Přeprava jízdních kol',
+        lowFloorAccess: 'Bezbariérový přístup',
+        reservationCompulsory: 'Nutné zakoupit místenku',
+        reservationPossible: 'Možnost zakoupit místenku',
+        snacksOnBoard: 'Občerstvení ve voze',
+        unaccompaniedMinorAssistance: 'Částečně bezbariérovÝ přístup, nutná dopomoc průvodce',
+    },
+    stopFacilities: {
+        transportBan: 'Přeprava mezi shodně označenými zastávkami není povolena',
+        onlyForBoarding: 'Zastávka je určena pouze pro nástup',
+        onlyForAlighting: 'Zastávka je určena pouze pro výstup',
+        requiresOrdering: 'Zastávka na objednávku',
+        stopOnRequest: 'Zastávka na znamení',
+        bistro: 'Občerstvení v zastávce',
+        borderCrossing: 'Hraniční přechod, není zřízena zastávka',
+        displaysForVisuallyImpaired: 'Úprava pro osoby se zrakovým postižením',
+        lowFloorAccess: 'Bezbariérový přístup',
+        parkAndRidePark: 'V okolí zastávky je P+R parkování',
+        suitableForHeavilyDisabled: 'Zastávka je vhodná pro osoby s těžkým postižením',
+        toilet: 'V zastávce se nachází toaleta',
+        wheelChairAccessToilet: 'V zastávce se nachází toaleta s bezbariérovým přístupem',
+    },
+}
 
 export { cs, csPluralization, csNumberFormats, csDatetimeFormats }

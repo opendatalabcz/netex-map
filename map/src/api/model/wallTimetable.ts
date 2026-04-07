@@ -27,7 +27,7 @@ export type WallActivePeriod = {
     toDate: string
 }
 
-export type LineType =
+export type WallLineType =
     | 'URBAN'
     | 'URBAN_SUBURBAN'
     | 'INTERNATIONAL_EXCLUDING_CABOTAGE'
@@ -66,7 +66,7 @@ export type WallLineVersion = {
     name: string
     shortName: string
     transportMode: string
-    lineType: LineType
+    lineType: WallLineType
     isDetour: boolean
     operator: WallOperator
     activePeriods: WallActivePeriod[]
@@ -147,7 +147,7 @@ export type WallLineVersionWithDates = {
     name: string
     shortName: string
     transportMode: string
-    lineType: LineType
+    lineType: WallLineType
     isDetour: boolean
     operator: WallOperator
     activePeriods: WallActivePeriodWithDates[]

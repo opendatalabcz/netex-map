@@ -37,10 +37,32 @@ export class MapEntitiesRenderer {
         return colorPalette[index]!
     }
 
+    highlightStop(route: RenderedMapRoute, stopOrder: number) {
+        if (route.stops == null) return
+        route.stops[stopOrder]![1]!.openTooltip()
+    }
+
+    deHighlightStop(route: RenderedMapRoute, stopOrder: number) {
+        if (route.stops == null) return
+        route.stops[stopOrder]![1]!.closeTooltip()
+    }
+
+    bindStopNames(route: RenderedMapRoute, stopNames: string[]) {
+        if (route.stops == null) return
+        for (let i = 0; i < stopNames.length; i++) {
+            const marker = route.stops[i]![1]!
+            marker.bindTooltip(stopNames[i]!, {
+                direction: 'top',
+                offset: [0, -5],
+            })
+        }
+    }
+
     clearRenderedRoute(route: RenderedMapRoute) {
         if (route.featureGroup == null) return
         route.featureGroup.remove()
         route.featureGroup = null
+        route.stops = null
     }
 
     renderRoute(route: RenderedMapRoute) {
@@ -66,13 +88,15 @@ export class MapEntitiesRenderer {
             }),
         )
 
+        route.stops = []
         getInterpolationDataFromRouteFractions(
             route.routeStops,
             route.pointSequence.coordinates,
             route.totalDistance,
         ).forEach((pointData) => {
             const position = [pointData.position[1], pointData.position[0]] as LatLngTuple
-            route.featureGroup!.addLayer(
+            const stopMarkers = []
+            stopMarkers.push(
                 L.circleMarker(position, {
                     radius: 5,
                     color: outlineColor,
@@ -81,7 +105,7 @@ export class MapEntitiesRenderer {
                     weight: 4,
                 }),
             )
-            route.featureGroup!.addLayer(
+            stopMarkers.push(
                 L.circleMarker(position, {
                     radius: 5,
                     color: route.color!,
@@ -90,6 +114,8 @@ export class MapEntitiesRenderer {
                     weight: 3,
                 }),
             )
+            stopMarkers.forEach((marker) => route.featureGroup!.addLayer(marker))
+            route.stops!.push(stopMarkers)
         })
 
         route.featureGroup.addTo(this.map)
