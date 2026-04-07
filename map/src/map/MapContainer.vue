@@ -14,7 +14,10 @@ const journeyDetails = ref<JourneyDetailsWithTimes | null>(null)
 
 onMounted(async () => {
     if (!mapContainer.value) return
-    map = L.map(mapContainer.value, { minZoom: 8, maxZoom: 19 }).setView([49.9, 15.5], 10)
+    map = L.map(mapContainer.value, { minZoom: 8, maxZoom: 19, zoomControl: false }).setView(
+        [49.9, 15.5],
+        10,
+    )
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution:
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -36,7 +39,7 @@ onUnmounted(() => {
         <JourneyDetails
             :journey-details="journeyDetails"
             @close="controller.clearJourneyDetails()"
-            @stop-selected="i => controller.highlightJourneyDetailsStop(i)"
+            @stop-selected="(i) => controller.highlightJourneyDetailsStop(i)"
         />
     </v-card>
 </template>

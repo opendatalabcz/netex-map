@@ -1,0 +1,12 @@
+export type TransportMode = 'BUS' | 'TROLLEY_BUS' | 'RAIL' | 'FUNICULAR' | 'TRAM' | 'METRO'
+
+export type LineType =
+    | 'URBAN'
+    | 'URBAN_SUBURBAN'
+    | 'INTERNATIONAL_EXCLUDING_CABOTAGE'
+    | 'INTERNATIONAL_INCLUDING_CABOTAGE'
+    | 'DOMESTIC_INTRA_REGIONAL'
+    | 'DOMESTIC_INTER_REGIONAL'
+    | 'DOMESTIC_LONG_DISTANCE'
+
+export type JourneyDirection = 'OUTBOUND' | 'INBOUND' | 'CLOCKWISE' | 'ANTICLOCKWISE'

@@ -1,7 +1,18 @@
 <script setup lang="ts">
-import type { JourneyDetailsScheduledStopWithTimes, JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
-import { computed } from 'vue';
+import type {
+    JourneyDetailsScheduledStopWithTimes,
+    JourneyDetailsWithTimes,
+} from '@/api/model/journeyDetails'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import LineVersionLabel from '@/map/LineVersionLabel.vue'
+import FacilityIcon from '@/map/FacilityIcon.vue'
+import TransportBanIcons from '@/map/TransportBanIcons.vue'
+import {
+    displayFacilitiesForJourney,
+    displayFacilitiesForCombinedStop,
+    type DisplayFacilities,
+} from '@/map/facilities'
 
 const { t, d } = useI18n()
 
@@ -9,214 +20,39 @@ const props = defineProps<{
     journeyDetails: JourneyDetailsWithTimes
 }>()
 const emit = defineEmits<{
-    close: [],
-    stopSelected: [stopOrder: number],
+    close: []
+    stopSelected: [stopOrder: number]
 }>()
 
-const journeyFacilities = computed(() => ({
-    requiresOrdering: {
-        icon: 'mdi-phone-alert',
-        tooltip: t('journeyFacilities.requiresOrdering'),
-        active: props.journeyDetails.requiresOrdering,
-    },
-    baggageStorage: {
-        icon: 'mdi-bag-suitcase',
-        tooltip: t('journeyFacilities.baggageStorage'),
-        active: props.journeyDetails.baggageStorage,
-    },
-    cyclesAllowed: {
-        icon: 'mdi-bicycle',
-        tooltip: t('journeyFacilities.cyclesAllowed'),
-        active: props.journeyDetails.cyclesAllowed,
-    },
-    lowFloorAccess: {
-        icon: 'mdi-wheelchair',
-        tooltip: t('journeyFacilities.lowFloorAccess'),
-        active: props.journeyDetails.lowFloorAccess,
-    },
-    reservationCompulsory: {
-        icon: 'mdi-alpha-r-box-outline',
-        tooltip: t('journeyFacilities.reservationCompulsory'),
-        active: props.journeyDetails.reservationCompulsory,
-    },
-    reservationPossible: {
-        icon: 'mdi-alpha-r',
-        tooltip: t('journeyFacilities.reservationPossible'),
-        active: props.journeyDetails.reservationPossible && !props.journeyDetails.reservationCompulsory,
-    },
-    snacksOnBoard: {
-        icon: 'mdi-silverware-variant',
-        tooltip: t('journeyFacilities.snacksOnBoard'),
-        active: props.journeyDetails.snacksOnBoard,
-    },
-    unaccompaniedMinorAssistance: {
-        icon: 'mdi-human-wheelchair',
-        tooltip: t('journeyFacilities.unaccompaniedMinorAssistance'),
-        active: props.journeyDetails.unaccompaniedMinorAssistance,
-    },
-}))
+const journeyFacilities = computed(() => displayFacilitiesForJourney(props.journeyDetails, t))
 
-const stopsWithFacilities = computed<{
-    stop: JourneyDetailsScheduledStopWithTimes,
-    transportBanGroups: number[] | null | undefined,
-    facilities: Record<string, {
-        icon?: string,
-        iconProps?: object,
-        text?: string,
-        tooltip: string,
-        active: boolean,
-    }>,
-}[]>(() => props.journeyDetails.stops.map((stop) => ({
-    stop: stop,
-    transportBanGroups: props.journeyDetails.transportBans?.reduce((acc, cur, idx) => {
-        if (cur.includes(idx)) acc.push(idx)
-        return acc
-    }, []),
-    facilities: {
-        onlyForBoarding: {
-            icon: 'mdi-circle-half',
-            iconProps: {
-                style: 'rotate: 180deg;',
-            },
-            tooltip: t('stopFacilities.onlyForBoarding'),
-            active: stop.forBoarding && !stop.forAlighting,
-        },
-        onlyForAlighting: {
-            icon: 'mdi-circle-half',
-            tooltip: t('stopFacilities.onlyForAlighting'),
-            active: stop.forAlighting && !stop.forBoarding,
-        },
-        requiresOrdering: {
-            icon: 'mdi-phone-alert',
-            tooltip: t('stopFacilities.requiresOrdering'),
-            active: stop.requiresOrdering,
-        },
-        stopOnRequest: {
-            icon: 'mdi-bell',
-            tooltip: t('stopFacilities.stopOnRequest'),
-            active: stop.stopOnRequest,
-        },
-        bistro: {
-            icon: 'mdi-silverware-variant',
-            tooltip: t('stopFacilities.bistro'),
-            active: stop.bistro,
-        },
-        borderCrossing: {
-            text: 'CLO',
-            tooltip: t('stopFacilities.borderCrossing'),
-            active: stop.borderCrossing,
-        },
-        displaysForVisuallyImpaired: {
-            icon: 'mdi-human-white-cane',
-            tooltip: t('stopFacilities.displaysForVisuallyImpaired'),
-            active: stop.displaysForVisuallyImpaired,
-        },
-        suitableForHeavilyDisabled: {
-            icon: 'mdi-human-white-cane',
-            iconProps: {
-                style: 'margin-inline-start: -0.25em;',
-                size: 'x-small'
-            },
-            text: 'EX',
-            tooltip: t('stopFacilities.suitableForHeavilyDisabled'),
-            active: stop.suitableForHeavilyDisabled,
-        },
-        lowFloorAccess: {
-            icon: 'mdi-wheelchair',
-            tooltip: t('stopFacilities.lowFloorAccess'),
-            active: stop.lowFloorAccess,
-        },
-        parkAndRidePark: {
-            text: 'P+R',
-            tooltip: t('stopFacilities.parkAndRidePark'),
-            active: stop.parkAndRidePark,
-        },
-        toilet: {
-            text: 'WC',
-            tooltip: t('stopFacilities.toilet'),
-            active: stop.toilet && !stop.wheelChairAccessToilet,
-        },
-        wheelChairAccessToilet: {
-            icon: 'mdi-wheelchair',
-            iconProps: {
-                style: 'margin-inline-start: -0.25em;',
-                size: 'x-small'
-            },
-            text: 'WC',
-            tooltip: t('stopFacilities.wheelChairAccessToilet'),
-            active: stop.wheelChairAccessToilet,
-        },
-    },
-})))
-
-const transportMode = computed(() => {
-    switch (props.journeyDetails.lineVersion.transportMode) {
-        case 'BUS':
-            return {
-                icon: 'mdi-bus',
-                text: t('transportModes.bus')
-            }
-        case 'TROLLEY_BUS':
-            return {
-                icon: 'mdi-bus',
-                text: t('transportModes.trolleybus')
-            }
-        case 'RAIL':
-            return {
-                icon: 'mdi-train',
-                text: t('transportModes.rail')
-            }
-        case 'FUNICULAR':
-            return {
-                icon: 'mdi-gondola',
-                text: t('transportModes.funicular')
-            }
-        case 'TRAM':
-            return {
-                icon: 'mdi-tram',
-                text: t('transportModes.tram')
-            }
-        case 'METRO':
-            return {
-                icon: 'mdi-subway-variant',
-                text: t('transportModes.metro')
-            }
-        default:
-            return {
-                icon: 'mdi-bus',
-                text: t('transportModes.bus')
-            }
-    }
-})
-
+const stopsWithFacilities = computed<
+    {
+        stop: JourneyDetailsScheduledStopWithTimes
+        transportBanGroups: number[] | null | undefined
+        facilities: DisplayFacilities
+    }[]
+>(() =>
+    props.journeyDetails.stops.map((stop, idx) => ({
+        stop: stop,
+        transportBanGroups: props.journeyDetails.transportBans?.reduce((acc, cur) => {
+            if (cur.includes(idx)) acc.push(idx)
+            return acc
+        }, []),
+        facilities: displayFacilitiesForCombinedStop(stop, t),
+    })),
+)
 </script>
 
 <template>
     <div class="journey-details">
         <div class="journey-header">
-            <v-tooltip
-                v-if="journeyDetails.lineVersion.isDetour"
-                :text="t('journeyFacilities.detour')"
-            >
-                <template #activator="tooltipProps">
-                    <v-icon
-                        v-bind="tooltipProps.props"
-                        icon="mdi-alert"
-                        size="small"
-                        color="warning"
-                    />
-                </template>
-            </v-tooltip>
-            <v-icon :icon="transportMode.icon"/>
-            {{ transportMode.text }}
-            {{ journeyDetails.lineVersion.shortName }}
-            <span
-                v-if="journeyDetails.lineVersion.shortName !== journeyDetails.lineVersion.publicCode"
-                class="public-code"
-            >
-                {{ journeyDetails.lineVersion.publicCode }}
-            </span>
-            <v-spacer />
+            <LineVersionLabel
+                :transport-mode="journeyDetails.lineVersion.transportMode"
+                :is-detour="journeyDetails.lineVersion.detour"
+                :short-name="journeyDetails.lineVersion.shortName"
+                :public-code="journeyDetails.lineVersion.publicCode"
+            />
             <v-btn
                 class="journey-details-close-button"
                 icon="mdi-close"
@@ -224,27 +60,15 @@ const transportMode = computed(() => {
                 variant="text"
                 @click="emit('close')"
             />
+            <br />
             {{ journeyDetails.lineVersion.operator.legalName }}
-            <br/>
+            <br />
             <div
                 v-if="Object.values(journeyFacilities).some((facility) => facility.active)"
                 class="journey-facilities"
             >
-                <template
-                    v-for="(facility, key) in journeyFacilities"
-                    :key="key"
-                >
-                    <v-tooltip
-                        v-if="facility.active"
-                        :text="facility.tooltip"
-                    >
-                        <template #activator="tooltipProps">
-                            <v-icon
-                                v-bind="tooltipProps.props"
-                                :icon="facility.icon"
-                            />
-                        </template>
-                    </v-tooltip>
+                <template v-for="(facility, key) in journeyFacilities" :key="key">
+                    <FacilityIcon v-if="facility.active" :facility="facility" />
                 </template>
             </div>
             <v-divider class="mt-1 mb-0" opacity="1" />
@@ -258,50 +82,28 @@ const transportMode = computed(() => {
                         v-ripple
                         @click="emit('stopSelected', idx)"
                     >
-                        <td class="time-mark first-td">{{ d((swf.stop.departure ?? swf.stop.arrival!).toDate(), 'timeShort') }}</td>
+                        <td class="time-mark first-td">
+                            {{ d((swf.stop.departure ?? swf.stop.arrival!).toDate(), 'timeShort') }}
+                        </td>
                         <td class="icon-td">
                             <div
-                                v-if="Object.values(swf.facilities).some((facility) => facility.active)"
+                                v-if="
+                                    Object.values(swf.facilities).some(
+                                        (facility) => facility.active,
+                                    )
+                                "
                                 class="stop-facilities"
                             >
-                                <v-tooltip
-                                    v-for="banGroup in swf.transportBanGroups"
-                                    :key="banGroup"
-                                    :text="t('stopFacilities.transportBan')"
-                                >
-                                    <template #activator="tooltipProps">
-                                        <span
-                                            v-bind="tooltipProps.props"
-                                            class="stop-facility-text"
-                                        >
-                                            §<sub>{{banGroup + 1}}</sub>
-                                        </span>
-                                    </template>
-                                </v-tooltip>
-                                <template
-                                    v-for="(facility, key) in swf.facilities"
-                                    :key="`${idx}-${key}`"
-                                >
-                                    <v-tooltip
+                                <TransportBanIcons
+                                    :transport-ban-groups="swf.transportBanGroups"
+                                    compact
+                                />
+                                <template v-for="(facility, key) in swf.facilities" :key="key">
+                                    <FacilityIcon
                                         v-if="facility.active"
-                                        :text="facility.tooltip"
-                                    >
-                                        <template #activator="tooltipProps">
-                                            <span
-                                                v-if="facility.text"
-                                                v-bind="tooltipProps.props"
-                                                class="stop-facility-text"
-                                            >
-                                                {{ facility.text }}
-                                            </span>
-                                            <v-icon
-                                                v-if="facility.icon"
-                                                size="small"
-                                                v-bind="{...tooltipProps.props, ...facility.iconProps}"
-                                                :icon="facility.icon"
-                                            />
-                                        </template>
-                                    </v-tooltip>
+                                        :facility="facility"
+                                        compact
+                                    />
                                 </template>
                             </div>
                         </td>
@@ -336,11 +138,6 @@ const transportMode = computed(() => {
     position: absolute;
     top: 0.25em;
     right: 0.25em;
-}
-
-.public-code {
-    font-size: 0.75em;
-    opacity: 0.6;
 }
 
 .time-mark {

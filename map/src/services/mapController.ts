@@ -63,7 +63,10 @@ export class MapController {
         this.focusedJourney.journeyDetails = details
         this.focusedJourneyDetailsListeners.forEach((listener) => listener(details))
         if (this.renderer == null) return
-        this.renderer.bindStopNames(this.focusedJourney.mapRoute, details.stops.map((s) => s.name))
+        this.renderer.bindStopNames(
+            this.focusedJourney.mapRoute,
+            details.stops.map((s) => s.name),
+        )
     }
 
     onJourneyClick(journey: RenderedMapJourney, route: RenderedMapRoute) {
@@ -107,7 +110,10 @@ export class MapController {
     highlightJourneyDetailsStop(stopOrder: number) {
         if (this.focusedJourney == null) return
         if (this.focusedJourney.highlightedStopOrder != null) {
-            this.renderer!.deHighlightStop(this.focusedJourney.mapRoute, this.focusedJourney.highlightedStopOrder)
+            this.renderer!.deHighlightStop(
+                this.focusedJourney.mapRoute,
+                this.focusedJourney.highlightedStopOrder,
+            )
             if (this.focusedJourney.highlightedStopOrder === stopOrder) {
                 this.focusedJourney.highlightedStopOrder = null
                 return
@@ -115,10 +121,12 @@ export class MapController {
         }
         this.focusedJourney.highlightedStopOrder = stopOrder
         this.renderer!.highlightStop(this.focusedJourney.mapRoute, stopOrder)
-        const offsetStopPosition = this.focusedJourney.mapRoute.stops![stopOrder]![0]!.getLatLng().clone()
+        const offsetStopPosition = this.focusedJourney.mapRoute
+            .stops![stopOrder]![0]!.getLatLng()
+            .clone()
         const mapBounds = this.map!.getBounds()
         offsetStopPosition.lng += (mapBounds.getEast() - mapBounds.getWest()) * 0.1
-        this.map!.flyTo(offsetStopPosition, undefined,  {
+        this.map!.flyTo(offsetStopPosition, undefined, {
             duration: 0.5,
             easeLinearity: 0.8,
             animate: true,

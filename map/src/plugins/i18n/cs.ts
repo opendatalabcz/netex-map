@@ -51,8 +51,10 @@ const cs = {
         tram: 'Tramvaj',
         metro: 'Metro',
     },
+    lineVersion: {
+        detour: 'Výlukový jízdní řád',
+    },
     journeyFacilities: {
-        detour: 'Spoj jede dle výlukového jízdního řádu',
         requiresOrdering: 'Spoj na objednávku',
         baggageStorage: 'Přeprava cestovních zavazadel',
         cyclesAllowed: 'Přeprava jízdních kol',

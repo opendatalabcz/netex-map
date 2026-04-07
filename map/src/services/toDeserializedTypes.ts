@@ -93,7 +93,7 @@ export function toWallLineVersionWithDates(
         shortName: wallLineVersion.shortName,
         transportMode: wallLineVersion.transportMode,
         lineType: wallLineVersion.lineType,
-        isDetour: wallLineVersion.isDetour,
+        detour: wallLineVersion.detour,
         operator: wallLineVersion.operator,
         activePeriods: wallLineVersion.activePeriods.map(toWallActivePeriodWithDates),
         tariffStops: wallLineVersion.tariffStops,

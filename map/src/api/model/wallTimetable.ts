@@ -1,4 +1,5 @@
 import type LocalTime from '@/util/localTime'
+import type { JourneyDirection, LineType, TransportMode } from '@/api/model/enums'
 
 export type WallScheduledStop = {
     arrival: string | null
@@ -26,15 +27,6 @@ export type WallActivePeriod = {
     fromDate: string
     toDate: string
 }
-
-export type WallLineType =
-    | 'URBAN'
-    | 'URBAN_SUBURBAN'
-    | 'INTERNATIONAL_EXCLUDING_CABOTAGE'
-    | 'INTERNATIONAL_INCLUDING_CABOTAGE'
-    | 'DOMESTIC_INTRA_REGIONAL'
-    | 'DOMESTIC_INTER_REGIONAL'
-    | 'DOMESTIC_LONG_DISTANCE'
 
 export type WallOperator = {
     relationalId: number
@@ -65,9 +57,9 @@ export type WallLineVersion = {
     publicCode: string
     name: string
     shortName: string
-    transportMode: string
-    lineType: WallLineType
-    isDetour: boolean
+    transportMode: TransportMode
+    lineType: LineType
+    detour: boolean
     operator: WallOperator
     activePeriods: WallActivePeriod[]
     tariffStops: WallTariffStop[]
@@ -109,8 +101,6 @@ export type WallJourneyPatternStop = {
     stopOnRequest: boolean
 }
 
-export type JourneyDirection = 'OUTBOUND' | 'INBOUND' | 'CLOCKWISE' | 'ANTICLOCKWISE'
-
 export type WallJourneyPattern = {
     patternNumber: number
     direction: JourneyDirection
@@ -146,9 +136,9 @@ export type WallLineVersionWithDates = {
     publicCode: string
     name: string
     shortName: string
-    transportMode: string
-    lineType: WallLineType
-    isDetour: boolean
+    transportMode: TransportMode
+    lineType: LineType
+    detour: boolean
     operator: WallOperator
     activePeriods: WallActivePeriodWithDates[]
     tariffStops: WallTariffStop[]
