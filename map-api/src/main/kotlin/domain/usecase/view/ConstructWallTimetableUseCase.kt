@@ -47,6 +47,7 @@ interface ConstructWallTimetableUseCase {
     data class WallJourney(
         val relationalId: Long,
         val schedule: List<WallScheduledStop>,
+        val patternNumber: Int,
         val requiresOrdering: Boolean,
         val baggageStorage: Boolean,
         val cyclesAllowed: Boolean,
@@ -72,14 +73,15 @@ interface ConstructWallTimetableUseCase {
         val routeId: Long,
     )
     data class WallOperatingPeriod(
+        val relationalId: Long,
         val operatingDays: WallOperatingDays,
         val operationExceptions: Map<WallOperationExceptionType, List<LocalDate>>,
-        val journeys: List<WallJourney>,
     )
     data class WallTimetable(
         val lineVersion: WallLineVersion,
         val operatingPeriods: List<WallOperatingPeriod>,
         val journeyPatterns: List<WallJourneyPattern>,
+        val journeys: Map<JourneyDirectionType, Map<Long, List<WallJourney>>>
     )
 
     fun constructWallTimetable(lineVersionId: Long): WallTimetable?

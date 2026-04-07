@@ -110,15 +110,16 @@ export type WallJourneyPattern = {
 }
 
 export type WallOperatingPeriod = {
+    relationalId: number
     operatingDays: WallOperatingDays
     operationExceptions: Record<WallOperationExceptionType, string[]>
-    journeys: WallJourney[]
 }
 
 export type WallTimetable = {
     lineVersion: WallLineVersion
     operatingPeriods: WallOperatingPeriod[]
     journeyPatterns: WallJourneyPattern[]
+    journeys: Record<JourneyDirection, Record<string, WallJourney[]>>
 }
 
 export type WallScheduledStopWithTimes = {
@@ -146,13 +147,14 @@ export type WallLineVersionWithDates = {
 }
 
 export type WallOperatingPeriodWithDates = {
+    relationalId: number
     operatingDays: WallOperatingDays
     operationExceptions: Map<WallOperationExceptionType, Date[]>
-    journeys: WallJourneyWithTimes[]
 }
 
 export type WallTimetableWithDates = {
     lineVersion: WallLineVersionWithDates
     operatingPeriods: WallOperatingPeriodWithDates[]
     journeyPatterns: WallJourneyPattern[]
+    journeys: Map<JourneyDirection, Map<number, WallJourneyWithTimes[]>>
 }

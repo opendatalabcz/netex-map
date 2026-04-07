@@ -133,6 +133,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     @Query(nativeQuery = true, value = """
         SELECT
             j.relational_id,
+            j.pattern_number,
             j.operating_period_id,
             j.requires_ordering,
             j.baggage_storage,
@@ -143,6 +144,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
             j.snacks_on_board,
             j.unaccompanied_minor_assistance
         FROM journey j
+            LEFT OUTER JOIN journey_pattern jp ON jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number
         WHERE j.line_version_id = :lineVersionId
     """)
     fun findAllWallDtoByLineVersionId(lineVersionId: Long): List<JourneyWallDto>

@@ -1,3 +1,4 @@
+import type { JourneyDirection } from '@/api/model/enums'
 import type {
     JourneyDetails,
     JourneyDetailsScheduledStop,
@@ -119,29 +120,31 @@ export function toWallJourneyWithDates(wallJourney: WallJourney): WallJourneyWit
 export function toWallOperatingPeriodWithDates(
     wallOperatingPeriod: WallOperatingPeriod,
 ): WallOperatingPeriodWithDates {
+    const operationExceptions = new Map()
+    for (const [key, value] of Object.entries(wallOperatingPeriod.operationExceptions)) {
+        operationExceptions.set(key, value.map((day) => new Date(day)))
+    }
     return {
+        relationalId: wallOperatingPeriod.relationalId,
         operatingDays: wallOperatingPeriod.operatingDays,
-        operationExceptions: new Map([
-            [
-                'ALSO_OPERATES',
-                wallOperatingPeriod.operationExceptions.ALSO_OPERATES.map((day) => new Date(day)),
-            ],
-            [
-                'DOES_NOT_OPERATE',
-                wallOperatingPeriod.operationExceptions.DOES_NOT_OPERATE.map(
-                    (day) => new Date(day),
-                ),
-            ],
-        ]),
-        journeys: wallOperatingPeriod.journeys.map(toWallJourneyWithDates),
+        operationExceptions: operationExceptions,
     }
 }
 
 export function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTimetableWithDates {
+    const journeys: Map<JourneyDirection, Map<number, WallJourneyWithTimes[]>> = new Map()
+    for (const [direction, journeyMap] of Object.entries(wallTimetable.journeys)) {
+        const journeysWithTimesMap: Map<number, WallJourneyWithTimes[]> = new Map()
+        for (const [id, journeys] of Object.entries(journeyMap)) {
+            journeysWithTimesMap.set(Number(id), journeys.map(toWallJourneyWithDates))
+        }
+        journeys.set(direction as JourneyDirection, journeysWithTimesMap)
+    }
     return {
         lineVersion: toWallLineVersionWithDates(wallTimetable.lineVersion),
         operatingPeriods: wallTimetable.operatingPeriods.map(toWallOperatingPeriodWithDates),
         journeyPatterns: wallTimetable.journeyPatterns,
+        journeys: journeys
     }
 }
 

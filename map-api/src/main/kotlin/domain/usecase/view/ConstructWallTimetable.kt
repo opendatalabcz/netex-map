@@ -122,46 +122,15 @@ class ConstructWallTimetable(
         )
     }
 
-    private fun reconstructOperatingPeriods(lineVersionId: Long): List<WallOperatingPeriod> {
-        val journeys = journeyJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
-        val operatingPeriods = operatingPeriodJpaRepository.findAllWallDtoByJourneyIds(
-            journeys.map(JourneyWallDto::relationalId)
-        )
-        val scheduledStops = scheduledStopJpaRepository
-            .findAllDtoByJourneyIds(journeys.map(JourneyWallDto::relationalId))
-            .groupBy(ScheduledStopDto::journeyId)
-            .mapValues { (_, routeStops) -> routeStops
-                .sortedBy(ScheduledStopDto::stopOrder)
-                .map { WallScheduledStop(
-                    arrival = if (it.arrival == it.departure) null else it.arrival,
-                    departure = it.departure,
-                ) }
-            }
-
-        val journeysByOperatingPeriod = journeys
-            .groupBy(JourneyWallDto::operatingPeriodId)
-            .mapValues { (_, journeys) ->
-                journeys.map { journey -> WallJourney(
-                    relationalId = journey.relationalId,
-                    schedule = scheduledStops[journey.relationalId]!!,
-                    requiresOrdering = journey.requiresOrdering,
-                    baggageStorage = journey.baggageStorage,
-                    cyclesAllowed = journey.cyclesAllowed,
-                    lowFloorAccess = journey.lowFloorAccess,
-                    reservationCompulsory = journey.reservationCompulsory,
-                    reservationPossible = journey.reservationPossible,
-                    snacksOnBoard = journey.snacksOnBoard,
-                    unaccompaniedMinorAssistance = journey.unaccompaniedMinorAssistance,
-                ) }
-            }
-
+    private fun reconstructOperatingPeriods(operatingPeriodIds: List<Long>): List<WallOperatingPeriod> {
+        val operatingPeriods = operatingPeriodJpaRepository.findAllWallDtoByIds(operatingPeriodIds)
         return operatingPeriods.map { wallDto ->
             reconstructWallOperatingPeriod(wallDto)
                 .let { operatingPeriodPair ->
                     WallOperatingPeriod(
+                        relationalId = wallDto.relationalId,
                         operatingPeriodPair.first,
                         operatingPeriodPair.second,
-                        journeysByOperatingPeriod[wallDto.relationalId]!!,
                     )
                 }
         }
@@ -202,12 +171,61 @@ class ConstructWallTimetable(
         ) }
     }
 
+    private fun reconstructJourneys(lineVersionId: Long): Map<Long, List<WallJourney>> {
+        val journeys = journeyJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
+        val scheduledStops = scheduledStopJpaRepository
+            .findAllDtoByJourneyIds(journeys.map(JourneyWallDto::relationalId))
+            .groupBy(ScheduledStopDto::journeyId)
+            .mapValues { (_, routeStops) -> routeStops
+                .sortedBy(ScheduledStopDto::stopOrder)
+                .map { WallScheduledStop(
+                    arrival = if (it.arrival == it.departure) null else it.arrival,
+                    departure = it.departure,
+                ) }
+            }
+
+        return journeys
+            .groupBy(JourneyWallDto::operatingPeriodId)
+            .mapValues { (_, journeys) ->
+                journeys.map { journey -> WallJourney(
+                    relationalId = journey.relationalId,
+                    schedule = scheduledStops[journey.relationalId]!!,
+                    patternNumber = journey.patternNumber,
+                    requiresOrdering = journey.requiresOrdering,
+                    baggageStorage = journey.baggageStorage,
+                    cyclesAllowed = journey.cyclesAllowed,
+                    lowFloorAccess = journey.lowFloorAccess,
+                    reservationCompulsory = journey.reservationCompulsory,
+                    reservationPossible = journey.reservationPossible,
+                    snacksOnBoard = journey.snacksOnBoard,
+                    unaccompaniedMinorAssistance = journey.unaccompaniedMinorAssistance,
+                ) }
+            }
+    }
+
     @Transactional(readOnly = true)
     override fun constructWallTimetable(lineVersionId: Long): WallTimetable? {
+        val reconstructedJourneys = reconstructJourneys(lineVersionId)
+        val reconstructedJourneyPatterns = reconstructJourneyPatterns(lineVersionId)
+
+        val journeyPatternsByNumber = reconstructedJourneyPatterns.associateBy(WallJourneyPattern::patternNumber)
+        val fullyReconstructedJourneys = mutableMapOf<JourneyDirectionType, MutableMap<Long, MutableList<WallJourney>>>()
+        for ((operatingPeriodId, journeys) in reconstructedJourneys) {
+            for (journey in journeys) {
+                val journeyPattern = journeyPatternsByNumber[journey.patternNumber]!!
+                val direction = journeyPattern.direction
+                fullyReconstructedJourneys
+                    .getOrPut(direction, ::mutableMapOf)
+                    .getOrPut(operatingPeriodId, ::mutableListOf)
+                    .add(journey)
+            }
+        }
+
         return WallTimetable(
             lineVersion = reconstructLineVersion(lineVersionId) ?: return null,
-            operatingPeriods = reconstructOperatingPeriods(lineVersionId),
-            journeyPatterns = reconstructJourneyPatterns(lineVersionId),
+            operatingPeriods = reconstructOperatingPeriods(reconstructedJourneys.keys.toList()),
+            journeyPatterns = reconstructedJourneyPatterns,
+            journeys = fullyReconstructedJourneys,
         )
     }
 }
