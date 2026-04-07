@@ -14,14 +14,27 @@ const JourneyApi = {
         latMax: number,
         zoom: number,
         day: Date,
+        excludedJourneyIds: number[] = [],
+        excludedJourneyIdsFromPreviousDay: number[] = [],
+        excludedRouteIds: number[] = [],
     ): Promise<JourneysOperatingInFrame | null | undefined> {
-        return HttpRequestSender.get([JOURNEY_URI, FRAME_LOCATION, day.toISOString()], {
+        const options: Record<string, unknown> = {
             lonMin: lonMin,
             latMin: latMin,
             lonMax: lonMax,
             latMax: latMax,
             zoom: zoom,
-        })
+        }
+        if (excludedJourneyIds.length > 0) {
+            options.nj = excludedJourneyIds
+        }
+        if (excludedJourneyIdsFromPreviousDay.length > 0) {
+            options.njpd = excludedJourneyIdsFromPreviousDay
+        }
+        if (excludedRouteIds.length > 0) {
+            options.nr = excludedRouteIds
+        }
+        return HttpRequestSender.get([JOURNEY_URI, FRAME_LOCATION, day.toISOString()], options)
     },
 
     getJourneyDetails(journeyId: number): Promise<JourneyDetails | null | undefined> {

@@ -36,5 +36,8 @@ interface GetJourneysOperatingInFrameUseCase {
         latMax: Double,
         zoomLevel: Int,
         dateTime: OffsetDateTime,
+        excludedJourneyIds: Set<Long>,
+        excludedJourneyIdsFromPreviousDay: Set<Long>,
+        excludedRouteIds: Set<Long>,
     ): JourneysOperatingInFrameResult
 }

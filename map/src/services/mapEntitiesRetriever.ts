@@ -13,6 +13,15 @@ export class MapEntitiesRetriever {
     }
 
     async fetchFrame(bounds: L.LatLngBounds, zoom: number, moment: Date) {
+        const excludedJourneyIds: number[] = []
+        const excludedJourneyIdsFromPreviousDay: number[] = []
+        for (const j of this.mapEntriesStore.journeys.values()) {
+            if (j.fromPreviousDay) {
+                excludedJourneyIdsFromPreviousDay.push(j.relationalId)
+            } else {
+                excludedJourneyIds.push(j.relationalId)
+            }
+        }
         const frame = await JourneyApi.getJourneysOperatingInFrame(
             bounds.getWest(),
             bounds.getSouth(),
@@ -20,6 +29,9 @@ export class MapEntitiesRetriever {
             bounds.getNorth(),
             zoom,
             moment,
+            excludedJourneyIds,
+            excludedJourneyIdsFromPreviousDay,
+            Array.from(this.mapEntriesStore.routes.keys()),
         )
         if (!frame) return
 

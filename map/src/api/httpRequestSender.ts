@@ -11,9 +11,7 @@ const ResponseCodes = {
 
 function encodeToURI(key: string, data: unknown): string {
     if (Array.isArray(data)) {
-        return Object.values(data)
-            .map((d) => `${key}=${encodeURIComponent(d + '')}`)
-            .join('&')
+        return `${key}=${data.map((d) => encodeURIComponent(d + '')).join(',')}`
     }
     if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
         return `${key}=${encodeURIComponent(data)}`

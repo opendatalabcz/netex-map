@@ -92,18 +92,21 @@ class GetJourneysOperatingInFrame(
         latMax: Double,
         zoomLevel: Int,
         dateTime: OffsetDateTime,
+        excludedJourneyIds: Set<Long>,
+        excludedJourneyIdsFromPreviousDay: Set<Long>,
+        excludedRouteIds: Set<Long>,
     ): GetJourneysOperatingInFrameUseCase.JourneysOperatingInFrameResult {
         val minRouteLength = levelOfDetailUseCase.getMinRouteLength(zoomLevel)
 
         val journeysForCurrentDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrame(
                 lonMin, latMin, lonMax, latMax, minRouteLength, dateTime
-            )
+            ).filter { it.relationalId !in excludedJourneyIds }
 
         val journeysForPreviousDay = journeyJpaRepository
             .findAllMapDtoOperatingInFrameWithNextDayOperation(
                 lonMin, latMin, lonMax, latMax, minRouteLength, dateTime
-            )
+            ).filter { it.relationalId !in excludedJourneyIdsFromPreviousDay }
 
         val scheduleStops = scheduledStopJpaRepository.findAllDtoByJourneyIds(
             journeysForCurrentDay.map(JourneyMapDto::relationalId)
@@ -114,10 +117,10 @@ class GetJourneysOperatingInFrame(
         val recomputedForDay = recomputeJourneysToMap(journeysForCurrentDay, dateTime, scheduleStops, false)
         val recomputedForPreviousDay = recomputeJourneysToMap(journeysForPreviousDay, dateTime.minusDays(1), scheduleStops, true)
 
-        val rawRoutes = routeJpaRepository.findAllMapDtoByRouteId(
-            journeysForCurrentDay.map(JourneyMapDto::routeId)
-                    + journeysForPreviousDay.map(JourneyMapDto::routeId)
-        )
+        val routeIds = (journeysForCurrentDay.map(JourneyMapDto::routeId)
+                + journeysForPreviousDay.map(JourneyMapDto::routeId)
+            ).filter { it !in excludedRouteIds }
+        val rawRoutes = if (routeIds.isEmpty()) emptyList() else routeJpaRepository.findAllMapDtoByRouteId(routeIds)
         val routeStops = routeStopJpaRepository.findAllDtoByRouteIds(rawRoutes.map(RouteMapDto::relationalId))
             .groupBy(RouteStopMapDto::routeId)
             .mapValues { (_, routeStops) -> routeStops

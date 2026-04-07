@@ -38,10 +38,14 @@ class JourneyController(
         @RequestParam latMax: Double,
         @RequestParam zoom: Int,
         @PathVariable dateTime: OffsetDateTime,
+        @RequestParam(required = false) nj: Set<Long> = emptySet(),
+        @RequestParam(required = false) njpd: Set<Long> = emptySet(),
+        @RequestParam(required = false) nr: Set<Long> = emptySet(),
     ): HttpJourneysOperatingInFrameResult {
         return modelConvertor.toHttp(
             getJourneysOperatingInFrameUseCase.getJourneysOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, zoom, dateTime
+                lonMin, latMin, lonMax, latMax, zoom, dateTime,
+                nj, njpd, nr,
             )
         )
     }
