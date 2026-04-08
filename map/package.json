@@ -42,7 +42,6 @@
     "unplugin-fonts": "1.x",
     "vite": "7.x",
     "vite-plugin-node-polyfills": "0.25.X",
-    "vite-plugin-vue-devtools": "8.x",
     "vite-plugin-vuetify": "2.x",
     "vue-tsc": "3.x"
   },
