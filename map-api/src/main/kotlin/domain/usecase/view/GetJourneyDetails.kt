@@ -31,7 +31,7 @@ class GetJourneyDetails(
 ): GetJourneyDetailsUseCase {
     override fun getJourneyDetails(journeyId: Long): JourneyDetails? {
         val journey = journeyJpaRepository.findDetailsDtoByJourneyId(journeyId).orElse(null) ?: return null
-        val lineVersion = lineVersionJpaRepository.findDtoById(journey.lineVersionId).orElse(null) ?: return null
+        val lineVersion = lineVersionJpaRepository.findJourneyDetailsDtoById(journey.lineVersionId).orElse(null) ?: return null
         val operator = operatorJpaRepository.findDtoByOperatorId(lineVersion.operatorId).orElse(null) ?: return null
         val scheduledStops = scheduledStopJpaRepository
             .findAllJourneyDetailsDtoByJourneyId(journeyId)

@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.JourneyDetailsLineVersionDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -42,9 +43,26 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
             lv.transport_mode,
             lv.line_type,
             lv.is_detour,
+            lv.valid_from,
+            lv.valid_to,
             lv.operator_id
         FROM line_version lv
         WHERE lv.relational_id = :id
     """)
     fun findDtoById(id: Long): Optional<LineVersionDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            lv.relational_id,
+            lv.public_code,
+            lv.name,
+            lv.short_name,
+            lv.transport_mode,
+            lv.line_type,
+            lv.is_detour,
+            lv.operator_id
+        FROM line_version lv
+        WHERE lv.relational_id = :id
+    """)
+    fun findJourneyDetailsDtoById(id: Long): Optional<JourneyDetailsLineVersionDto>
 }

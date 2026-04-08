@@ -24,6 +24,7 @@ import cz.cvut.fit.gaierda1.domain.usecase.view.ConstructWallTimetableUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.OffsetDateTime
 
 @Component
 class ConstructWallTimetable(
@@ -116,6 +117,8 @@ class ConstructWallTimetable(
             isDetour = lineVersion.isDetour,
             activePeriods = activePeriods,
             lineType = LineType.fromJdfCode(lineVersion.lineType),
+            validFrom = lineVersion.validFrom,
+            validTo = lineVersion.validTo,
             operator = operator,
             tariffStops = tariffStops,
             stops = stops,

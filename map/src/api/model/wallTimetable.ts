@@ -60,6 +60,8 @@ export type WallLineVersion = {
     transportMode: TransportMode
     lineType: LineType
     detour: boolean
+    validFrom: string
+    validTo: string
     operator: WallOperator
     activePeriods: WallActivePeriod[]
     tariffStops: WallTariffStop[]
@@ -140,6 +142,8 @@ export type WallLineVersionWithDates = {
     transportMode: TransportMode
     lineType: LineType
     detour: boolean
+    validFrom: Date
+    validTo: Date
     operator: WallOperator
     activePeriods: WallActivePeriodWithDates[]
     tariffStops: WallTariffStop[]

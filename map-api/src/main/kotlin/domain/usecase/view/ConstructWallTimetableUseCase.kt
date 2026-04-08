@@ -6,6 +6,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.OperatorDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.ActivePeriodWallDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -39,6 +40,8 @@ interface ConstructWallTimetableUseCase {
         val transportMode: TransportMode,
         val lineType: LineType,
         val isDetour: Boolean,
+        val validFrom: Instant,
+        val validTo: Instant,
         val operator: OperatorDto,
         val activePeriods: List<ActivePeriodWallDto>,
         val tariffStops: List<WallTariffStop>,

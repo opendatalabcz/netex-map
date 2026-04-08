@@ -1,8 +1,6 @@
-package cz.cvut.fit.gaierda1.data.orm.repository.dto
+package cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails
 
-import java.time.Instant
-
-data class LineVersionDto(
+data class JourneyDetailsLineVersionDto(
     val relationalId: Long,
     val publicCode: String,
     val name: String,
@@ -10,7 +8,5 @@ data class LineVersionDto(
     val transportMode: String,
     val lineType: String,
     val isDetour: Boolean,
-    val validFrom: Instant,
-    val validTo: Instant,
     val operatorId: Long,
 )
