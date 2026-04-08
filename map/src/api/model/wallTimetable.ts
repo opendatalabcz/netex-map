@@ -70,6 +70,7 @@ export type WallLineVersion = {
 
 export type WallJourney = {
     relationalId: number
+    patternNumber: number
     schedule: WallScheduledStop[]
     requiresOrdering: boolean
     baggageStorage: boolean
@@ -83,6 +84,7 @@ export type WallJourney = {
 
 export type WallJourneyWithTimes = {
     relationalId: number
+    patternNumber: number
     schedule: WallScheduledStopWithTimes[]
     requiresOrdering: boolean
     baggageStorage: boolean

@@ -13,12 +13,10 @@ export type StopFacilities = {
 }
 
 export type CombinedStopFacilities = StopFacilities & {
-    distanceToNextStop: number
     forBoarding: boolean
     forAlighting: boolean
     requiresOrdering: boolean
     stopOnRequest: boolean
-    tariffZone: string | null
 }
 
 export type JourneyFacilities = {

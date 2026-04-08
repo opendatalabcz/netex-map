@@ -64,9 +64,9 @@ class LocalTime {
     }
 
     toString() {
-        const baseTime = `${this.hour}:${this.minute.toString().padStart(2)}:${this.second.toString().padStart(2)}`
+        const baseTime = `${this.hour}:${this.minute.toString().padStart(2, '0')}:${this.second.toString().padStart(2, '0')}`
         const millis = this.millis
-        return millis === 0 ? baseTime : baseTime + millis.toString().padStart(3)
+        return millis === 0 ? baseTime : baseTime + millis.toString().padStart(3, '0')
     }
 
     toDate() {

@@ -53,20 +53,37 @@ const transportMode = computed(() => {
 </script>
 
 <template>
-    <v-tooltip v-if="isDetour" :text="t('lineVersion.detour')">
-        <template #activator="tooltipProps">
-            <v-icon v-bind="tooltipProps.props" icon="mdi-alert" size="small" color="warning" />
-        </template>
-    </v-tooltip>
-    <v-icon :icon="transportMode.icon" />
-    {{ transportMode.text }}
-    {{ shortName }}
-    <span v-if="shortName !== publicCode" class="public-code">
-        {{ publicCode }}
-    </span>
+    <div class="line-version-label">
+        <v-tooltip v-if="isDetour" :text="t('lineVersion.detour')">
+            <template #activator="tooltipProps">
+                <v-icon v-bind="tooltipProps.props" icon="mdi-alert" size="small" color="warning" />
+            </template>
+        </v-tooltip>
+        <v-icon :icon="transportMode.icon" />
+        <span>
+            {{ transportMode.text }}
+        </span>
+        <span>
+            {{ shortName }}
+        </span>
+        <span v-if="shortName !== publicCode" class="public-code">
+            {{ publicCode }}
+        </span>
+    </div>
 </template>
 
 <style scoped>
+.line-version-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25em;
+    flex-wrap: nowrap;
+}
+
+.line-version-label .v-icon {
+    align-self: center;
+}
+
 .public-code {
     font-size: 0.75em;
     opacity: 0.6;

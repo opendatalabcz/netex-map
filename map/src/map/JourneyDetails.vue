@@ -33,10 +33,10 @@ const stopsWithFacilities = computed<
         facilities: DisplayFacilities
     }[]
 >(() =>
-    props.journeyDetails.stops.map((stop, idx) => ({
+    props.journeyDetails.stops.map((stop, stopIdx) => ({
         stop: stop,
-        transportBanGroups: props.journeyDetails.transportBans?.reduce((acc, cur) => {
-            if (cur.includes(idx)) acc.push(idx)
+        transportBanGroups: props.journeyDetails.transportBans?.reduce((acc, cur, groupIdx) => {
+            if (cur.includes(stopIdx)) acc.push(groupIdx)
             return acc
         }, []),
         facilities: displayFacilitiesForCombinedStop(stop, t),
@@ -60,13 +60,9 @@ const stopsWithFacilities = computed<
                 variant="text"
                 @click="emit('close')"
             />
-            <br />
             {{ journeyDetails.lineVersion.operator.legalName }}
             <br />
-            <div
-                v-if="Object.values(journeyFacilities).some((facility) => facility.active)"
-                class="journey-facilities"
-            >
+            <div class="journey-facilities">
                 <template v-for="(facility, key) in journeyFacilities" :key="key">
                     <FacilityIcon v-if="facility.active" :facility="facility" />
                 </template>
@@ -86,14 +82,7 @@ const stopsWithFacilities = computed<
                             {{ d((swf.stop.departure ?? swf.stop.arrival!).toDate(), 'timeShort') }}
                         </td>
                         <td class="icon-td">
-                            <div
-                                v-if="
-                                    Object.values(swf.facilities).some(
-                                        (facility) => facility.active,
-                                    )
-                                "
-                                class="stop-facilities"
-                            >
+                            <div class="stop-facilities">
                                 <TransportBanIcons
                                     :transport-ban-groups="swf.transportBanGroups"
                                     compact
@@ -167,11 +156,12 @@ table {
 }
 
 tr:nth-child(even) {
-    background-color: color-mix(in srgb, currentColor 10%, transparent);
+    background-color: color-mix(in srgb, black 10%, white);
+
 }
 
 tr:hover {
-    background-color: color-mix(in srgb, currentColor 20%, transparent);
+    background-color: color-mix(in srgb, black 20%, white);
     cursor: pointer;
 }
 
@@ -188,6 +178,6 @@ tr:hover {
 }
 
 td {
-    padding-block: 0.5em;
+    padding-block: 0.25em;
 }
 </style>

@@ -107,6 +107,7 @@ export function toWallLineVersionWithDates(
 export function toWallJourneyWithDates(wallJourney: WallJourney): WallJourneyWithTimes {
     return {
         relationalId: wallJourney.relationalId,
+        patternNumber: wallJourney.patternNumber,
         schedule: wallJourney.schedule.map(toWallScheduledStopWithTimes),
         requiresOrdering: wallJourney.requiresOrdering,
         baggageStorage: wallJourney.baggageStorage,

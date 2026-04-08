@@ -51,8 +51,27 @@ const cs = {
         tram: 'Tramvaj',
         metro: 'Metro',
     },
+    daysOfWeek: {
+        short: {
+            monday: 'Po',
+            tuesday: 'Út',
+            wednesday: 'St',
+            thursday: 'Čt',
+            friday: 'Pá',
+            saturday: 'So',
+            sunday: 'Ne',
+        },
+    },
     lineVersion: {
         detour: 'Výlukový jízdní řád',
+        inDirectionTo: 'Ve směru',
+        operatingPeriod: 'Fragment',
+        validIn: 'Vydaný na:',
+        activeIn: 'Platný v:',
+        operatesRegularlyIn: 'Spoje pravidelně jezdí v:',
+        alsoOperatesIn: 'Spoje také jedou v:',
+        onlyOperatesIn: 'Spoje jedou pouze v:',
+        doesNotOperateIn: 'Spoje nejedou v:',
     },
     journeyFacilities: {
         requiresOrdering: 'Spoj na objednávku',
