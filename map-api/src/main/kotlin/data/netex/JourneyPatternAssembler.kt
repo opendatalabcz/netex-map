@@ -134,7 +134,7 @@ class JourneyPatternAssembler {
             checkNotNull(tariffStop) { "Tariff stop $scheduledStopKey not found" }
 
             patternStops[stopPointInJourneyPattern.id] = JourneyPatternStop(
-                stopId = JourneyPatternStopId(journeyPattern.patternId, stopPointInJourneyPattern.order.toInt()),
+                stopId = JourneyPatternStopId(journeyPattern.patternId, stopPointInJourneyPattern.order.toInt() - 1),
                 journeyPattern = journeyPattern,
                 distanceToNextStop = onwardServiceLink?.distance?.toDouble() ?: 0.0,
                 tariffOrder = tariffStop.stopId.tariffOrder,

@@ -135,7 +135,7 @@ class JourneyAssembler(
             checkNotNull(stopPointInJourneyPattern) { "Stop point in journey pattern $stopPointInJourneyPatternKey not found" }
 
             scheduledStops.add(ScheduledStop(
-                stopId = ScheduledStopId(assembledJourney.relationalId, stopPointInJourneyPattern.order.toInt()),
+                stopId = ScheduledStopId(assembledJourney.relationalId, stopPointInJourneyPattern.order.toInt() - 1),
                 journey = assembledJourney,
                 arrival = timetabledPassingTime.arrivalTime,
                 departure = timetabledPassingTime.departureTime,
