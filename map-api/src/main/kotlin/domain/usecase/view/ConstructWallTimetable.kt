@@ -24,7 +24,6 @@ import cz.cvut.fit.gaierda1.domain.usecase.view.ConstructWallTimetableUseCase.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.OffsetDateTime
 
 @Component
 class ConstructWallTimetable(
@@ -75,8 +74,8 @@ class ConstructWallTimetable(
             val currentDayOfWeekIsCommon = commonDays.contains(currentDayOfWeekValue)
             val operatesThisDay = operatingPeriod.validDays[i]
             if (operatesThisDay xor currentDayOfWeekIsCommon) {
-                val exceptionType = if (operatesThisDay) WallOperationExceptionType.DOES_NOT_OPERATE
-                                    else WallOperationExceptionType.ALSO_OPERATES
+                val exceptionType = if (operatesThisDay) WallOperationExceptionType.ALSO_OPERATES
+                                    else WallOperationExceptionType.DOES_NOT_OPERATE
                 operatingExceptions[exceptionType]!!.add(firstDate.plusDays(i.toLong()))
             }
             currentDayOfWeekValue = (currentDayOfWeekValue + 1) % 7
