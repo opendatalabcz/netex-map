@@ -1,5 +1,3 @@
-import type { ComposerTranslation } from 'vue-i18n'
-
 export type StopFacilities = {
     bistro: boolean
     borderCrossing: boolean
@@ -42,7 +40,7 @@ export type DisplayFacilities = Record<string, DisplayFacility>
 
 export function displayFacilitiesForJourney(
     journey: JourneyFacilities,
-    t: ComposerTranslation,
+    t: (key: string) => string,
 ): DisplayFacilities {
     return {
         requiresOrdering: {
@@ -90,7 +88,7 @@ export function displayFacilitiesForJourney(
 
 export function displayFacilitiesForStop(
     stop: StopFacilities,
-    t: ComposerTranslation,
+    t: (key: string) => string,
 ): DisplayFacilities {
     return {
         bistro: {
@@ -148,7 +146,7 @@ export function displayFacilitiesForStop(
 
 export function displayFacilitiesForCombinedStop(
     stop: CombinedStopFacilities,
-    t: ComposerTranslation,
+    t: (key: string) => string,
 ): DisplayFacilities {
     return {
         ...displayFacilitiesForStop(stop, t),

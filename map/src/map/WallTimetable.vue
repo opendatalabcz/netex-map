@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import type { WallOperatingPeriodWithDates, WallTimetableWithDates } from '@/api/model/wallTimetable'
+import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import LineVersionLabel from '@/map/LineVersionLabel.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { displayFacilitiesForCombinedStop, displayFacilitiesForJourney, type CombinedStopFacilities, type DisplayFacilities } from '@/map/facilities'
 import FacilityIcon from '@/map/FacilityIcon.vue'
 import TransportBanIcons from '@/map/TransportBanIcons.vue'
 import type { JourneyDirection } from '@/api/model/enums'
-import type LocalTime from '@/util/localTime'
+import { getDisplayWallTimetable } from '@/map/wallTimetable'
 
 const { t, d } = useI18n()
 
@@ -18,171 +17,19 @@ const props = defineProps<{
     wallTimetable: WallTimetableWithDates
 }>()
 
-const stopsMap = computed(
-    () => new Map(props.wallTimetable.lineVersion.stops.map((s) => [s.relationalId, s])),
-)
-const journeyPatternsMap = computed(
-    () => new Map(props.wallTimetable.journeyPatterns.map((j) => [j.patternNumber, j])),
-)
-const operatingPeriodsMap = computed(
-    () => new Map(props.wallTimetable.operatingPeriods.map((o) => [o.relationalId, o]))
-)
-
-type DisplayStop = {
-    stopName: string
-    facilities: DisplayFacilities
-    banGroups: number[]
-}
-const tariffStopList = computed<DisplayStop[]>(() => {
-    const journeyPatterns = props.wallTimetable.journeyPatterns
-    const transportBanGroups = Array.from(new Map(
-        journeyPatterns
-            .filter((jp) => jp.transportBans != null && (jp.direction === 'OUTBOUND' || jp.direction === 'CLOCKWISE'))
-            .flatMap((journeyPattern) =>
-                journeyPattern.transportBans!.map((banGroup) =>
-                    banGroup.map((journeyPatternStopIdx) => journeyPattern.stops[journeyPatternStopIdx]!.tariffOrder)
-                )
-            ).map((banGroup) => [banGroup.join(','), banGroup])
-    ).values())
-    const tariffStops = props.wallTimetable.lineVersion.tariffStops
-    return tariffStops.map((tariffStop, tariffStopIdx) => {
-        const stop = stopsMap.value.get(tariffStop.stopId)!
-        const facilitiesFromJourneyPatterns = journeyPatterns.reduce((acc, journeyPattern) => {
-            for (const journeyPatternStop of journeyPattern.stops) {
-                if (journeyPatternStop.tariffOrder !== tariffStopIdx) continue
-                if (journeyPatternStop.forBoarding) acc.forBoarding = true
-                if (journeyPatternStop.forAlighting) acc.forAlighting = true
-                if (journeyPatternStop.requiresOrdering) acc.requiresOrdering = true
-                if (journeyPatternStop.stopOnRequest) acc.stopOnRequest = true
-                break
-            }
-            return acc
-        }, {
-            forBoarding: false,
-            forAlighting: false,
-            requiresOrdering: false,
-            stopOnRequest: false,
-        })
-        const combinedStop: CombinedStopFacilities = {
-            forBoarding: facilitiesFromJourneyPatterns.forBoarding,
-            forAlighting: facilitiesFromJourneyPatterns.forAlighting,
-            requiresOrdering: facilitiesFromJourneyPatterns.requiresOrdering,
-            stopOnRequest: facilitiesFromJourneyPatterns.stopOnRequest,
-            bistro: stop.bistro,
-            borderCrossing: stop.borderCrossing,
-            displaysForVisuallyImpaired: stop.displaysForVisuallyImpaired,
-            lowFloorAccess: stop.lowFloorAccess,
-            parkAndRidePark: stop.parkAndRidePark,
-            suitableForHeavilyDisabled: stop.suitableForHeavilyDisabled,
-            toilet: stop.toilet,
-            wheelChairAccessToilet: stop.wheelChairAccessToilet,
-            otherTransportModes: stop.otherTransportModes,
-        }
-        return {
-            stopName: stop.name,
-            facilities: displayFacilitiesForCombinedStop(combinedStop, t),
-            banGroups: transportBanGroups.reduce((acc, cur, groupIdx) => {
-                if (cur.includes(tariffStopIdx)) acc.push(groupIdx)
-                return acc
-            }, [])
-        }
-    })
-})
-const reversedTariffStopList = computed(() => {
-    return [...tariffStopList.value].reverse()
-})
-
-
-type DisplayJourney = {
-    facilities: DisplayFacilities
-    schedule: (LocalTime | null)[]
-}
-type DisplayOperatingPeriod = WallOperatingPeriodWithDates & {
-    journeys: DisplayJourney[]
-    regularDays: string[]
-    alsoOperatesIn: Date[]
-    doesNotOperateIn: Date[]
-}
-function getDisplayOperatingPeriodsForDirection(direction: JourneyDirection): DisplayOperatingPeriod[] {
-    const journeysByOperatingPeriod = Array.from(props.wallTimetable.journeys.get(direction)!.entries())
-    return journeysByOperatingPeriod.map(([operatingPeriodId, journeys]) => {
-        const operatingPeriod = operatingPeriodsMap.value.get(operatingPeriodId)!
-        const res = {...operatingPeriod} as DisplayOperatingPeriod
-        res.regularDays = Object.entries(operatingPeriod.operatingDays)
-            .filter(([, active]) => active)
-            .map(([day,]) => day)
-        res.alsoOperatesIn = []
-        res.doesNotOperateIn = []
-        for (const [operationExceptionType, days] of operatingPeriod.operationExceptions) {
-            switch(operationExceptionType) {
-                case 'ALSO_OPERATES': {
-                    days.forEach((d) => res.alsoOperatesIn.push(d))
-                    break
-                }
-                case 'DOES_NOT_OPERATE': {
-                    days.forEach((d) => res.doesNotOperateIn.push(d))
-                    break
-                }
-            }
-        }
-        res.journeys = []
-        for (const journey of journeys) {
-            const displayJourney: DisplayJourney = {
-                facilities: displayFacilitiesForJourney(journey, t),
-                schedule: [],
-            }
-            res.journeys.push(displayJourney)
-            const journeyPattern = journeyPatternsMap.value.get(journey.patternNumber)!
-            let journeyPatternIdx = 0
-            const reverseOrder = direction !== 'CLOCKWISE' && direction !== 'OUTBOUND'
-            const tariffStopCount = props.wallTimetable.lineVersion.tariffStops.length
-            let tariffIdx = reverseOrder ? tariffStopCount - 1 : 0
-            while(reverseOrder ? tariffIdx >= 0 : tariffIdx < tariffStopCount) {
-                const patternStop = journeyPattern.stops[journeyPatternIdx]
-                if (patternStop != null && patternStop.tariffOrder === tariffIdx) {
-                    const scheduledStop = journey.schedule[journeyPatternIdx]!
-                    displayJourney.schedule.push(scheduledStop.departure ?? scheduledStop.arrival!)
-                    journeyPatternIdx += 1
-                } else {
-                    displayJourney.schedule.push(null)
-                }
-                tariffIdx += reverseOrder ? -1 : 1
-            }
-        }
-        return res
-    })
-}
-const directionDisplayTabs = computed(() => Array.from(props.wallTimetable.journeys.keys()).map((direction) => {
-    let displayStops: DisplayStop[]
-    switch(direction) {
-        case 'CLOCKWISE':
-        case 'OUTBOUND': {
-            displayStops = tariffStopList.value
-            break
-        }
-        case 'ANTICLOCKWISE':
-        case 'INBOUND': {
-            displayStops = reversedTariffStopList.value
-            break
-        }
-    }
-    const text = t('lineVersion.inDirectionTo') + ' ' + displayStops[displayStops.length - 1]!.stopName
-    return {
-        value: direction,
-        text: text,
-        displayStops: displayStops,
-        displayOperatingPeriods: getDisplayOperatingPeriodsForDirection(direction),
-    }
-}))
-const activeDirectionTab = ref<JourneyDirection>(directionDisplayTabs.value[0]!.value)
+const displayWallTimetable = computed(() => getDisplayWallTimetable(props.wallTimetable, t))
+const activeDirectionTab = ref<JourneyDirection>(displayWallTimetable.value[0]!.direction)
 const activeOperatingPeriodTab = ref<number>(0)
 watch(
     activeDirectionTab,
-    () => activeOperatingPeriodTab.value = directionDisplayTabs.value[0]!.displayOperatingPeriods[0]!.relationalId,
-    { immediate: true }
+    () =>
+        (activeOperatingPeriodTab.value =
+            displayWallTimetable.value[0]!.displayOperatingPeriods[0]!.relationalId),
+    { immediate: true },
 )
-const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((tab) => tab.value === activeDirectionTab.value)!)
-
+const activeDisplayDirection = computed(
+    () => displayWallTimetable.value.find((tab) => tab.direction === activeDirectionTab.value)!,
+)
 </script>
 
 <template>
@@ -223,20 +70,20 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
                             label
                             density="compact"
                         />
+                        <v-icon
+                            v-if="wallTimetable.lineVersion.activePeriods.length === 0"
+                            icon="mdi-cancel"
+                        />
                     </span>
                 </div>
             </div>
             <v-divider class="mt-1" opacity="1" />
-            <v-tabs
-                v-if="directionDisplayTabs.length > 1"
-                v-model="activeDirectionTab"
-                grow
-            >
+            <v-tabs v-if="displayWallTimetable.length > 1" v-model="activeDirectionTab" grow>
                 <v-tab
-                    v-for="tab in directionDisplayTabs"
-                    :key="tab.value"
+                    v-for="tab in displayWallTimetable"
+                    :key="tab.direction"
                     :text="tab.text"
-                    :value="tab.value"
+                    :value="tab.direction"
                     selected-class="selected-tab"
                 />
             </v-tabs>
@@ -259,9 +106,9 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
         <div class="timetable-body-wrapper">
             <v-tabs-window v-model="activeDirectionTab">
                 <v-tabs-window-item
-                    v-for="tab in directionDisplayTabs"
-                    :key="tab.value"
-                    :value="tab.value"
+                    v-for="tab in displayWallTimetable"
+                    :key="tab.direction"
+                    :value="tab.direction"
                 >
                     <v-tabs-window v-model="activeOperatingPeriodTab">
                         <v-tabs-window-item
@@ -273,11 +120,21 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
                             <div class="operation-time">
                                 <span v-if="op.regularDays.length > 0">
                                     {{ t('lineVersion.operatesRegularlyIn') }}
-                                    {{ op.regularDays.map((day) => t(`daysOfWeek.short.${day}`)).join(', ') }}
+                                    {{
+                                        op.regularDays
+                                            .map((day) => t(`daysOfWeek.short.${day}`))
+                                            .join(', ')
+                                    }}
                                 </span>
                                 <span v-if="op.alsoOperatesIn.length > 0">
                                     <span class="operating-days-chips">
-                                        {{  t(op.regularDays.length > 0 ? 'lineVersion.alsoOperatesIn' : 'lineVersion.onlyOperatesIn') }}
+                                        {{
+                                            t(
+                                                op.regularDays.length > 0
+                                                    ? 'lineVersion.alsoOperatesIn'
+                                                    : 'lineVersion.onlyOperatesIn',
+                                            )
+                                        }}
                                         <v-chip
                                             v-for="day in op.alsoOperatesIn"
                                             :key="day.toISOString()"
@@ -289,7 +146,7 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
                                 </span>
                                 <span v-if="op.doesNotOperateIn.length > 0">
                                     <span class="operating-days-chips">
-                                        {{  t('lineVersion.doesNotOperateIn') }}
+                                        {{ t('lineVersion.doesNotOperateIn') }}
                                         <v-chip
                                             v-for="day in op.doesNotOperateIn"
                                             :key="day.toISOString()"
@@ -303,17 +160,31 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
                             <table>
                                 <tbody>
                                     <tr>
-                                        <template v-if="op.journeys.some((j) => Object.values(j.facilities).some((f) => f.active))">
+                                        <template
+                                            v-if="
+                                                op.journeys.some((j) =>
+                                                    Object.values(j.facilities).some(
+                                                        (f) => f.active,
+                                                    ),
+                                                )
+                                            "
+                                        >
                                             <td></td>
                                             <td class="header-column"></td>
                                             <td
                                                 v-for="(journey, kdx) in op.journeys"
                                                 :key="kdx"
-                                                :class="{ 'journey-column': true, 'left-border': kdx !== 0, 'header-row': true }"
+                                                :class="{
+                                                    'journey-column': true,
+                                                    'left-border': kdx !== 0,
+                                                    'header-row': true,
+                                                }"
                                             >
-                                                <span class="journey-facilities">
+                                                <div class="journey-facilities">
                                                     <template
-                                                        v-for="(facility, key) in journey.facilities"
+                                                        v-for="(
+                                                            facility, key
+                                                        ) in journey.facilities"
                                                         :key="key"
                                                     >
                                                         <FacilityIcon
@@ -322,21 +193,21 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
                                                             compact
                                                         />
                                                     </template>
-                                                </span>
+                                                </div>
                                             </td>
                                         </template>
                                     </tr>
-                                    <tr
-                                        v-for="(stopEntry, idx) in tab.displayStops"
-                                        :key="idx"
-                                    >
+                                    <tr v-for="(stopEntry, idx) in tab.displayStops" :key="idx">
                                         <td class="icon-td">
                                             <div class="stop-facilities">
                                                 <TransportBanIcons
                                                     :transport-ban-groups="stopEntry.banGroups"
                                                     compact
                                                 />
-                                                <template v-for="(facility, key) in stopEntry.facilities" :key="key">
+                                                <template
+                                                    v-for="(facility, key) in stopEntry.facilities"
+                                                    :key="key"
+                                                >
                                                     <FacilityIcon
                                                         v-if="facility.active"
                                                         :facility="facility"
@@ -349,9 +220,19 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
                                         <td
                                             v-for="(journey, kdx) in op.journeys"
                                             :key="kdx"
-                                            :class="{ 'journey-column': true, 'left-border': kdx !== 0 }"
+                                            :class="{
+                                                'journey-column': true,
+                                                'left-border': kdx !== 0,
+                                            }"
                                         >
-                                            {{ journey.schedule[idx] != null ? d(journey.schedule[idx]!.toDate(), 'timeShort') : 'x' }}
+                                            {{
+                                                journey.schedule[idx] != null
+                                                    ? d(
+                                                          journey.schedule[idx]!.toDate(),
+                                                          'timeShort',
+                                                      )
+                                                    : 'x'
+                                            }}
                                         </td>
                                     </tr>
                                 </tbody>
@@ -410,6 +291,9 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
 .timetable-header-chips .v-chip {
     flex: 0 0 auto;
 }
+.timetable-header-chips .v-icon {
+    align-self: center;
+}
 
 .wall-timetable-close-button {
     position: absolute;
@@ -434,7 +318,7 @@ const activeDisplayDirection = computed(() => directionDisplayTabs.value.find((t
 
 .operating-days-chips {
     display: inline-flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     flex-direction: row;
     gap: 0.25em;
     white-space: nowrap;
@@ -507,5 +391,7 @@ td {
     flex-direction: column;
     gap: 0.125em;
     margin-block: 0.5em;
+    position: sticky;
+    left: 0;
 }
 </style>

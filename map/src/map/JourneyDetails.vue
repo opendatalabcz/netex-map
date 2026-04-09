@@ -157,7 +157,6 @@ table {
 
 tr:nth-child(even) {
     background-color: color-mix(in srgb, black 10%, white);
-
 }
 
 tr:hover {
