@@ -1,4 +1,4 @@
-const debounce = (callback: (...args: unknown[]) => void, wait: number) => {
+export function debounce(callback: (...args: unknown[]) => void, wait: number) {
     let timeoutId: number | undefined = undefined
     return (...args: unknown[]) => {
         window.clearTimeout(timeoutId)
@@ -7,5 +7,3 @@ const debounce = (callback: (...args: unknown[]) => void, wait: number) => {
         }, wait)
     }
 }
-
-export { debounce }

@@ -338,6 +338,10 @@ const activeDisplayDirection = computed(
     align-items: center;
 }
 
+.stop-facilities :deep(.v-icon) {
+    margin-inline-start: 0.25em;
+}
+
 table {
     border-collapse: separate;
     border-spacing: 0;
@@ -359,7 +363,7 @@ td {
 }
 
 .icon-td {
-    padding-inline-end: 0;
+    padding-inline: 0;
 }
 
 .journey-column {

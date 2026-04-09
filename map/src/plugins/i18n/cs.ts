@@ -43,6 +43,7 @@ const csDatetimeFormats: Record<string, Intl.DateTimeFormatOptions> = {
 }
 
 const cs = {
+    searchLine: 'Zadejte kód linky',
     transportModes: {
         bus: 'Autobus',
         trolleybus: 'Trolejbus',
@@ -81,7 +82,7 @@ const cs = {
         reservationCompulsory: 'Nutné zakoupit místenku',
         reservationPossible: 'Možnost zakoupit místenku',
         snacksOnBoard: 'Občerstvení ve voze',
-        unaccompaniedMinorAssistance: 'Částečně bezbariérovÝ přístup, nutná dopomoc průvodce',
+        unaccompaniedMinorAssistance: 'Částečně bezbariérový přístup, nutná dopomoc průvodce',
     },
     stopFacilities: {
         transportBan: 'Přeprava mezi shodně označenými zastávkami není povolena',

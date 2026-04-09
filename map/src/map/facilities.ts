@@ -61,7 +61,7 @@ export function displayFacilitiesForJourney(
         lowFloorAccess: {
             icon: 'mdi-wheelchair',
             tooltip: t('journeyFacilities.lowFloorAccess'),
-            active: journey.lowFloorAccess,
+            active: journey.lowFloorAccess && !journey.unaccompaniedMinorAssistance,
         },
         reservationCompulsory: {
             icon: 'mdi-alpha-r-box-outline',
@@ -104,7 +104,7 @@ export function displayFacilitiesForStop(
         displaysForVisuallyImpaired: {
             icon: 'mdi-human-white-cane',
             tooltip: t('stopFacilities.displaysForVisuallyImpaired'),
-            active: stop.displaysForVisuallyImpaired,
+            active: stop.displaysForVisuallyImpaired && !stop.suitableForHeavilyDisabled,
         },
         suitableForHeavilyDisabled: {
             icon: 'mdi-human-white-cane',

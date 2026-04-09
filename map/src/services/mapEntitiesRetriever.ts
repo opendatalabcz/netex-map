@@ -2,8 +2,14 @@ import JourneyApi from '@/api/journeyApi'
 import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import type { MapEntitiesStore } from '@/services/mapEntitiesStore'
 import LineVersionApi from '@/api/lineVersionApi'
-import { toJourneyDetailsWithTimes, toWallTimetableWithDates } from './toDeserializedTypes'
+import {
+    toJourneyDetailsWithTimes,
+    toSearchLineVersionWithDates,
+    toWallTimetableWithDates,
+} from './toDeserializedTypes'
 import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
+import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
+import type { Page } from '@/api/model/page'
 
 export class MapEntitiesRetriever {
     mapEntriesStore: MapEntitiesStore
@@ -53,5 +59,18 @@ export class MapEntitiesRetriever {
         const details = await JourneyApi.getJourneyDetails(journeyId)
         if (details == null) return null
         return toJourneyDetailsWithTimes(details)
+    }
+
+    async searchLineVersions(
+        query: string,
+        pageSize?: number | undefined,
+        pageNumber?: number | undefined,
+    ): Promise<Page<SearchLineVersionWithDates> | null | undefined> {
+        const result = await LineVersionApi.searchLineVersions(query, pageSize, pageNumber)
+        if (result == null) return null
+        return {
+            page: result.page,
+            content: result.content.map(toSearchLineVersionWithDates),
+        }
     }
 }

@@ -95,7 +95,7 @@ class ConstructWallTimetable(
     private fun reconstructLineVersion(lineVersionId: Long): WallLineVersion? {
         val lineVersion = lineVersionJpaRepository.findDtoById(lineVersionId).orElse(null) ?: return null
         val operator = operatorJpaRepository.findDtoByOperatorId(lineVersion.operatorId).orElse(null) ?: return null
-        val activePeriods = activePeriodJpaRepository.findAllWallDtoByLineVersionId(lineVersionId)
+        val activePeriods = activePeriodJpaRepository.findAllDtoForSingleLineByLineVersionId(lineVersionId)
         val tariffStops = tariffStopJpaRepository
             .findAllWallDtoByLineVersionId(lineVersionId)
             .sortedBy(TariffStopWallDto::tariffOrder)

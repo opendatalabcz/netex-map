@@ -25,4 +25,18 @@ interface OperatorJpaRepository: JpaRepository<Operator, Long> {
         WHERE o.relational_id = :operatorId
     """)
     fun findDtoByOperatorId(operatorId: Long): Optional<OperatorDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            o.relational_id,
+            o.public_code,
+            o.legal_name,
+            o.phone,
+            o.email,
+            o.url,
+            o.address_line
+        FROM operator o
+        WHERE o.relational_id IN :operatorIds
+    """)
+    fun findAllDtoByOperatorIds(operatorIds: List<Long>): List<OperatorDto>
 }

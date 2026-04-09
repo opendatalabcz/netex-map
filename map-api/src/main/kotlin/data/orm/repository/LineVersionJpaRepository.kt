@@ -65,4 +65,30 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         WHERE lv.relational_id = :id
     """)
     fun findJourneyDetailsDtoById(id: Long): Optional<JourneyDetailsLineVersionDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            lv.relational_id,
+            lv.public_code,
+            lv.name,
+            lv.short_name,
+            lv.transport_mode,
+            lv.line_type,
+            lv.is_detour,
+            lv.valid_from,
+            lv.valid_to,
+            lv.operator_id
+        FROM line_version lv
+            CROSS JOIN LATERAL ( SELECT CONCAT('%', :query, '%') as query_pattern )
+            CROSS JOIN LATERAL ( SELECT
+                lv.public_code ILIKE query_pattern ESCAPE '\' as public_code_match,
+                lv.short_name ILIKE query_pattern ESCAPE '\' as short_name_match
+            )
+        WHERE public_code_match OR short_name_match
+        ORDER BY LEAST(
+            CASE WHEN public_code_match THEN LENGTH(lv.public_code) ELSE ${Integer.MAX_VALUE} END,
+            CASE WHEN short_name_match THEN LENGTH(lv.short_name) ELSE ${Integer.MAX_VALUE} END
+        ) ASC NULLS LAST
+    """)
+    fun searchDto(query: String, pageable: Pageable): Page<LineVersionDto>
 }

@@ -14,6 +14,12 @@ import type {
     MapRoute,
 } from '@/api/model/journeysOperatingInFrame'
 import type {
+    SearchLineVersion,
+    SearchLineVersionsActivePeriod,
+    SearchLineVersionsActivePeriodWithDates,
+    SearchLineVersionWithDates,
+} from '@/api/model/searchLineVersions'
+import type {
     WallScheduledStop,
     WallActivePeriod,
     WallLineVersion,
@@ -125,7 +131,10 @@ export function toWallOperatingPeriodWithDates(
 ): WallOperatingPeriodWithDates {
     const operationExceptions = new Map()
     for (const [key, value] of Object.entries(wallOperatingPeriod.operationExceptions)) {
-        operationExceptions.set(key, value.map((day) => new Date(day)))
+        operationExceptions.set(
+            key,
+            value.map((day) => new Date(day)),
+        )
     }
     return {
         relationalId: wallOperatingPeriod.relationalId,
@@ -147,7 +156,7 @@ export function toWallTimetableWithDates(wallTimetable: WallTimetable): WallTime
         lineVersion: toWallLineVersionWithDates(wallTimetable.lineVersion),
         operatingPeriods: wallTimetable.operatingPeriods.map(toWallOperatingPeriodWithDates),
         journeyPatterns: wallTimetable.journeyPatterns,
-        journeys: journeys
+        journeys: journeys,
     }
 }
 
@@ -197,5 +206,34 @@ export function toJourneyDetailsWithTimes(journeyDetails: JourneyDetails): Journ
         reservationPossible: journeyDetails.reservationPossible,
         snacksOnBoard: journeyDetails.snacksOnBoard,
         unaccompaniedMinorAssistance: journeyDetails.unaccompaniedMinorAssistance,
+    }
+}
+
+export function toSearchLineVersionsActivePeriodWithDates(
+    searchLineVersionsActivePeriod: SearchLineVersionsActivePeriod,
+): SearchLineVersionsActivePeriodWithDates {
+    return {
+        fromDate: new Date(searchLineVersionsActivePeriod.fromDate),
+        toDate: new Date(searchLineVersionsActivePeriod.toDate),
+    }
+}
+
+export function toSearchLineVersionWithDates(
+    searchLineVersion: SearchLineVersion,
+): SearchLineVersionWithDates {
+    return {
+        relationalId: searchLineVersion.relationalId,
+        publicCode: searchLineVersion.publicCode,
+        name: searchLineVersion.name,
+        shortName: searchLineVersion.shortName,
+        transportMode: searchLineVersion.transportMode,
+        lineType: searchLineVersion.lineType,
+        detour: searchLineVersion.detour,
+        validFrom: new Date(searchLineVersion.validFrom),
+        validTo: new Date(searchLineVersion.validTo),
+        operator: searchLineVersion.operator,
+        activePeriods: searchLineVersion.activePeriods.map(
+            toSearchLineVersionsActivePeriodWithDates,
+        ),
     }
 }

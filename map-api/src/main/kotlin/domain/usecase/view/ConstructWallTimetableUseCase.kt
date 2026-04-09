@@ -4,7 +4,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.JourneyDirectionType
 import cz.cvut.fit.gaierda1.data.orm.model.LineType
 import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.OperatorDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.ActivePeriodWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.ActivePeriodForSingleLineDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
 import java.time.Instant
 import java.time.LocalDate
@@ -43,7 +43,7 @@ interface ConstructWallTimetableUseCase {
         val validFrom: Instant,
         val validTo: Instant,
         val operator: OperatorDto,
-        val activePeriods: List<ActivePeriodWallDto>,
+        val activePeriods: List<ActivePeriodForSingleLineDto>,
         val tariffStops: List<WallTariffStop>,
         val stops: List<StopDto>,
     )

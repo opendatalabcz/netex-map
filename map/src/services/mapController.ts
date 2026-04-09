@@ -8,12 +8,22 @@ import {
 import { recalculateVehiclePosition } from '@/services/interpolatePositions'
 import { debounce } from '@/util/debounce'
 import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
+import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
+import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 
 type FocusedJourney = {
     journeyId: number
     journeyDetails: JourneyDetailsWithTimes | null
     mapRoute: RenderedMapRoute
     highlightedStopOrder: number | null
+}
+
+type LineVersionSearchResult = {
+    query: string
+    lineVersions: SearchLineVersionWithDates[]
+    lastLoadedPage: number
+    pageSize: number
+    totalPages: number
 }
 
 export class MapController {
@@ -26,6 +36,13 @@ export class MapController {
     private focusedJourney: FocusedJourney | null = null
     private focusedJourneyDetailsListeners: ((focused: JourneyDetailsWithTimes | null) => void)[] =
         []
+    private selectedWallTimetable: WallTimetableWithDates | null = null
+    private wallTimetableListeners: ((timetable: WallTimetableWithDates | null) => void)[] = []
+    private lineVersionSearchResult: LineVersionSearchResult | null = null
+    private lineVersionSearchResultListeners: ((
+        lineVersions: SearchLineVersionWithDates[] | null,
+    ) => void)[] = []
+    private extendingLineSearch: boolean = false
 
     constructor(
         initialMoment: Date,
@@ -39,9 +56,12 @@ export class MapController {
         this.moment = initialMoment
     }
 
-    async reRender() {
-        if (this.map == null || this.renderer == null) return
-        await this.retriever.fetchFrame(this.map.getBounds(), this.map.getZoom(), this.moment)
+    /*
+     *   Map contents
+     */
+
+    reRender() {
+        if (this.renderer == null) return
         const routes = this.store.routes
         this.store.journeys.forEach((j) => {
             const route = routes.get(j.routeId)
@@ -55,7 +75,91 @@ export class MapController {
             }
         })
     }
-    debouncedReRender = debounce(() => this.reRender(), 400)
+    private async fetchFrame() {
+        if (this.map == null) return
+        await this.retriever.fetchFrame(
+            this.map.getBounds().pad(0.25),
+            this.map.getZoom(),
+            this.moment,
+        )
+        this.reRender()
+    }
+    debouncedFrameFetch = debounce(() => this.fetchFrame(), 400)
+
+    /*
+     *   WallTimetable
+     */
+
+    async onWallTimetableSelected(lineVersionId: number | null) {
+        if (lineVersionId == null) {
+            this.clearSelectedWallTimetable()
+            return
+        }
+        const timetable = await this.retriever.fetchWallTimetable(lineVersionId)
+        if (timetable == null) return
+        this.selectedWallTimetable = timetable
+        this.wallTimetableListeners.forEach((listener) => listener(timetable))
+    }
+
+    clearSelectedWallTimetable() {
+        if (this.selectedWallTimetable == null) return
+        this.selectedWallTimetable = null
+        this.wallTimetableListeners.forEach((listener) => listener(null))
+    }
+
+    private async getLineVersionSearch(query: string, pageNumber: number) {
+        const pageSize = 10
+        const searchPage = await this.retriever.searchLineVersions(query, pageSize, pageNumber)
+        console.log(searchPage)
+        if (searchPage == null) return
+        if (pageNumber === 0) {
+            this.lineVersionSearchResult = {
+                query: query,
+                lineVersions: searchPage.content,
+                lastLoadedPage: pageNumber,
+                pageSize: pageSize,
+                totalPages: searchPage.page.totalPages,
+            }
+        } else if (this.lineVersionSearchResult?.query === query) {
+            this.lineVersionSearchResult.lineVersions.push(...searchPage.content)
+            this.lineVersionSearchResult.lastLoadedPage = pageNumber
+        } else {
+            return
+        }
+        this.lineVersionSearchResultListeners.forEach((listener) =>
+            listener(this.lineVersionSearchResult!.lineVersions),
+        )
+    }
+    debouncedLineVersionSearch = debounce(
+        (query) => this.getLineVersionSearch(query + '', 0),
+        250,
+    ) as (query: string) => void
+
+    clearLineVersionSearch() {
+        if (this.lineVersionSearchResult == null) return
+        this.lineVersionSearchResult = null
+        this.lineVersionSearchResultListeners.forEach((listener) => listener(null))
+    }
+
+    async extendLineVersionSearch() {
+        if (
+            this.extendingLineSearch ||
+            this.lineVersionSearchResult == null ||
+            this.lineVersionSearchResult.lastLoadedPage ===
+                this.lineVersionSearchResult.totalPages - 1
+        )
+            return
+        this.extendingLineSearch = true
+        await this.getLineVersionSearch(
+            this.lineVersionSearchResult.query,
+            this.lineVersionSearchResult.lastLoadedPage + 1,
+        )
+        this.extendingLineSearch = false
+    }
+
+    /*
+     *   JourneyDetails
+     */
 
     private async fetchJourneyDetails(journeyId: number) {
         const details = await this.retriever.fetchJourneyDetails(journeyId)
@@ -140,9 +244,9 @@ export class MapController {
     setMap(map: L.Map) {
         this.map = map
         this.renderer = new MapEntitiesRenderer(map)
-        this.reRender()
-        map.on('move', this.debouncedReRender)
-        map.on('zoom', this.debouncedReRender)
+        this.fetchFrame()
+        map.on('move', () => this.debouncedFrameFetch())
+        map.on('zoom', () => this.debouncedFrameFetch())
     }
 
     getMoment() {
@@ -170,6 +274,26 @@ export class MapController {
     }
     removeJourneyDetailsListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
         this.focusedJourneyDetailsListeners = this.focusedJourneyDetailsListeners.filter(
+            (l) => l !== listener,
+        )
+    }
+
+    addWallTimetableListener(listener: (timetable: WallTimetableWithDates | null) => void) {
+        this.wallTimetableListeners.push(listener)
+    }
+    removeWallTimetableListener(listener: (timetable: WallTimetableWithDates | null) => void) {
+        this.wallTimetableListeners = this.wallTimetableListeners.filter((l) => l !== listener)
+    }
+
+    addLineVersionSearchListener(
+        listener: (lineVersions: SearchLineVersionWithDates[] | null) => void,
+    ) {
+        this.lineVersionSearchResultListeners.push(listener)
+    }
+    removeLineVersionSearchListener(
+        listener: (lineVersions: SearchLineVersionWithDates[] | null) => void,
+    ) {
+        this.lineVersionSearchResultListeners = this.lineVersionSearchResultListeners.filter(
             (l) => l !== listener,
         )
     }
