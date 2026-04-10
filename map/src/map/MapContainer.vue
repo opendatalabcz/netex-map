@@ -12,12 +12,13 @@ import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import SearchLineVersion from '@/map/SearchLineVersion.vue'
 import { vIntersectionObserver } from '@vueuse/components'
 
-const { t } = useI18n()
+const { t, d } = useI18n()
 
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 
-const controller = new MapController(new Date('2025-11-15T16:17:00'))
+const moment = ref<Date | null>(null)
+const controller = new MapController()
 const journeyDetails = ref<JourneyDetailsWithTimes | null>(null)
 const wallTimetable = ref<WallTimetableWithDates | null>(null)
 const lineSearch = ref<string | undefined>(undefined)
@@ -32,6 +33,10 @@ function onWallTimetableUpdate(timetable: WallTimetableWithDates | null) {
 function onLineVersionSearchResultUpdate(lineVersions: SearchLineVersionWithDates[] | null) {
     lineVersionSearchResult.value = lineVersions ? [...lineVersions] : []
 }
+function onMomentUpdate(newMoment: Date | null) {
+    moment.value = newMoment
+}
+
 async function onLineVersionSearchUpdate(value: string | null) {
     if (value == null || value.length === 0) {
         lineVersionSearchResult.value = []
@@ -59,6 +64,7 @@ onMounted(async () => {
     controller.addJourneyDetailsListener(onJourneyDetailsUpdate)
     controller.addWallTimetableListener(onWallTimetableUpdate)
     controller.addLineVersionSearchListener(onLineVersionSearchResultUpdate)
+    controller.addMomentListener(onMomentUpdate)
 })
 
 onUnmounted(() => {
@@ -66,6 +72,7 @@ onUnmounted(() => {
     controller.removeJourneyDetailsListener(onJourneyDetailsUpdate)
     controller.removeWallTimetableListener(onWallTimetableUpdate)
     controller.removeLineVersionSearchListener(onLineVersionSearchResultUpdate)
+    controller.removeMomentListener(onMomentUpdate)
 })
 </script>
 

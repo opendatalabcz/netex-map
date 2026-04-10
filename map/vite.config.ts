@@ -7,6 +7,8 @@ import vuetify from 'vite-plugin-vuetify'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: '../',
+  envPrefix: 'FE_',
   plugins: [
     vue(),
     vuetify(),

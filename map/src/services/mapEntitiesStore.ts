@@ -14,7 +14,7 @@ type RenderedMapRoute = MapRoute & {
 }
 
 type StoreEntry = {
-    journeys: Map<number, RenderedMapJourney>
+    journeys: Map<number, Map<string, RenderedMapJourney>>
     routes: Map<number, RenderedMapRoute>
 }
 
@@ -39,10 +39,16 @@ export class MapEntitiesStore {
         routes: new Map(),
     }
 
-    get journeys() {
-        return this.store.journeys
+    normalizeMoment(moment: Date): Date {
+        const normalizedMoment = new Date(moment)
+        normalizedMoment.setMinutes(0, 0, 0)
+        return normalizedMoment
     }
-    get routes() {
+
+    journeysForMoment(moment: Date) {
+        return this.store.journeys.get(this.normalizeMoment(moment).getTime())?.values()
+    }
+    routes() {
         return this.store.routes
     }
 
@@ -53,10 +59,17 @@ export class MapEntitiesStore {
         }
     }
 
-    addJourneys(journeys: MapJourney[]) {
+    addJourneys(moment: Date, journeys: MapJourney[]) {
+        const normalizedMoment = this.normalizeMoment(moment)
+        let timePartition = this.store.journeys.get(normalizedMoment.getTime())
+        if (timePartition == null) {
+            timePartition = new Map()
+            this.store.journeys.set(normalizedMoment.getTime(), timePartition)
+        }
         for (const journey of journeys) {
-            if (this.store.journeys.has(journey.relationalId)) continue
-            this.store.journeys.set(journey.relationalId, toRenderedJourney(journey))
+            const key = '' + journey.relationalId + journey.fromPreviousDay
+            if (timePartition.has(key)) continue
+            timePartition.set(key, toRenderedJourney(journey))
         }
     }
 }

@@ -21,11 +21,14 @@ export class MapEntitiesRetriever {
     async fetchFrame(bounds: L.LatLngBounds, zoom: number, moment: Date) {
         const excludedJourneyIds: number[] = []
         const excludedJourneyIdsFromPreviousDay: number[] = []
-        for (const j of this.mapEntriesStore.journeys.values()) {
-            if (j.fromPreviousDay) {
-                excludedJourneyIdsFromPreviousDay.push(j.relationalId)
-            } else {
-                excludedJourneyIds.push(j.relationalId)
+        const journeysForMoment = this.mapEntriesStore.journeysForMoment(moment)
+        if (journeysForMoment != null) {
+            for (const j of journeysForMoment) {
+                if (j.fromPreviousDay) {
+                    excludedJourneyIdsFromPreviousDay.push(j.relationalId)
+                } else {
+                    excludedJourneyIds.push(j.relationalId)
+                }
             }
         }
         const frame = await JourneyApi.getJourneysOperatingInFrame(
@@ -37,12 +40,12 @@ export class MapEntitiesRetriever {
             moment,
             excludedJourneyIds,
             excludedJourneyIdsFromPreviousDay,
-            Array.from(this.mapEntriesStore.routes.keys()),
+            Array.from(this.mapEntriesStore.routes().keys()),
         )
         if (!frame) return
 
         this.mapEntriesStore.addRoutes(frame.routes)
-        this.mapEntriesStore.addJourneys(frame.journeys)
+        this.mapEntriesStore.addJourneys(moment, frame.journeys)
     }
 
     async fetchWallTimetable(

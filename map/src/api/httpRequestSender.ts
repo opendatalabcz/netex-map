@@ -1,6 +1,6 @@
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-const VITE_API_URL = import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.FE_API_URL
 
 const ResponseCodes = {
     OK: 200,
@@ -42,7 +42,7 @@ async function request(
     }
 
     try {
-        const response = await fetch(VITE_API_URL + uri + urlQuery, {
+        const response = await fetch(API_URL + uri + urlQuery, {
             method: method,
             headers: headers,
             body: body,
@@ -79,8 +79,8 @@ const HttpRequestSender = {
         return response.json()
     },
 
-    post(path: string[], data: object | null | undefined) {
-        return request(path, 'POST', null, data)
+    post(path: string[], data: object | null | undefined, query?: object | null | undefined) {
+        return request(path, 'POST', query, data)
     },
 
     put(path: string[], data: object) {

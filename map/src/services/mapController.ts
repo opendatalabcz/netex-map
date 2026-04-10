@@ -45,7 +45,7 @@ export class MapController {
     private extendingLineSearch: boolean = false
 
     constructor(
-        initialMoment: Date,
+        initialMoment: Date = new Date(import.meta.env.FE_INITIAL_MOMENT),
         store: MapEntitiesStore | null = null,
         map: L.Map | null = null,
     ) {
@@ -62,18 +62,20 @@ export class MapController {
 
     reRender() {
         if (this.renderer == null) return
-        const routes = this.store.routes
-        this.store.journeys.forEach((j) => {
-            const route = routes.get(j.routeId)
-            if (route == null) return
-            recalculateVehiclePosition(this.moment, j, route)
-            if (j.position == null) return
-            const firstRender = j.vehicleMarker == null
-            this.renderer!.renderVehicle(j)
+        const routes = this.store.routes()
+        const journeysForMoment = this.store.journeysForMoment(this.moment)
+        if (journeysForMoment == null) return
+        for (const journey of journeysForMoment) {
+            const route = routes.get(journey.routeId)
+            if (route == null) continue
+            recalculateVehiclePosition(this.moment, journey, route)
+            if (journey.position == null) continue
+            const firstRender = journey.vehicleMarker == null
+            this.renderer!.renderVehicle(journey)
             if (firstRender) {
-                j.vehicleMarker!.addEventListener('click', () => this.onJourneyClick(j, route))
+                journey.vehicleMarker!.addEventListener('click', () => this.onJourneyClick(journey, route))
             }
-        })
+        }
     }
     private async fetchFrame() {
         if (this.map == null) return
@@ -110,7 +112,6 @@ export class MapController {
     private async getLineVersionSearch(query: string, pageNumber: number) {
         const pageSize = 10
         const searchPage = await this.retriever.searchLineVersions(query, pageSize, pageNumber)
-        console.log(searchPage)
         if (searchPage == null) return
         if (pageNumber === 0) {
             this.lineVersionSearchResult = {
@@ -264,6 +265,7 @@ export class MapController {
 
     addMomentListener(listener: (moment: Date) => void) {
         this.momentListeners.push(listener)
+        listener(this.moment)
     }
     removeMomentListener(listener: (moment: Date) => void) {
         this.momentListeners = this.momentListeners.filter((l) => l !== listener)
@@ -271,6 +273,7 @@ export class MapController {
 
     addJourneyDetailsListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
         this.focusedJourneyDetailsListeners.push(listener)
+        listener(this.focusedJourney?.journeyDetails ?? null)
     }
     removeJourneyDetailsListener(listener: (focused: JourneyDetailsWithTimes | null) => void) {
         this.focusedJourneyDetailsListeners = this.focusedJourneyDetailsListeners.filter(
@@ -280,6 +283,7 @@ export class MapController {
 
     addWallTimetableListener(listener: (timetable: WallTimetableWithDates | null) => void) {
         this.wallTimetableListeners.push(listener)
+        listener(this.selectedWallTimetable)
     }
     removeWallTimetableListener(listener: (timetable: WallTimetableWithDates | null) => void) {
         this.wallTimetableListeners = this.wallTimetableListeners.filter((l) => l !== listener)
@@ -289,6 +293,7 @@ export class MapController {
         listener: (lineVersions: SearchLineVersionWithDates[] | null) => void,
     ) {
         this.lineVersionSearchResultListeners.push(listener)
+        listener(this.lineVersionSearchResult?.lineVersions ?? null)
     }
     removeLineVersionSearchListener(
         listener: (lineVersions: SearchLineVersionWithDates[] | null) => void,

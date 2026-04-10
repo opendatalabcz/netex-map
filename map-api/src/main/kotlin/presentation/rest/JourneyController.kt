@@ -7,6 +7,8 @@ import cz.cvut.fit.gaierda1.presentation.model.HttpJourneysOperatingInFrameResul
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -30,7 +32,13 @@ class JourneyController(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
-    @GetMapping("/date-hour/{dateTime}")
+    data class FrameExcludeArrays(
+        val excludedJourneyIds: Set<Long>?,
+        val excludedJourneyIdsFromPreviousDay: Set<Long>?,
+        val excludedRouteIds: Set<Long>?,
+    )
+
+    @PostMapping("/date-hour/{dateTime}")
     fun getJourneysOperatingInFrame(
         @RequestParam lonMin: Double,
         @RequestParam latMin: Double,
@@ -38,14 +46,14 @@ class JourneyController(
         @RequestParam latMax: Double,
         @RequestParam zoom: Int,
         @PathVariable dateTime: OffsetDateTime,
-        @RequestParam(required = false) nj: Set<Long> = emptySet(),
-        @RequestParam(required = false) njpd: Set<Long> = emptySet(),
-        @RequestParam(required = false) nr: Set<Long> = emptySet(),
+        @RequestBody(required = false) bigParams: FrameExcludeArrays?,
     ): HttpJourneysOperatingInFrameResult {
         return modelConvertor.toHttp(
             getJourneysOperatingInFrameUseCase.getJourneysOperatingInFrame(
                 lonMin, latMin, lonMax, latMax, zoom, dateTime,
-                nj, njpd, nr,
+                bigParams?.excludedJourneyIds ?: emptySet(),
+                bigParams?.excludedJourneyIdsFromPreviousDay ?: emptySet(),
+                bigParams?.excludedRouteIds ?: emptySet(),
             )
         )
     }

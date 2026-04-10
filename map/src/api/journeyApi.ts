@@ -7,7 +7,7 @@ const FRAME_LOCATION = 'date-hour'
 const DETAILS_LOCATION = 'details'
 
 const JourneyApi = {
-    getJourneysOperatingInFrame(
+    async getJourneysOperatingInFrame(
         lonMin: number,
         latMin: number,
         lonMax: number,
@@ -18,23 +18,21 @@ const JourneyApi = {
         excludedJourneyIdsFromPreviousDay: number[] = [],
         excludedRouteIds: number[] = [],
     ): Promise<JourneysOperatingInFrame | null | undefined> {
-        const options: Record<string, unknown> = {
+        const data = {
+            excludedJourneyIds: excludedJourneyIds.length > 0 ? excludedJourneyIds : [],
+            excludedJourneyIdsFromPreviousDay: excludedJourneyIdsFromPreviousDay.length > 0 ? excludedJourneyIdsFromPreviousDay : [],
+            excludedRouteIds: excludedRouteIds.length > 0 ? excludedRouteIds : [],
+        }
+        const response = await HttpRequestSender.post([JOURNEY_URI, FRAME_LOCATION, day.toISOString()], data, {
             lonMin: lonMin,
             latMin: latMin,
             lonMax: lonMax,
             latMax: latMax,
             zoom: zoom,
-        }
-        if (excludedJourneyIds.length > 0) {
-            options.nj = excludedJourneyIds
-        }
-        if (excludedJourneyIdsFromPreviousDay.length > 0) {
-            options.njpd = excludedJourneyIdsFromPreviousDay
-        }
-        if (excludedRouteIds.length > 0) {
-            options.nr = excludedRouteIds
-        }
-        return HttpRequestSender.get([JOURNEY_URI, FRAME_LOCATION, day.toISOString()], options)
+        })
+        if (!response) return response
+        if (response.status !== 200) return null
+        return response.json()
     },
 
     getJourneyDetails(journeyId: number): Promise<JourneyDetails | null | undefined> {
