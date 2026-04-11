@@ -19,17 +19,26 @@ type StoreEntry = {
 }
 
 function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
-    const res = toMapJourneyWithDates(journey) as RenderedMapJourney
-    res.vehicleMarker = null
-    res.color = null
+    const res: RenderedMapJourney = {
+        ...toMapJourneyWithDates(journey),
+        vehicleMarker: null,
+        color: null,
+        routePointIndex: null,
+        routeCumulativeDistance: null,
+        position: null,
+        segmentIndex: null,
+        azimuth: null,
+    }
     return res
 }
 
 function toRenderedRoute(route: MapRawRoute): RenderedMapRoute {
-    const res = toMapRoute(route) as RenderedMapRoute
-    res.featureGroup = null
-    res.stops = null
-    res.color = null
+    const res: RenderedMapRoute = {
+        ...toMapRoute(route),
+        featureGroup: null,
+        stops: null,
+        color: null,
+    }
     return res
 }
 
@@ -39,14 +48,14 @@ export class MapEntitiesStore {
         routes: new Map(),
     }
 
-    normalizeMoment(moment: Date): Date {
+    getMomentKeyFor(moment: Date): number {
         const normalizedMoment = new Date(moment)
         normalizedMoment.setMinutes(0, 0, 0)
-        return normalizedMoment
+        return normalizedMoment.getTime()
     }
 
     journeysForMoment(moment: Date) {
-        return this.store.journeys.get(this.normalizeMoment(moment).getTime())?.values()
+        return this.store.journeys.get(this.getMomentKeyFor(moment))?.values()
     }
     routes() {
         return this.store.routes
@@ -60,11 +69,11 @@ export class MapEntitiesStore {
     }
 
     addJourneys(moment: Date, journeys: MapJourney[]) {
-        const normalizedMoment = this.normalizeMoment(moment)
-        let timePartition = this.store.journeys.get(normalizedMoment.getTime())
+        const momentKey = this.getMomentKeyFor(moment)
+        let timePartition = this.store.journeys.get(momentKey)
         if (timePartition == null) {
             timePartition = new Map()
-            this.store.journeys.set(normalizedMoment.getTime(), timePartition)
+            this.store.journeys.set(momentKey, timePartition)
         }
         for (const journey of journeys) {
             const key = '' + journey.relationalId + journey.fromPreviousDay

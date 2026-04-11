@@ -3,6 +3,7 @@ import { createVuetify } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import '@mdi/font/css/materialdesignicons.css'
 import { cs } from 'vuetify/locale'
+import { VDateInput } from 'vuetify/labs/VDateInput'
 
 type Theme = 'light' | 'dark'
 const Themes: Record<string, Theme> = {
@@ -31,6 +32,9 @@ const Vuetify = createVuetify({
     },
     theme: {
         defaultTheme: Themes.light,
+    },
+    components: {
+        VDateInput,
     },
 })
 

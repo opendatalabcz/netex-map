@@ -11,13 +11,16 @@ import { useI18n } from 'vue-i18n'
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import SearchLineVersion from '@/map/SearchLineVersion.vue'
 import { vIntersectionObserver } from '@vueuse/components'
+import MomentControls from '@/map/MomentControls.vue'
 
-const { t, d } = useI18n()
+const { t } = useI18n()
 
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 
-const moment = ref<Date | null>(null)
+const moment = ref<Date>(new Date())
+const playing = ref(false)
+const playSpeed = ref(1)
 const controller = new MapController()
 const journeyDetails = ref<JourneyDetailsWithTimes | null>(null)
 const wallTimetable = ref<WallTimetableWithDates | null>(null)
@@ -33,8 +36,14 @@ function onWallTimetableUpdate(timetable: WallTimetableWithDates | null) {
 function onLineVersionSearchResultUpdate(lineVersions: SearchLineVersionWithDates[] | null) {
     lineVersionSearchResult.value = lineVersions ? [...lineVersions] : []
 }
-function onMomentUpdate(newMoment: Date | null) {
+function onMomentUpdate(newMoment: Date) {
     moment.value = newMoment
+}
+function onAnimationPlayingUpdate(animationPlaying: boolean) {
+    playing.value = animationPlaying
+}
+function onAnimationSpeedUpdate(speed: number) {
+    playSpeed.value = speed
 }
 
 async function onLineVersionSearchUpdate(value: string | null) {
@@ -65,14 +74,18 @@ onMounted(async () => {
     controller.addWallTimetableListener(onWallTimetableUpdate)
     controller.addLineVersionSearchListener(onLineVersionSearchResultUpdate)
     controller.addMomentListener(onMomentUpdate)
+    controller.addAnimationPlayingListener(onAnimationPlayingUpdate)
+    controller.addAnimationSpeedListener(onAnimationSpeedUpdate)
 })
 
 onUnmounted(() => {
-    map?.remove()
     controller.removeJourneyDetailsListener(onJourneyDetailsUpdate)
     controller.removeWallTimetableListener(onWallTimetableUpdate)
     controller.removeLineVersionSearchListener(onLineVersionSearchResultUpdate)
     controller.removeMomentListener(onMomentUpdate)
+    controller.removeAnimationPlayingListener(onAnimationPlayingUpdate)
+    controller.removeAnimationSpeedListener(onAnimationSpeedUpdate)
+    map?.remove()
 })
 </script>
 
@@ -105,6 +118,7 @@ onUnmounted(() => {
                     v-for="(lineVersion, idx) in lineVersionSearchResult"
                     :key="lineSearch ?? '' + lineVersion.relationalId"
                     class="search-line-version-card"
+                    elevation="3"
                     @click="controller.onWallTimetableSelected(lineVersion.relationalId)"
                 >
                     <div
@@ -122,6 +136,15 @@ onUnmounted(() => {
             @close="controller.clearSelectedWallTimetable()"
         />
     </v-card>
+    <MomentControls
+        :model-value="moment"
+        :playing="playing"
+        :play-speed="playSpeed"
+        class="overlay"
+        @update:model-value="(m) => controller.setMoment(m)"
+        @update:playing="(p) => controller.setAnimationPlaying(p)"
+        @update:play-speed="(s) => controller.setAnimationSpeed(s)"
+    />
 </template>
 
 <style scoped>
@@ -146,7 +169,7 @@ onUnmounted(() => {
     top: 0.5em;
     left: 0.5em;
     width: 25em;
-    max-height: calc(100vh - 1em);
+    max-height: calc(85vh - 1em);
 }
 .search-card {
     flex: 0 0 auto;
@@ -178,5 +201,9 @@ onUnmounted(() => {
 .journey-details,
 .wall-timetable {
     max-height: 90vh;
+}
+.moment-controls {
+    left: 0.5em;
+    bottom: 0.5em;
 }
 </style>

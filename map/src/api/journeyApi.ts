@@ -20,16 +20,23 @@ const JourneyApi = {
     ): Promise<JourneysOperatingInFrame | null | undefined> {
         const data = {
             excludedJourneyIds: excludedJourneyIds.length > 0 ? excludedJourneyIds : [],
-            excludedJourneyIdsFromPreviousDay: excludedJourneyIdsFromPreviousDay.length > 0 ? excludedJourneyIdsFromPreviousDay : [],
+            excludedJourneyIdsFromPreviousDay:
+                excludedJourneyIdsFromPreviousDay.length > 0
+                    ? excludedJourneyIdsFromPreviousDay
+                    : [],
             excludedRouteIds: excludedRouteIds.length > 0 ? excludedRouteIds : [],
         }
-        const response = await HttpRequestSender.post([JOURNEY_URI, FRAME_LOCATION, day.toISOString()], data, {
-            lonMin: lonMin,
-            latMin: latMin,
-            lonMax: lonMax,
-            latMax: latMax,
-            zoom: zoom,
-        })
+        const response = await HttpRequestSender.post(
+            [JOURNEY_URI, FRAME_LOCATION, day.toISOString()],
+            data,
+            {
+                lonMin: lonMin,
+                latMin: latMin,
+                lonMax: lonMax,
+                latMax: latMax,
+                zoom: zoom,
+            },
+        )
         if (!response) return response
         if (response.status !== 200) return null
         return response.json()

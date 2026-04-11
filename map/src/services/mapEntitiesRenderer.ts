@@ -131,7 +131,13 @@ export class MapEntitiesRenderer {
     }
 
     renderVehicle(journey: RenderedMapJourney) {
-        if (journey.position == null || journey.azimuth == null) return
+        if (journey.position == null || journey.azimuth == null) {
+            if (journey.vehicleMarker != null) {
+                journey.vehicleMarker.remove()
+                journey.vehicleMarker = null
+            }
+            return
+        }
         if (journey.color == null) journey.color = this.getColor(journey.routeId!)
         if (journey.vehicleMarker) {
             journey.vehicleMarker.setLatLng([

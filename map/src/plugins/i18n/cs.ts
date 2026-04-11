@@ -66,7 +66,7 @@ const cs = {
     lineVersion: {
         detour: 'Výlukový jízdní řád',
         inDirectionTo: 'Ve směru',
-        operatingPeriod: 'Fragment',
+        operatingPeriod: 'Řád',
         validIn: 'Vydaný na:',
         activeIn: 'Platný v:',
         operatesRegularlyIn: 'Spoje pravidelně jezdí v:',
