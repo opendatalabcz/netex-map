@@ -13,6 +13,9 @@ import java.util.Optional
 
 @Repository
 interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
+    companion object {
+        private const val FIND_ALL_PUBLIC_CODES_JPQL_QUERY = "SELECT DISTINCT lv.publicCode FROM LineVersion lv ORDER BY lv.publicCode"
+    }
     @Query("""
         SELECT lv.relationalId
         FROM LineVersion lv
@@ -28,7 +31,10 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         isDetour: Boolean,
     ): Optional<Long>
 
-    @Query("SELECT DISTINCT lv.publicCode FROM LineVersion lv ORDER BY lv.publicCode")
+    @Query(FIND_ALL_PUBLIC_CODES_JPQL_QUERY)
+    fun findAllPublicCodes(): List<String>
+
+    @Query(FIND_ALL_PUBLIC_CODES_JPQL_QUERY)
     fun findAllPublicCodes(pageable: Pageable): Page<String>
 
     @Query("SELECT lv FROM LineVersion lv WHERE lv.publicCode IN :publicCodes")

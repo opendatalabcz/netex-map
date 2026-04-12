@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.Stop
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.position.StopPositionEnrichmentDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -29,4 +30,11 @@ interface StopJpaRepository: JpaRepository<Stop, Long> {
         WHERE s.relational_id IN :stopIds
     """)
     fun findAllDtoByStopIds(stopIds: List<Long>): List<StopDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT s.relational_id, s.name
+        FROM stop s
+        WHERE s.line_public_code = :linePublicCode AND s.border_crossing = false
+    """)
+    fun findAllPositionEnrichmentDtoByLinePublicCode(linePublicCode: String): List<StopPositionEnrichmentDto>
 }

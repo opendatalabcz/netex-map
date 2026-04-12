@@ -17,6 +17,7 @@ dependencies {
     implementation("org.entur:netex-java-model:2.0.15")
     implementation("jakarta.xml.bind:jakarta.xml.bind-api:4.0.4")
     implementation("org.glassfish.jaxb:jaxb-runtime:4.0.6")
+    implementation("org.apache.commons:commons-csv:1.14.1")
     testImplementation(kotlin("test"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
