@@ -237,7 +237,7 @@ export class MapController {
         }
         this.fetchJourneyDetails(journey.relationalId)
         if (renderRoute) {
-            this.renderer!.renderRoute(route)
+            this.renderer!.renderRoute(route, journey.lineVersionId)
         }
         this.map!.flyToBounds(route.featureGroup!.getBounds(), {
             duration: MAP_FLY_DURATION,

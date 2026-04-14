@@ -7,9 +7,12 @@ map:
       11: 0.2
       12: 0.1
       13: 0.0
+routing:
+  service:
+    url: http://localhost:8113
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:8112/map?reWriteBatchedInserts=true
+    url: jdbc:postgresql://localhost:8112/timetable?reWriteBatchedInserts=true
     username: SuperUser
     password: stronk-pazzward
   jpa:

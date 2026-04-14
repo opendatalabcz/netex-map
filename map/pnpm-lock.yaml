@@ -40,7 +40,7 @@ importers:
         specifier: ~24.0.4
         version: 24.0.4
       '@types/leaflet':
-        specifier: ^1.9.21
+        specifier: ~1.9.21
         version: 1.9.21
       '@types/node':
         specifier: ~24.12.2

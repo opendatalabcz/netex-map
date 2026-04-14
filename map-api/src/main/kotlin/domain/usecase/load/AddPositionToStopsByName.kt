@@ -2,7 +2,7 @@ package cz.cvut.fit.gaierda1.domain.usecase.load
 
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.position.StopPositionEnrichmentDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.StopPositionEnrichmentDto
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component

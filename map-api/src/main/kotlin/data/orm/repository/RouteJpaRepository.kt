@@ -17,4 +17,6 @@ interface RouteJpaRepository: JpaRepository<Route, Long> {
         WHERE r.relational_id IN :routeIds
     """)
     fun findAllMapDtoByRouteId(routeIds: List<Long>): List<RouteMapDto>
+
+    fun findAllByExternalId(externalId: String): List<Route>
 }

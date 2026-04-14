@@ -1,7 +1,7 @@
 name: netex-map
 
 services:
-  postgis:
+  map-db:
     image: postgis/postgis:18-3.6-alpine
     restart: always
     container_name: ${DB_CONTAINER_NAME}
@@ -12,8 +12,25 @@ services:
     ports:
       - ${DB_HOST_PORT}:5432
     volumes:
-      - data-db:/var/lib/postgresql
+      - timetable-db:/var/lib/postgresql
       - ${DB_INIT_SCRIPTS_HOST_PATH}:/docker-entrypoint-initdb.d/
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+  graphhopper:
+    image: israelhikingmap/graphhopper:11.0
+    restart: no
+    container_name: ${GRAPHHOPPER_CONTAINER_NAME}
+    command: >
+      --input /data/czech-republic.osm.pbf
+      --graph-cache ${GRAPHHOPPER_CACHE_DIR}
+    ports:
+      - ${GRAPHHOPPER_HOST_PORT}:8989
+    volumes:
+      - routing-cache:${GRAPHHOPPER_CACHE_DIR}
+      - ${GRAPHHOPPER_OSM_PBF_HOST_PATH}:/data/czech-republic.osm.pbf:ro
     logging:
       driver: local
       options:
@@ -21,5 +38,7 @@ services:
         max-file: 4
 
 volumes:
-  data-db:
+  timetable-db:
     name: ${DB_VOLUME_NAME}
+  routing-cache:
+    name: ${GRAPHHOPPER_VOLUME_NAME}

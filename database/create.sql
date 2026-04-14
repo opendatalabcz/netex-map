@@ -20,11 +20,12 @@ CREATE TABLE physical_stop (
 
 CREATE TABLE route (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('route_seq'),
-    external_id TEXT NOT NULL UNIQUE,
+    external_id TEXT NOT NULL,
     point_sequence GEOGRAPHY(LineString, 4326) NOT NULL,
     total_distance DOUBLE PRECISION NOT NULL
 );
 
+CREATE INDEX idx_route_external_id ON route(external_id);
 CREATE INDEX idx_route_point_sequence ON route USING GIST(point_sequence);
 
 CREATE TABLE operator (

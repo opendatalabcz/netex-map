@@ -15,6 +15,8 @@ type InterpolationData = {
     cumulativeDistanceHint: number
 }
 
+const EARTH_RADIUS = 6_371_000
+
 function getRouteSegmentIndex(
     moment: Date,
     journey: MapJourneyWithDates,
@@ -41,9 +43,10 @@ function getRouteSegmentIndex(
 }
 
 function distanceBetweenPoints(a: number[], b: number[]): number {
-    const dLon = b[0]! - a[0]!
-    const dLat = b[1]! - a[1]!
-    return Math.sqrt(dLat * dLat + dLon * dLon)
+    const cosLat = Math.cos(a[1]! * Math.PI / 180)
+    const dLonRad = (b[0]! - a[0]!) * Math.PI / 180 * cosLat
+    const dLatRad = (b[1]! - a[1]!) * Math.PI / 180
+    return EARTH_RADIUS * Math.sqrt(dLatRad * dLatRad + dLonRad * dLonRad)
 }
 
 function lerp(a: number, b: number, f: number): number {
@@ -57,8 +60,8 @@ function inverseLerp(a: number, b: number, c: number): number {
 function calculateAzimuth(a: number[], b: number[]): number {
     const dLon = b[0]! - a[0]!
     const dLat = b[1]! - a[1]!
-    const cosLat = Math.cos((a[1]! * Math.PI) / 180)
-    const angle = Math.atan2(dLon * cosLat, dLat) * (180 / Math.PI)
+    const cosLatRad = Math.cos(a[1]! * Math.PI / 180)
+    const angle = Math.atan2(dLon * cosLatRad, dLat) * (180 / Math.PI)
     return (angle + 360) % 360
 }
 

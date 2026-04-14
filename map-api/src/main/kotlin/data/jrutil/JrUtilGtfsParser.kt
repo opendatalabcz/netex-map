@@ -9,6 +9,7 @@ import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.*
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsSourcePort.*
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
+import org.locationtech.jts.geom.Coordinate
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.InputStream
@@ -100,13 +101,12 @@ class JrUtilGtfsParser: JrUtilGtfsParserPort {
                     .map {
                         JrUtilGtfsStopParseResult(
                             name = it.name,
-                            longitude = it.longitude,
-                            latitude = it.latitude,
+                            coordinate = Coordinate(it.longitude, it.latitude),
                         )
                     },
             )
         }
-        val resultStops = stops.map { JrUtilGtfsStopParseResult(it.name, it.longitude, it.latitude)}
+        val resultStops = stops.map { JrUtilGtfsStopParseResult(it.name, Coordinate(it.longitude, it.latitude)) }
         return JrUtilGtfsParseResult(resultLines, resultStops)
     }
 }

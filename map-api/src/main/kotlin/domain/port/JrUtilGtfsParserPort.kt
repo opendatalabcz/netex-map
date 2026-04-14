@@ -1,10 +1,11 @@
 package cz.cvut.fit.gaierda1.domain.port
 
+import org.locationtech.jts.geom.Coordinate
+
 interface JrUtilGtfsParserPort {
     data class JrUtilGtfsStopParseResult(
         val name: String,
-        val longitude: Double,
-        val latitude: Double,
+        val coordinate: Coordinate,
     )
     data class JrUtilGtfsLineParseResult(
         val publicCode: String,

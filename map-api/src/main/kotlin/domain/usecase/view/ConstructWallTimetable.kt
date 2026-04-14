@@ -18,7 +18,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.OperatingPeriodDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyPatternStopWallDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.TariffStopWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.TariffStopForSingleLineDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.WithinRegionTransportBanWallDto
 import cz.cvut.fit.gaierda1.domain.usecase.view.ConstructWallTimetableUseCase.*
 import org.springframework.stereotype.Component
@@ -97,8 +97,8 @@ class ConstructWallTimetable(
         val operator = operatorJpaRepository.findDtoByOperatorId(lineVersion.operatorId).orElse(null) ?: return null
         val activePeriods = activePeriodJpaRepository.findAllDtoForSingleLineByLineVersionId(lineVersionId)
         val tariffStops = tariffStopJpaRepository
-            .findAllWallDtoByLineVersionId(lineVersionId)
-            .sortedBy(TariffStopWallDto::tariffOrder)
+            .findAllDtoForSingleLineByLineVersionId(lineVersionId)
+            .sortedBy(TariffStopForSingleLineDto::tariffOrder)
             .map { WallTariffStop(
                 tariffZone = it.tariffZone,
                 stopId = it.stopId,
@@ -210,11 +210,11 @@ class ConstructWallTimetable(
         val reconstructedJourneys = reconstructJourneys(lineVersionId)
         val reconstructedJourneyPatterns = reconstructJourneyPatterns(lineVersionId)
 
-        val journeyPatternsByNumber = reconstructedJourneyPatterns.associateBy(WallJourneyPattern::patternNumber)
+        val sortedJourneyPatterns = reconstructedJourneyPatterns.sortedBy(WallJourneyPattern::patternNumber)
         val fullyReconstructedJourneys = mutableMapOf<JourneyDirectionType, MutableMap<Long, MutableList<WallJourney>>>()
         for ((operatingPeriodId, journeys) in reconstructedJourneys) {
             for (journey in journeys) {
-                val journeyPattern = journeyPatternsByNumber[journey.patternNumber]!!
+                val journeyPattern = sortedJourneyPatterns[journey.patternNumber]
                 val direction = journeyPattern.direction
                 fullyReconstructedJourneys
                     .getOrPut(direction, ::mutableMapOf)

@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
@@ -13,14 +14,19 @@ import org.hibernate.annotations.BatchSize
 import org.locationtech.jts.geom.LineString
 
 @Entity
-@Table(name = "route")
+@Table(
+    name = "route",
+    indexes = [
+        Index(columnList = "external_id"),
+    ],
+)
 class Route(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "route_seq_gen")
     @SequenceGenerator(name = "route_seq_gen", sequenceName = "route_seq", allocationSize = 20)
     var relationalId: Long?,
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     val externalId: String,
 
     @Column(columnDefinition = "geography(LineString,4326)", nullable = false)

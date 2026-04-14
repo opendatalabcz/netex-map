@@ -23,6 +23,7 @@ import cz.cvut.fit.gaierda1.domain.port.TimetableParserPort
 import cz.cvut.fit.gaierda1.domain.port.TimetableSourcePort
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 
@@ -46,17 +47,21 @@ class ImportTimetables(
         private const val INPUT_BATCH_SIZE = 30
     }
 
+    private val log = LoggerFactory.getLogger(ImportTimetables::class.java)
+
     override fun importTimetables(
         timetableSource: TimetableSourcePort,
         timetableParser: TimetableParserPort,
         calculateNextDayOperationUseCase: CalculateNextDayOperationUseCase,
     ) {
+        var lineVersionCount = 0
         val inputStreamSequence = timetableSource.provideInput().iterator()
         while (inputStreamSequence.hasNext()) {
             transactionTemplate.executeWithoutResult {
                 var cumulativeParseResult = TimetableParseResult()
                 for (i in 0 until INPUT_BATCH_SIZE) {
                     if (!inputStreamSequence.hasNext()) break
+                    lineVersionCount++
                     cumulativeParseResult = timetableParser.parseTimetable(
                         contentStream = inputStreamSequence.next(),
                         cumulativeParseResult = cumulativeParseResult,
@@ -66,6 +71,7 @@ class ImportTimetables(
                 batchSave(cumulativeParseResult)
             }
         }
+        log.info("Imported $lineVersionCount line versions.")
     }
     
     private fun nextDayCalculation(

@@ -2,8 +2,8 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.TariffStop
 import cz.cvut.fit.gaierda1.data.orm.model.TariffStopId
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.TariffStopJourneyDetailsDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.TariffStopWallDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.TariffStopForSingleLineDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.TariffStopRoutingDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -15,12 +15,12 @@ interface TariffStopJpaRepository: JpaRepository<TariffStop, TariffStopId> {
         FROM tariff_stop ts
         WHERE ts.line_version_id = :lineVersionId
     """)
-    fun findAllWallDtoByLineVersionId(lineVersionId: Long): List<TariffStopWallDto>
+    fun findAllDtoForSingleLineByLineVersionId(lineVersionId: Long): List<TariffStopForSingleLineDto>
 
     @Query(nativeQuery = true, value = """
-        SELECT ts.tariff_order, ts.tariff_zone, ts.stop_id
+        SELECT ts.tariff_order, ts.stop_id
         FROM tariff_stop ts
         WHERE ts.line_version_id = :lineVersionId
     """)
-    fun findAllJourneyDetailsDtoByLineVersionId(lineVersionId: Long): List<TariffStopJourneyDetailsDto>
+    fun findAllRoutingDtoByLineVersionId(lineVersionId: Long): List<TariffStopRoutingDto>
 }

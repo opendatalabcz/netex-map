@@ -47,6 +47,7 @@ class CalculateJourneyRoutesMock(
         private const val KILOMETER_TO_DEGREE = 0.008_983
         private const val STEP_LENGTH = KILOMETER_TO_DEGREE / 8
         private const val AVG_SPEED_DPM = 50.0 * KILOMETER_TO_DEGREE / 60.0
+        private const val PAGE_SIZE = 30
     }
 
     private fun interpolate(a: Double, b: Double, t: Double): Double = a + (b - a) * t
@@ -126,16 +127,15 @@ class CalculateJourneyRoutesMock(
     }
 
     override fun calculateRoutes() {
-        val pageSize = 30
         var currentPage: Page<JourneyByDistinctJourneyPatternDto>? = null
         do { transactionTemplate.executeWithoutResult {
             currentPage = journeyJpaRepository
-                .findAllDistinctJourneyPatternDtoWithNullRoute(PageRequest.of(0, pageSize))
+                .findAllDistinctJourneyPatternDtoWithNullRoute(PageRequest.of(0, PAGE_SIZE))
             val scheduledStops1 = scheduledStopJpaRepository
-                .findAllDtoByJourneyIds(currentPage.content.map { it.relationalId })
+                .findAllDtoByJourneyIds(currentPage.content.map(JourneyByDistinctJourneyPatternDto::relationalId))
             val scheduledStops = scheduledStops1
-                .groupBy { it.journeyId }
-                .mapValues { (_, stops) -> stops.sortedBy { it.stopOrder } }
+                .groupBy(ScheduledStopDto::journeyId)
+                .mapValues { (_, stops) -> stops.sortedBy(ScheduledStopDto::stopOrder) }
             val newRoutesMap = scheduledStops.mapValues { createRoute(it.value) }
 
             val newRoutes = newRoutesMap.values

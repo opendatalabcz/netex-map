@@ -61,9 +61,9 @@ function onSearchSentinelVisible([entry]: IntersectionObserverEntry[]) {
 
 onMounted(async () => {
     if (!mapContainer.value) return
-    map = L.map(mapContainer.value, { minZoom: 8, maxZoom: 19, zoomControl: false }).setView(
-        [49.9, 15.5],
-        10,
+    map = L.map(mapContainer.value, { minZoom: 8, maxZoom: 18, zoomControl: false }).setView(
+        [50.05, 14.5],
+        11,
     )
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution:

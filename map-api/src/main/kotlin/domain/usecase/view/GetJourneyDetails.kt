@@ -11,9 +11,9 @@ import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.TariffStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.WithinRegionTransportBanJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.TariffStopForSingleLineDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.JourneyPatternStopJourneyDetailsDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.ScheduledStopJourneyDetailsDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.TariffStopJourneyDetailsDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.TransportBanJourneyDetailsDto
 import cz.cvut.fit.gaierda1.domain.usecase.view.GetJourneyDetailsUseCase.*
 import org.springframework.stereotype.Component
@@ -38,20 +38,21 @@ class GetJourneyDetails(
             .sortedBy(ScheduledStopJourneyDetailsDto::stopOrder)
         val journeyPatternStops = journeyPatternStopJpaRepository
             .findAllJourneyDetailsDtoByLineVersionIdAndPatternNumber(journey.lineVersionId, journey.patternNumber)
-            .associateBy(JourneyPatternStopJourneyDetailsDto::stopOrder)
+            .sortedBy(JourneyPatternStopJourneyDetailsDto::stopOrder)
         val withinRegionTransportBans = withinRegionTransportBanJpaRepository
             .findAllJourneyDetailsDtoByLineVersionIdAndPatternNumber(journey.lineVersionId, journey.patternNumber)
             .groupBy(TransportBanJourneyDetailsDto::banGroupNumber)
             .mapValues { (_, bans) -> bans.map(TransportBanJourneyDetailsDto::stopOrder) }
-        val tariffStops = tariffStopJpaRepository.findAllJourneyDetailsDtoByLineVersionId(journey.lineVersionId)
+        val tariffStops = tariffStopJpaRepository
+            .findAllDtoForSingleLineByLineVersionId(journey.lineVersionId)
+            .sortedBy(TariffStopForSingleLineDto::tariffOrder)
         val stops = stopJpaRepository
-            .findAllDtoByStopIds(tariffStops.map(TariffStopJourneyDetailsDto::stopId))
+            .findAllDtoByStopIds(tariffStops.map(TariffStopForSingleLineDto::stopId))
             .associateBy(StopDto::relationalId)
 
-        val tariffStopsByTariffOrder = tariffStops.associateBy(TariffStopJourneyDetailsDto::tariffOrder)
         val reconstructedStops = scheduledStops.map { scheduledStop ->
-            val journeyPatternStop = journeyPatternStops[scheduledStop.stopOrder]!!
-            val tariffStop = tariffStopsByTariffOrder[journeyPatternStop.tariffOrder]!!
+            val journeyPatternStop = journeyPatternStops[scheduledStop.stopOrder]
+            val tariffStop = tariffStops[journeyPatternStop.tariffOrder]
             val stop = stops[tariffStop.stopId]!!
             JourneyDetailsScheduledStop(
                 arrival = scheduledStop.arrival,

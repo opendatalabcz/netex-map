@@ -20,6 +20,9 @@ dependencies {
     implementation("org.apache.commons:commons-csv:1.14.1")
     testImplementation(kotlin("test"))
 
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("com.graphhopper:graphhopper-web-api:11.0")
+
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")

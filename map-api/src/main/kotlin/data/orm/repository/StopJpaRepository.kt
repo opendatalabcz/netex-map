@@ -2,7 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.Stop
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.StopDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.position.StopPositionEnrichmentDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.StopPositionEnrichmentDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
