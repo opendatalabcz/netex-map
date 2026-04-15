@@ -117,7 +117,7 @@ export class MapEntitiesRenderer {
         route.featureGroup.addTo(this.map)
     }
 
-    createVehicleIcon(journey: RenderedMapJourney) {
+    private createVehicleIcon(journey: RenderedMapJourney) {
         return L.divIcon({
             className: 'vehicle-icon',
             html: `<div style="color: ${journey.color}; transform: rotate(${journey.azimuth}deg); width: 100%; height: 100%;">${dropSvg}</div>`,
@@ -144,5 +144,11 @@ export class MapEntitiesRenderer {
             journey.position as LatLngTuple,
             { icon: this.createVehicleIcon(journey) },
         ).addTo(this.map)
+    }
+
+    clearRenderedVehicle(journey: RenderedMapJourney) {
+        if (journey.vehicleMarker == null) return
+        journey.vehicleMarker.remove()
+        journey.vehicleMarker = null
     }
 }

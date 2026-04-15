@@ -6,7 +6,7 @@ const { d } = useI18n()
 const moment = defineModel<Date>({ required: true })
 const playing = defineModel<boolean>('playing', { required: true })
 const playSpeed = defineModel<number>('play-speed', { required: true })
-const playSpeedOptions = [60, 30, 10, 5, 1].map((s) => ({ value: s, title: `${s}x` }))
+const playSpeedOptions = [180, 60, 10, 1].map((s) => ({ value: s, title: `${s}x` }))
 
 function onDateUpdate(date: Date | undefined) {
     if (date == undefined) return
@@ -57,8 +57,6 @@ const notEmptyValidationRule = (v: unknown) => !!v || v === 0
                 <v-number-input
                     :model-value="moment.getHours()"
                     :rules="[notEmptyValidationRule]"
-                    :max="23"
-                    :min="0"
                     variant="outlined"
                     control-variant="hidden"
                     hide-details
@@ -70,8 +68,6 @@ const notEmptyValidationRule = (v: unknown) => !!v || v === 0
                 <v-number-input
                     :model-value="moment.getMinutes()"
                     :rules="[notEmptyValidationRule]"
-                    :max="59"
-                    :min="0"
                     variant="outlined"
                     control-variant="hidden"
                     hide-details
@@ -83,8 +79,6 @@ const notEmptyValidationRule = (v: unknown) => !!v || v === 0
                 <v-number-input
                     :model-value="moment.getSeconds()"
                     :rules="[notEmptyValidationRule]"
-                    :max="59"
-                    :min="0"
                     variant="outlined"
                     control-variant="hidden"
                     hide-details
@@ -141,7 +135,7 @@ const notEmptyValidationRule = (v: unknown) => !!v || v === 0
     width: 2em;
 }
 .moment-controls .v-select {
-    width: 4em;
+    width: 5em;
 }
 .moment-controls .v-select :deep(.v-field__input) {
     justify-content: center;

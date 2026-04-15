@@ -61,7 +61,14 @@ function onSearchSentinelVisible([entry]: IntersectionObserverEntry[]) {
 
 onMounted(async () => {
     if (!mapContainer.value) return
-    map = L.map(mapContainer.value, { minZoom: 8, maxZoom: 18, zoomControl: false }).setView(
+    map = L.map(
+        mapContainer.value,
+        {
+            minZoom: 8,
+            maxZoom: 18,
+            zoomControl: false,
+        },
+    ).setView(
         [50.05, 14.5],
         11,
     )

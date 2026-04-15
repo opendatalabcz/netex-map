@@ -39,7 +39,7 @@ const MAP_FLY_DURATION = 0.5
 const MAP_FLY_LINEARITY = 0.8
 const FRAME_FETCH_FRAME_EXTRA_PAD_SCALE = 0.25
 const FRAME_FETCH_DEBOUNCE_DELAY = 400
-const FRAME_FETCH_MINUTES_IN_ADVANCE = 15
+const FRAME_FETCH_MINUTES_IN_ADVANCE = 5
 const STOP_FOCUS_HORIZONTAL_OFFSET_SCALE = 0.1
 const ANIMATION_FRAME_REQUIRED_DELAY_IN_MILLIS = 500
 
@@ -65,6 +65,7 @@ export class MapController {
     private animationPlayingListeners: ((playing: boolean) => void)[] = []
     private animationSpeed: number = 1
     private animationSpeedListeners: ((speed: number) => void)[] = []
+    private renderedJourneys: Map<number, RenderedMapJourney> = new Map()
 
     constructor(
         initialMoment: Date = new Date(import.meta.env.FE_INITIAL_MOMENT),
@@ -87,18 +88,36 @@ export class MapController {
         if (this.renderer == null) return
         const routes = this.store.routes()
         const journeysForMoment = this.store.journeysForMoment(this.moment)
-        if (journeysForMoment == null) return
+        if (journeysForMoment == null) {
+            for (const journey of this.renderedJourneys.values()) {
+                this.renderer.clearRenderedVehicle(journey)
+            }
+            this.renderedJourneys.clear()
+            return
+        }
+        const oldRenderedJourneys = this.renderedJourneys
+        this.renderedJourneys = new Map()
         for (const journey of journeysForMoment) {
             const route = routes.get(journey.routeId)
             if (route == null) continue
             recalculateVehiclePosition(this.moment, journey, route)
             const firstRender = journey.vehicleMarker == null
-            this.renderer!.renderVehicle(journey)
-            if (firstRender && journey.vehicleMarker != null) {
-                journey.vehicleMarker.addEventListener('click', () =>
-                    this.onJourneyClick(journey, route),
-                )
+            const journeyFromOldRender = oldRenderedJourneys.get(journey.relationalId)!
+            if (journeyFromOldRender === journey) {
+                oldRenderedJourneys.delete(journey.relationalId)
             }
+            this.renderer.renderVehicle(journey)
+            if (journey.vehicleMarker != null) {
+                this.renderedJourneys.set(journey.relationalId, journey)
+                if (firstRender) {
+                    journey.vehicleMarker.addEventListener('click', () => {
+                        this.onJourneyClick(journey, route)
+                    })
+                }
+            }
+        }
+        for (const [, oldUnrenderedJourney] of oldRenderedJourneys) {
+            this.renderer.clearRenderedVehicle(oldUnrenderedJourney)
         }
     }
 
@@ -126,7 +145,7 @@ export class MapController {
         }
         this.fetching = false
     }
-    debouncedFrameFetch = debounce(
+    private debouncedFrameFetch = debounce(
         (moment, reRender) => this.fetchFrame(moment as Date, reRender as boolean),
         FRAME_FETCH_DEBOUNCE_DELAY,
     ) as (moment: Date, reRender: boolean) => void
@@ -327,27 +346,30 @@ export class MapController {
         await this.fetchFrame(this.moment, true)
     }
 
-    private loadFrameInAdvance(moment: Date, momentKey?: number | undefined) {
-        const momentBuffer = new Date(moment)
-        momentBuffer.setMinutes(moment.getMinutes() + FRAME_FETCH_MINUTES_IN_ADVANCE)
+    private handleAdjacentFrames(newMoment: Date, newMomentKey?: number | undefined) {
+        const momentBuffer = new Date(newMoment)
+        momentBuffer.setMinutes(newMoment.getMinutes() + FRAME_FETCH_MINUTES_IN_ADVANCE)
         const bufferKey = this.store.getMomentKeyFor(momentBuffer)
-        const usedMomentKey = momentKey ?? this.store.getMomentKeyFor(moment)
+        const usedMomentKey = newMomentKey ?? this.store.getMomentKeyFor(newMoment)
         if (usedMomentKey !== bufferKey) {
             this.fetchFrame(momentBuffer, false)
         }
     }
-    async setMoment(moment: Date) {
-        if (moment.getTime() === this.moment.getTime()) return
-        this.moment = moment
-        this.momentListeners.forEach((listener) => listener(moment))
-        const momentKey = this.store.getMomentKeyFor(moment)
-        if (this.momentKey !== momentKey) {
-            /* TODO: Clear journeys from previous frame */
-            this.fetchFrame(moment, true)
-            this.loadFrameInAdvance(moment, momentKey)
+    async setMoment(newMoment: Date) {
+        if (newMoment.getTime() === this.moment.getTime()) return
+        this.moment = newMoment
+        this.momentListeners.forEach((listener) => listener(newMoment))
+        const newMomentKey = this.store.getMomentKeyFor(newMoment)
+        if (this.momentKey !== newMomentKey) {
+            await this.fetchFrame(newMoment, true)
+            this.store.removeJourneysForMoment(this.momentKey)
+            this.store.removeUnusedRoutes()
+            this.handleAdjacentFrames(newMoment, newMomentKey)
+            this.momentKey = newMomentKey
             return
         }
-        this.loadFrameInAdvance(moment, momentKey)
+        this.momentKey = newMomentKey
+        this.handleAdjacentFrames(newMoment, newMomentKey)
         this.reRender()
     }
 

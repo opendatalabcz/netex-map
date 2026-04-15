@@ -55,6 +55,10 @@ export class MapEntitiesStore {
     journeysForMoment(moment: Date) {
         return this.store.journeys.get(this.getMomentKeyFor(moment))?.values()
     }
+    journeysForMomentKey(momentKey: number) {
+        return this.store.journeys.get(momentKey)?.values()
+    }
+
     routes() {
         return this.store.routes
     }
@@ -77,6 +81,26 @@ export class MapEntitiesStore {
             const key = '' + journey.relationalId + journey.fromPreviousDay
             if (timePartition.has(key)) continue
             timePartition.set(key, toRenderedJourney(journey))
+        }
+    }
+
+    removeJourneysForMoment(momentKey: number) {
+        this.store.journeys.delete(momentKey)
+    }
+
+    removeUnusedRoutes() {
+        const usedRouteIds = new Set<number>()
+        for (const [, journeyMap] of this.store.journeys) {
+            for (const [, journey] of journeyMap) {
+                usedRouteIds.add(journey.routeId)
+            }
+        }
+        const routeIdsToDelete: number[] = []
+        for (const [id] of this.store.routes) {
+            if (!usedRouteIds.has(id)) routeIdsToDelete.push(id)
+        }
+        for (const id of routeIdsToDelete) {
+            this.store.routes.delete(id)
         }
     }
 }
