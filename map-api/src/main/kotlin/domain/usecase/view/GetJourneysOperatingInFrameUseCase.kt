@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 interface GetJourneysOperatingInFrameUseCase {
     data class MapRoute(
         val relationalId: Long,
-        val pointSequence: ByteArray,
+        val pointSequence: String,
         val totalDistance: Double,
         val routeStops: List<Double>,
     )

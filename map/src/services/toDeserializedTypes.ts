@@ -34,8 +34,7 @@ import type {
     WallJourneyWithTimes,
 } from '@/api/model/wallTimetable'
 import LocalTime from '@/util/localTime'
-import { Buffer } from 'buffer'
-import { Geometry } from 'wkx'
+import Polyline from '@mapbox/polyline'
 
 export function toMapScheduledStopWithDates(
     mapScheduledStop: MapScheduledStop,
@@ -58,11 +57,9 @@ export function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDat
 }
 
 export function toMapRoute(route: MapRawRoute): MapRoute {
-    const buffer = Buffer.from(route.pointSequence, 'base64')
-    const geoJson = Geometry.parse(buffer).toGeoJSON()
     return {
         relationalId: route.relationalId,
-        pointSequence: geoJson as GeoJSON.LineString,
+        pointSequence: Polyline.decode(route.pointSequence),
         totalDistance: route.totalDistance,
         routeStops: route.routeStops,
     }

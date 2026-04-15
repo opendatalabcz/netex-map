@@ -3,7 +3,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 import cz.cvut.fit.gaierda1.data.orm.model.Journey
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.JourneyDetailsDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.JourneyByDistinctJourneyPatternDto
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.JourneyMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.frame.JourneyFrameDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.wall.JourneyWallDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -97,24 +97,24 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     ): Optional<Long>
 
     @Query(nativeQuery = true, value = OPERATING_IN_FRAME_QUERY)
-    fun findAllMapDtoOperatingInFrame(
+    fun findAllFrameDtoOperatingInFrame(
         lonMin: Double,
         latMin: Double,
         lonMax: Double,
         latMax: Double,
         minRouteLength: Double,
         targetMoment: OffsetDateTime,
-    ): List<JourneyMapDto>
+    ): List<JourneyFrameDto>
 
     @Query(nativeQuery = true, value = OPERATING_IN_FRAME_FOR_PREVIOUS_DAY_QUERY)
-    fun findAllMapDtoOperatingInFrameWithNextDayOperation(
+    fun findAllFrameDtoOperatingInFrameWithNextDayOperation(
         lonMin: Double,
         latMin: Double,
         lonMax: Double,
         latMax: Double,
         minRouteLength: Double,
         targetMoment: OffsetDateTime,
-    ): List<JourneyMapDto>
+    ): List<JourneyFrameDto>
 
     @Query(nativeQuery = true, value = """
         SELECT DISTINCT ON (j.line_version_id, j.pattern_number) j.relational_id, j.line_version_id, j.pattern_number

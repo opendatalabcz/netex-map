@@ -72,29 +72,25 @@ export class MapEntitiesRenderer {
         }
         route.featureGroup = L.featureGroup()
         route.featureGroup.addLayer(
-            L.geoJSON(route.pointSequence, {
-                style: {
-                    color: outlineColor,
-                    weight: 4,
-                },
+            L.polyline(route.pointSequence, {
+                color: outlineColor,
+                weight: 4,
             }),
         )
         route.featureGroup.addLayer(
-            L.geoJSON(route.pointSequence, {
-                style: {
-                    color: route.color,
-                    weight: 3,
-                },
+            L.polyline(route.pointSequence, {
+                color: route.color,
+                weight: 3,
             }),
         )
 
         route.stops = []
         getInterpolationDataFromRouteFractions(
             route.routeStops,
-            route.pointSequence.coordinates,
+            route.pointSequence,
             route.totalDistance,
         ).forEach((pointData) => {
-            const position = [pointData.position[1], pointData.position[0]] as LatLngTuple
+            const position = pointData.position as LatLngTuple
             const stopMarkers = []
             stopMarkers.push(
                 L.circleMarker(position, {
@@ -140,15 +136,12 @@ export class MapEntitiesRenderer {
         }
         if (journey.color == null) journey.color = this.getColor(journey.lineVersionId!)
         if (journey.vehicleMarker) {
-            journey.vehicleMarker.setLatLng([
-                journey.position[1],
-                journey.position[0],
-            ] as LatLngTuple)
+            journey.vehicleMarker.setLatLng(journey.position as LatLngTuple)
             journey.vehicleMarker.setIcon(this.createVehicleIcon(journey))
             return
         }
         journey.vehicleMarker = L.marker(
-            [journey.position[1], journey.position[0]] as LatLngTuple,
+            journey.position as LatLngTuple,
             { icon: this.createVehicleIcon(journey) },
         ).addTo(this.map)
     }

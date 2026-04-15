@@ -2,7 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStop
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStopId
-import cz.cvut.fit.gaierda1.data.orm.repository.dto.map.RouteStopMapDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.frame.RouteStopFrameDto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -14,5 +14,5 @@ interface RouteStopJpaRepository: JpaRepository<RouteStop, RouteStopId> {
         FROM route_stop rs
         WHERE route_id IN :routeIds
     """)
-    fun findAllDtoByRouteIds(routeIds: List<Long>): List<RouteStopMapDto>
+    fun findAllFrameDtoByRouteIds(routeIds: List<Long>): List<RouteStopFrameDto>
 }

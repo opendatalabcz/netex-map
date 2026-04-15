@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import ViteFonts from 'unplugin-fonts/vite'
@@ -12,11 +11,6 @@ export default defineConfig({
   plugins: [
     vue(),
     vuetify(),
-    nodePolyfills({
-      globals: {
-        Buffer: true,
-      }
-    }),
     ViteFonts({
       fontsource: {
         families: [

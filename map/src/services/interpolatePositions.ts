@@ -16,6 +16,8 @@ type InterpolationData = {
 }
 
 const EARTH_RADIUS = 6_371_000
+const LAT = 0
+const LON = 1
 
 function getRouteSegmentIndex(
     moment: Date,
@@ -43,9 +45,9 @@ function getRouteSegmentIndex(
 }
 
 function distanceBetweenPoints(a: number[], b: number[]): number {
-    const cosLat = Math.cos(a[1]! * Math.PI / 180)
-    const dLonRad = (b[0]! - a[0]!) * Math.PI / 180 * cosLat
-    const dLatRad = (b[1]! - a[1]!) * Math.PI / 180
+    const cosLat = Math.cos(a[LAT]! * Math.PI / 180)
+    const dLonRad = (b[LON]! - a[LON]!) * Math.PI / 180 * cosLat
+    const dLatRad = (b[LAT]! - a[LAT]!) * Math.PI / 180
     return EARTH_RADIUS * Math.sqrt(dLatRad * dLatRad + dLonRad * dLonRad)
 }
 
@@ -58,16 +60,16 @@ function inverseLerp(a: number, b: number, c: number): number {
 }
 
 function calculateAzimuth(a: number[], b: number[]): number {
-    const dLon = b[0]! - a[0]!
-    const dLat = b[1]! - a[1]!
-    const cosLatRad = Math.cos(a[1]! * Math.PI / 180)
+    const dLon = b[LON]! - a[LON]!
+    const dLat = b[LAT]! - a[LAT]!
+    const cosLatRad = Math.cos(a[LAT]! * Math.PI / 180)
     const angle = Math.atan2(dLon * cosLatRad, dLat) * (180 / Math.PI)
     return (angle + 360) % 360
 }
 
 function getInterpolationDataFromRouteFractions(
     routeFractions: number[],
-    pointSequence: number[][],
+    pointSequence: [number, number][],
     totalRouteDistance: number,
     includeAzimuth: boolean = false,
     pointIndexHint: number = 0,
@@ -117,8 +119,8 @@ function getInterpolationDataFromRouteFractions(
         )
         result.push({
             position: [
-                lerp(fromPoint[0]!, toPoint[0]!, lerpFraction),
-                lerp(fromPoint[1]!, toPoint[1]!, lerpFraction),
+                lerp(fromPoint[LAT]!, toPoint[LAT]!, lerpFraction),
+                lerp(fromPoint[LON]!, toPoint[LON]!, lerpFraction),
             ],
             azimuth: includeAzimuth ? calculateAzimuth(fromPoint, toPoint) : undefined,
             pointIndexHint: pointIndex - 1,
@@ -136,7 +138,7 @@ function getInterpolationDataFromRouteFraction(
 ): InterpolationData {
     return getInterpolationDataFromRouteFractions(
         [routeFraction],
-        route.pointSequence.coordinates,
+        route.pointSequence,
         route.totalDistance,
         true,
         pointIndexHint ?? 0,

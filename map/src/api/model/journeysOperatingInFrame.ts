@@ -7,7 +7,7 @@ type MapRawRoute = {
 
 type MapRoute = {
     relationalId: number
-    pointSequence: GeoJSON.LineString
+    pointSequence: [number, number][]
     totalDistance: number
     routeStops: number[]
 }

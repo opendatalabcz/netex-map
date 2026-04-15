@@ -1,6 +1,6 @@
-package cz.cvut.fit.gaierda1.data.orm.repository.dto.map
+package cz.cvut.fit.gaierda1.data.orm.repository.dto.frame
 
-data class JourneyMapDto(
+data class JourneyFrameDto(
     val relationalId: Long,
     val lineVersionId: Long,
     val routeId: Long,
