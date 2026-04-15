@@ -10,6 +10,7 @@ import { debounce } from '@/util/debounce'
 import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
+import type { LatLng } from 'leaflet'
 
 type FocusedJourney = {
     journeyId: number
@@ -33,6 +34,11 @@ type FetchQueueEntry = {
     reRender: boolean
 }
 
+type FramePreloadEntry = {
+    centerOfMap: LatLng
+    zoom: number
+}
+
 const LINE_VERSION_SEARCH_DEBOUNCE_DELAY = 250
 const LINE_VERSION_SEARCH_PAGE_SIZE = 10
 const MAP_FLY_DURATION = 0.5
@@ -42,6 +48,8 @@ const FRAME_FETCH_DEBOUNCE_DELAY = 400
 const FRAME_FETCH_MINUTES_IN_ADVANCE = 5
 const STOP_FOCUS_HORIZONTAL_OFFSET_SCALE = 0.1
 const ANIMATION_FRAME_REQUIRED_DELAY_IN_MILLIS = 500
+const PRELOAD_LON_TOLERANCE = 0.1
+const PRELOAD_LAT_TOLERANCE = 0.07
 
 export class MapController {
     private store: MapEntitiesStore
@@ -66,6 +74,7 @@ export class MapController {
     private animationSpeed: number = 1
     private animationSpeedListeners: ((speed: number) => void)[] = []
     private renderedJourneys: Map<number, RenderedMapJourney> = new Map()
+    private framePreloadRegistry: FramePreloadEntry[] = []
 
     constructor(
         initialMoment: Date = new Date(import.meta.env.FE_INITIAL_MOMENT),
@@ -351,7 +360,16 @@ export class MapController {
         momentBuffer.setMinutes(newMoment.getMinutes() + FRAME_FETCH_MINUTES_IN_ADVANCE)
         const bufferKey = this.store.getMomentKeyFor(momentBuffer)
         const usedMomentKey = newMomentKey ?? this.store.getMomentKeyFor(newMoment)
-        if (usedMomentKey !== bufferKey) {
+        if (usedMomentKey !== bufferKey && this.map != null) {
+            const mapCenter = this.map.getCenter()
+            const zoom = this.map.getZoom()
+            for (const entry of this.framePreloadRegistry) {
+                if (entry.zoom === zoom
+                    && Math.abs(entry.centerOfMap.lat - mapCenter.lat) < PRELOAD_LAT_TOLERANCE
+                    && Math.abs(entry.centerOfMap.lng - mapCenter.lng) < PRELOAD_LON_TOLERANCE
+                ) return
+            }
+            this.framePreloadRegistry.push({ centerOfMap: mapCenter, zoom: zoom })
             this.fetchFrame(momentBuffer, false)
         }
     }
@@ -362,6 +380,7 @@ export class MapController {
         const newMomentKey = this.store.getMomentKeyFor(newMoment)
         if (this.momentKey !== newMomentKey) {
             await this.fetchFrame(newMoment, true)
+            this.framePreloadRegistry = []
             this.store.removeJourneysForMoment(this.momentKey)
             this.store.removeUnusedRoutes()
             this.handleAdjacentFrames(newMoment, newMomentKey)
