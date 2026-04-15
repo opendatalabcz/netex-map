@@ -8,11 +8,14 @@ import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.JrUtilGtfsStopParseResult
 import cz.cvut.fit.gaierda1.domain.port.RoutingServicePort
+import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.stereotype.Component
 import java.security.MessageDigest
 import kotlin.io.encoding.Base64
+import kotlin.math.cos
+import kotlin.math.sqrt
 
 @Component
 class CalculateRoutesFromWaypoints(
@@ -20,6 +23,10 @@ class CalculateRoutesFromWaypoints(
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
     private val routeJpaRepository: RouteJpaRepository,
 ): CalculateRoutesFromWaypointsUseCase {
+    companion object {
+        private const val EARTH_RADIUS = 6_371_000.0
+    }
+
     private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
 
     private fun stopNamesMatches(
@@ -55,6 +62,13 @@ class CalculateRoutesFromWaypoints(
         return null
     }
 
+    private fun distanceBetweenPoints(a: Coordinate, b: Coordinate): Double {
+        val cosLat = cos(a.y * Math.PI / 180)
+        val dLonRad = (b.x - a.x) * Math.PI / 180 * cosLat
+        val dLatRad = (b.y - a.y) * Math.PI / 180
+        return EARTH_RADIUS * sqrt(dLatRad * dLatRad + dLonRad * dLonRad)
+    }
+
     override fun calculateRouteFromWaypoints(
         waypoints: List<JrUtilGtfsStopParseResult>,
         cache: RouteCalculationCache?,
@@ -79,10 +93,18 @@ class CalculateRoutesFromWaypoints(
         val waypointDistances = Array(routeFromService.waypoints.size) { 0.0 }
         for (pointIndex in 1 until routeFromService.route.size) {
             val routePoint = routeFromService.route[pointIndex]
-            cumulativeDistance += routePoint.distance(prevRoutePoint)
-            if (waypointIndex < routeFromService.waypoints.size && routePoint == routeFromService.waypoints[waypointIndex]) {
+            cumulativeDistance += distanceBetweenPoints(prevRoutePoint, routePoint)
+            if (waypointIndex < routeFromService.waypoints.size
+                && routePoint == routeFromService.waypoints[waypointIndex]
+            ) {
                 waypointDistances[waypointIndex] = cumulativeDistance
                 waypointIndex++
+                while (waypointIndex < routeFromService.waypoints.size
+                    && routeFromService.waypoints[waypointIndex] == routeFromService.waypoints[waypointIndex - 1]
+                ) {
+                    waypointDistances[waypointIndex] = cumulativeDistance
+                    waypointIndex++
+                }
             }
             prevRoutePoint = routePoint
         }
@@ -96,7 +118,7 @@ class CalculateRoutesFromWaypoints(
             externalId = routeExternalId,
             pointSequence = geometryFactory.createLineString(routePoints),
             routeStops = routeStops,
-            totalDistance = routeFromService.distance,
+            totalDistance = cumulativeDistance,
         )
         routeStops.addAll(waypoints.mapIndexed { idx, stop ->
             var physicalStop = usedCache.findPhysicalStop(stop.name)

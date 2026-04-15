@@ -136,7 +136,6 @@ CREATE TABLE journey (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('journey_seq'),
     journey_number TEXT NOT NULL,
     line_version_id BIGINT NOT NULL,
-    route_id BIGINT,
     operating_period_id BIGINT NOT NULL,
     pattern_number INT NOT NULL,
     requires_ordering BOOLEAN NOT NULL,
@@ -152,7 +151,6 @@ CREATE TABLE journey (
     end_time TIME NOT NULL,
     timezone TEXT NOT NULL,
     UNIQUE(line_version_id, journey_number),
-    FOREIGN KEY (route_id) REFERENCES route(relational_id) ON DELETE SET NULL,
     FOREIGN KEY (operating_period_id) REFERENCES operating_period(relational_id),
     FOREIGN KEY (line_version_id, pattern_number) REFERENCES journey_pattern(line_version_id, pattern_number) ON DELETE CASCADE
 );
