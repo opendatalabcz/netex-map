@@ -4,15 +4,11 @@ type PositionedMapJourneyWithDates = MapJourneyWithDates & {
     position: number[] | null | undefined
     segmentIndex: number | null | undefined
     azimuth: number | null | undefined
-    routePointIndex: number | null
-    routeCumulativeDistance: number | null
 }
 
 type InterpolationData = {
     position: number[]
     azimuth?: number | undefined
-    pointIndexHint: number
-    cumulativeDistanceHint: number
 }
 
 const EARTH_RADIUS = 6_371_000
@@ -72,13 +68,11 @@ function getInterpolationDataFromRouteFractions(
     pointSequence: [number, number][],
     totalRouteDistance: number,
     includeAzimuth: boolean = false,
-    pointIndexHint: number = 0,
-    cumulativeDistanceHint: number = 0,
 ): InterpolationData[] {
     const result: InterpolationData[] = []
-    let cumulativeDistance = cumulativeDistanceHint
-    let previousCumulativeDistance = cumulativeDistance
-    let pointIndex = pointIndexHint
+    let cumulativeDistance = 0
+    let previousCumulativeDistance = 0
+    let pointIndex = 0
     for (const routeFraction of routeFractions) {
         if (routeFraction <= 0) {
             const first = pointSequence[0]!
@@ -86,8 +80,6 @@ function getInterpolationDataFromRouteFractions(
             result.push({
                 position: first,
                 azimuth: includeAzimuth ? calculateAzimuth(first, second) : undefined,
-                pointIndexHint: pointIndex,
-                cumulativeDistanceHint: cumulativeDistance,
             })
             continue
         }
@@ -97,8 +89,6 @@ function getInterpolationDataFromRouteFractions(
             result.push({
                 position: last,
                 azimuth: includeAzimuth ? calculateAzimuth(secondLast, last) : undefined,
-                pointIndexHint: pointIndex,
-                cumulativeDistanceHint: cumulativeDistance,
             })
             continue
         }
@@ -123,8 +113,6 @@ function getInterpolationDataFromRouteFractions(
                 lerp(fromPoint[LON]!, toPoint[LON]!, lerpFraction),
             ],
             azimuth: includeAzimuth ? calculateAzimuth(fromPoint, toPoint) : undefined,
-            pointIndexHint: pointIndex - 1,
-            cumulativeDistanceHint: previousCumulativeDistance,
         })
     }
     return result
@@ -133,16 +121,12 @@ function getInterpolationDataFromRouteFractions(
 function getInterpolationDataFromRouteFraction(
     routeFraction: number,
     route: MapRoute,
-    pointIndexHint: number | null,
-    cumulativeDistanceHint: number | null,
 ): InterpolationData {
     return getInterpolationDataFromRouteFractions(
         [routeFraction],
         route.pointSequence,
         route.totalDistance,
         true,
-        pointIndexHint ?? 0,
-        cumulativeDistanceHint ?? 0,
     )[0]!
 }
 
@@ -150,13 +134,11 @@ function interpolatePositionBetweenStops(
     timeFraction: number,
     segment: number,
     route: MapRoute,
-    pointIndexHint: number | null,
-    cumulativeDistanceHint: number | null,
 ): InterpolationData {
     const departureStopFraction = route.routeStops[segment]!
     const arrivalStopFraction = route.routeStops[segment + 1]!
     const distanceThreshold = lerp(departureStopFraction, arrivalStopFraction, timeFraction)
-    return getInterpolationDataFromRouteFraction(distanceThreshold, route, pointIndexHint, cumulativeDistanceHint)
+    return getInterpolationDataFromRouteFraction(distanceThreshold, route)
 }
 
 function interpolateVehiclePosition(
@@ -191,12 +173,10 @@ function interpolateVehiclePosition(
     }
 
     const lerpFraction = Math.max(0, (momentTime - departureTime) / (arrivalTime - departureTime))
-    const interpolationData = interpolatePositionBetweenStops(lerpFraction, segment, routeMap, journey.routePointIndex, journey.routeCumulativeDistance)
+    const interpolationData = interpolatePositionBetweenStops(lerpFraction, segment, routeMap)
     journey.position = interpolationData.position
     journey.azimuth = interpolationData.azimuth
     journey.segmentIndex = segment
-    journey.routePointIndex = interpolationData.pointIndexHint
-    journey.routeCumulativeDistance = interpolationData.cumulativeDistanceHint
     return
 }
 

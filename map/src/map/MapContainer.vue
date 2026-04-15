@@ -79,6 +79,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+    controller.setMap(null)
     controller.removeJourneyDetailsListener(onJourneyDetailsUpdate)
     controller.removeWallTimetableListener(onWallTimetableUpdate)
     controller.removeLineVersionSearchListener(onLineVersionSearchResultUpdate)

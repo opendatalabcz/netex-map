@@ -106,9 +106,10 @@ export class MapController {
     private fetching = false
     private async fetchFrame(moment: Date, reRender: boolean) {
         if (this.map == null) return
+        const zoom = this.map.getZoom()
         this.fetchQueue.push({
             bounds: this.map.getBounds().pad(FRAME_FETCH_FRAME_EXTRA_PAD_SCALE),
-            zoom: this.map.getZoom(),
+            zoom: Number.isInteger(zoom) ? zoom : Number.parseInt(zoom + ''),
             moment: moment,
             reRender: reRender,
         })
@@ -317,8 +318,9 @@ export class MapController {
      *   Setters
      */
 
-    async setMap(map: L.Map) {
+    async setMap(map: L.Map | null) {
         this.map = map
+        if (map == null) return
         this.renderer = new MapEntitiesRenderer(map)
         map.on('move', () => this.debouncedFrameFetch(this.moment, true))
         map.on('zoom', () => this.debouncedFrameFetch(this.moment, true))

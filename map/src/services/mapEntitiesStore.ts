@@ -23,8 +23,6 @@ function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
         ...toMapJourneyWithDates(journey),
         vehicleMarker: null,
         color: null,
-        routePointIndex: null,
-        routeCumulativeDistance: null,
         position: null,
         segmentIndex: null,
         azimuth: null,
