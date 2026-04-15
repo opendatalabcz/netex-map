@@ -91,6 +91,11 @@ class CalculateRoutesFromWaypoints(
         var cumulativeDistance = 0.0
         var prevRoutePoint = routeFromService.waypoints.first()
         val waypointDistances = Array(routeFromService.waypoints.size) { 0.0 }
+        while (waypointIndex < routeFromService.waypoints.size
+            && routeFromService.waypoints[waypointIndex] == routeFromService.waypoints[waypointIndex - 1]
+        ) {
+            waypointIndex++
+        }
         for (pointIndex in 1 until routeFromService.route.size) {
             val routePoint = routeFromService.route[pointIndex]
             cumulativeDistance += distanceBetweenPoints(prevRoutePoint, routePoint)
