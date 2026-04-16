@@ -407,8 +407,6 @@ export class MapController {
         if (this.momentKey !== newMomentKey) {
             await this.fetchFrame(newMoment, true)
             this.framePreloadRegistry = []
-            this.store.removeJourneysForMoment(this.momentKey)
-            this.store.removeUnusedRoutes()
             this.handleAdjacentFrames(newMoment, newMomentKey)
             this.momentKey = newMomentKey
             return
