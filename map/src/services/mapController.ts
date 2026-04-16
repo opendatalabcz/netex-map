@@ -10,7 +10,7 @@ import { debounce } from '@/util/debounce'
 import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
-import type { LatLng } from 'leaflet'
+import type { LatLng, LatLngTuple } from 'leaflet'
 
 type FocusedJourney = {
     journeyDetails: JourneyDetailsWithTimes
@@ -42,7 +42,7 @@ const LINE_VERSION_SEARCH_DEBOUNCE_DELAY = 250
 const LINE_VERSION_SEARCH_PAGE_SIZE = 10
 const MAP_FLY_DURATION = 0.5
 const MAP_FLY_LINEARITY = 0.8
-const FRAME_FETCH_FRAME_EXTRA_PAD_SCALE = 0.25
+const FRAME_FETCH_EXTRA_PAD_SCALE = 0.25
 const FRAME_FETCH_DEBOUNCE_DELAY = 400
 const FRAME_FETCH_MINUTES_IN_ADVANCE = 5
 const STOP_FOCUS_HORIZONTAL_OFFSET_SCALE = 0.1
@@ -51,6 +51,7 @@ const PRELOAD_LON_TOLERANCE = 0.1
 const PRELOAD_LAT_TOLERANCE = 0.07
 const RENDERED_ROUTE_PADDING = 20
 const RENDERED_ROUTE_OFFSET = 400
+const CITY_LINES_ZOOM_THRESHOLD = import.meta.env.FE_CITY_LINES_ZOOM_THRESHOLD
 
 export class MapController {
     private store: MapEntitiesStore
@@ -97,7 +98,6 @@ export class MapController {
 
     reRender() {
         if (this.renderer == null) return
-        const routes = this.store.routes()
         const journeysForMoment = this.store.journeysForMoment(this.moment)
         if (journeysForMoment == null) {
             for (const journey of this.renderedJourneys.values()) {
@@ -106,15 +106,27 @@ export class MapController {
             this.renderedJourneys.clear()
             return
         }
+
+        const routes = this.store.routes()
         const oldRenderedJourneys = this.renderedJourneys
         this.renderedJourneys = new Map()
+        const zoom = this.map!.getZoom()
+        const bounds = this.map!.getBounds().pad(FRAME_FETCH_EXTRA_PAD_SCALE)
         for (const journey of journeysForMoment) {
             const route = routes.get(journey.routeId)
-            if (route == null) continue
+            if (
+                route == null ||
+                (zoom < CITY_LINES_ZOOM_THRESHOLD &&
+                    (journey.lineType === 'URBAN' || journey.lineType === 'URBAN_SUBURBAN'))
+            ) {
+                continue
+            }
             recalculateVehiclePosition(this.moment, journey, route)
+            if (journey.position != null && !bounds.contains(journey.position as LatLngTuple)) {
+                continue
+            }
             const firstRender = journey.vehicleMarker == null
-            const journeyFromOldRender = oldRenderedJourneys.get(journey.relationalId)!
-            if (journeyFromOldRender === journey) {
+            if (oldRenderedJourneys.get(journey.relationalId) === journey) {
                 oldRenderedJourneys.delete(journey.relationalId)
             }
             this.renderer.renderVehicle(journey)
@@ -138,7 +150,7 @@ export class MapController {
         if (this.map == null) return
         const zoom = this.map.getZoom()
         this.fetchQueue.push({
-            bounds: this.map.getBounds().pad(FRAME_FETCH_FRAME_EXTRA_PAD_SCALE),
+            bounds: this.map.getBounds().pad(FRAME_FETCH_EXTRA_PAD_SCALE),
             zoom: Number.isInteger(zoom) ? zoom : Number.parseInt(zoom + ''),
             moment: moment,
             reRender: reRender,
@@ -254,7 +266,10 @@ export class MapController {
                 easeLinearity: MAP_FLY_LINEARITY,
                 animate: true,
                 paddingTopLeft: [RENDERED_ROUTE_PADDING, RENDERED_ROUTE_PADDING],
-                paddingBottomRight: [RENDERED_ROUTE_PADDING + RENDERED_ROUTE_OFFSET, RENDERED_ROUTE_PADDING],
+                paddingBottomRight: [
+                    RENDERED_ROUTE_PADDING + RENDERED_ROUTE_OFFSET,
+                    RENDERED_ROUTE_PADDING,
+                ],
             })
         }
     }
@@ -270,9 +285,7 @@ export class MapController {
         const cachedRoute = this.store.routes().get(routeId)
         const results = await Promise.all([
             this.retriever.fetchJourneyDetails(journeyId),
-            cachedRoute == null
-                ? this.retriever.fetchRoute(routeId)
-                : Promise.resolve(cachedRoute)
+            cachedRoute == null ? this.retriever.fetchRoute(routeId) : Promise.resolve(cachedRoute),
         ])
         if (results[0] == null || results[1] == null || this.focusedJourneyId !== journeyId) return
         this.focusJourney(results[0], results[1])
@@ -282,7 +295,7 @@ export class MapController {
         if (this.focusedJourneyId === journeyId) return
         this.focusedJourneyId = journeyId
         const details = await this.retriever.fetchJourneyDetails(journeyId)
-        if (details == null || this.focusedJourneyId !== journeyId == null) return
+        if (details == null || this.focusedJourneyId !== journeyId) return
         this.focusJourney(details, route)
     }
 
@@ -345,7 +358,9 @@ export class MapController {
             return
         }
         const newMoment = new Date(this.moment)
-        newMoment.setMilliseconds(this.moment.getMilliseconds() + elapsedMillis * this.animationSpeed)
+        newMoment.setMilliseconds(
+            this.moment.getMilliseconds() + elapsedMillis * this.animationSpeed,
+        )
         this.setMoment(newMoment)
         this.animationPreviousTimeStamp = timestamp
         requestAnimationFrame((t) => this.animationStep(t))
@@ -373,10 +388,12 @@ export class MapController {
             const mapCenter = this.map.getCenter()
             const zoom = this.map.getZoom()
             for (const entry of this.framePreloadRegistry) {
-                if (entry.zoom === zoom
-                    && Math.abs(entry.centerOfMap.lat - mapCenter.lat) < PRELOAD_LAT_TOLERANCE
-                    && Math.abs(entry.centerOfMap.lng - mapCenter.lng) < PRELOAD_LON_TOLERANCE
-                ) return
+                if (
+                    entry.zoom === zoom &&
+                    Math.abs(entry.centerOfMap.lat - mapCenter.lat) < PRELOAD_LAT_TOLERANCE &&
+                    Math.abs(entry.centerOfMap.lng - mapCenter.lng) < PRELOAD_LON_TOLERANCE
+                )
+                    return
             }
             this.framePreloadRegistry.push({ centerOfMap: mapCenter, zoom: zoom })
             this.fetchFrame(momentBuffer, false)
@@ -475,8 +492,6 @@ export class MapController {
         listener(this.animationSpeed)
     }
     removeAnimationSpeedListener(listener: (speed: number) => void) {
-        this.animationSpeedListeners = this.animationSpeedListeners.filter(
-            (l) => l !== listener,
-        )
+        this.animationSpeedListeners = this.animationSpeedListeners.filter((l) => l !== listener)
     }
 }

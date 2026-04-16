@@ -7,10 +7,10 @@ import type {
     JourneyDetailsWithTimes,
 } from '@/api/model/journeyDetails'
 import type {
-    MapJourney,
-    MapScheduledStop,
-    MapJourneyWithDates,
-    MapScheduledStopWithDates,
+    FrameJourney,
+    FrameScheduledStop,
+    FrameJourneyWithDates,
+    FrameScheduledStopWithDates,
 } from '@/api/model/journeysOperatingInFrame'
 import type {
     SearchLineVersion,
@@ -36,15 +36,15 @@ import LocalTime from '@/util/localTime'
 import Polyline from '@mapbox/polyline'
 
 export function toMapScheduledStopWithDates(
-    mapScheduledStop: MapScheduledStop,
-): MapScheduledStopWithDates {
+    mapScheduledStop: FrameScheduledStop,
+): FrameScheduledStopWithDates {
     return {
         arrival: mapScheduledStop.arrival == null ? null : new Date(mapScheduledStop.arrival),
         departure: mapScheduledStop.departure == null ? null : new Date(mapScheduledStop.departure),
     }
 }
 
-export function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDates {
+export function toMapJourneyWithDates(mapJourney: FrameJourney): FrameJourneyWithDates {
     return {
         relationalId: mapJourney.relationalId,
         lineVersionId: mapJourney.lineVersionId,

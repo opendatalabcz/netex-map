@@ -1,7 +1,7 @@
-import type { MapJourneyWithDates } from '@/api/model/journeysOperatingInFrame'
+import type { FrameJourneyWithDates } from '@/api/model/journeysOperatingInFrame'
 import type { Route } from '@/api/model/encodedRoute'
 
-type PositionedMapJourneyWithDates = MapJourneyWithDates & {
+type PositionedMapJourneyWithDates = FrameJourneyWithDates & {
     position: number[] | null | undefined
     segmentIndex: number | null | undefined
     azimuth: number | null | undefined
@@ -18,7 +18,7 @@ const LON = 1
 
 function getRouteSegmentIndex(
     moment: Date,
-    journey: MapJourneyWithDates,
+    journey: FrameJourneyWithDates,
     from: number,
 ): number | null {
     let i = Math.max(0, from)
@@ -42,9 +42,9 @@ function getRouteSegmentIndex(
 }
 
 function distanceBetweenPoints(a: number[], b: number[]): number {
-    const cosLat = Math.cos(a[LAT]! * Math.PI / 180)
-    const dLonRad = (b[LON]! - a[LON]!) * Math.PI / 180 * cosLat
-    const dLatRad = (b[LAT]! - a[LAT]!) * Math.PI / 180
+    const cosLat = Math.cos((a[LAT]! * Math.PI) / 180)
+    const dLonRad = (((b[LON]! - a[LON]!) * Math.PI) / 180) * cosLat
+    const dLatRad = ((b[LAT]! - a[LAT]!) * Math.PI) / 180
     return EARTH_RADIUS * Math.sqrt(dLatRad * dLatRad + dLonRad * dLonRad)
 }
 
@@ -59,7 +59,7 @@ function inverseLerp(a: number, b: number, c: number): number {
 function calculateAzimuth(a: number[], b: number[]): number {
     const dLon = b[LON]! - a[LON]!
     const dLat = b[LAT]! - a[LAT]!
-    const cosLatRad = Math.cos(a[LAT]! * Math.PI / 180)
+    const cosLatRad = Math.cos((a[LAT]! * Math.PI) / 180)
     const angle = Math.atan2(dLon * cosLatRad, dLat) * (180 / Math.PI)
     return (angle + 360) % 360
 }

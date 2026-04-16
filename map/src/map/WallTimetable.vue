@@ -11,8 +11,8 @@ import { getDisplayWallTimetable } from '@/map/wallTimetable'
 const { t, d } = useI18n()
 
 const emit = defineEmits<{
-    close: [],
-    'journey-selected': [journeyId: number, routeId: number],
+    close: []
+    'journey-selected': [journeyId: number, routeId: number]
 }>()
 const props = defineProps<{
     wallTimetable: WallTimetableWithDates
@@ -51,10 +51,7 @@ function handleColumnLeave() {
 
 <template>
     <div class="wall-timetable">
-        <div
-            v-show="collapsed"
-            class="timetable-handle"
-        >
+        <div v-show="collapsed" class="timetable-handle">
             <v-btn
                 icon="mdi-timetable"
                 variant="text"
@@ -62,10 +59,7 @@ function handleColumnLeave() {
                 @click="collapsed = false"
             />
         </div>
-        <div
-            v-show="!collapsed"
-            class="timetable"
-        >
+        <div v-show="!collapsed" class="timetable">
             <div class="timetable-header">
                 <div class="timetable-header-info">
                     <div>
@@ -218,9 +212,15 @@ function handleColumnLeave() {
                                                         'journey-column': true,
                                                         'left-border': kdx !== 0,
                                                         'header-row': true,
-                                                        'hovered-column': hoveredColumnIndex === kdx,
+                                                        'hovered-column':
+                                                            hoveredColumnIndex === kdx,
                                                     }"
-                                                    @click="onJourneySelected(journey.relationalId, journey.routeId)"
+                                                    @click="
+                                                        onJourneySelected(
+                                                            journey.relationalId,
+                                                            journey.routeId,
+                                                        )
+                                                    "
                                                     @mouseenter="handleColumnHover(kdx)"
                                                     @mouseleave="handleColumnLeave"
                                                 >
@@ -249,7 +249,9 @@ function handleColumnLeave() {
                                                         compact
                                                     />
                                                     <template
-                                                        v-for="(facility, key) in stopEntry.facilities"
+                                                        v-for="(
+                                                            facility, key
+                                                        ) in stopEntry.facilities"
                                                         :key="key"
                                                     >
                                                         <FacilityIcon
@@ -269,7 +271,12 @@ function handleColumnLeave() {
                                                     'left-border': kdx !== 0,
                                                     'hovered-column': hoveredColumnIndex === kdx,
                                                 }"
-                                                @click="onJourneySelected(journey.relationalId, journey.routeId)"
+                                                @click="
+                                                    onJourneySelected(
+                                                        journey.relationalId,
+                                                        journey.routeId,
+                                                    )
+                                                "
                                                 @mouseenter="handleColumnHover(kdx)"
                                                 @mouseleave="handleColumnLeave"
                                             >
@@ -295,7 +302,7 @@ function handleColumnLeave() {
 </template>
 
 <style scoped>
-.wall-timetable{
+.wall-timetable {
     display: flex;
     flex-direction: column;
     min-height: 0;

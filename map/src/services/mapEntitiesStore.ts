@@ -1,11 +1,13 @@
 import type { EncodedRoute, Route } from '@/api/model/encodedRoute'
-import type { MapJourney } from '@/api/model/journeysOperatingInFrame'
+import type { LineType } from '@/api/model/enums'
+import type { FrameJourney, FrameLineVersion } from '@/api/model/journeysOperatingInFrame'
 import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositions'
 import { toMapJourneyWithDates, toRoute } from '@/services/toDeserializedTypes'
 
 type RenderedMapJourney = PositionedMapJourneyWithDates & {
     vehicleMarker: L.Marker | null
     color: string | null
+    lineType: LineType
 }
 
 type RenderedMapRoute = Route & {
@@ -19,9 +21,10 @@ type StoreEntry = {
     routes: Map<number, RenderedMapRoute>
 }
 
-function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
+function toRenderedJourney(journey: FrameJourney, lineType: LineType): RenderedMapJourney {
     const res: RenderedMapJourney = {
         ...toMapJourneyWithDates(journey),
+        lineType: lineType,
         vehicleMarker: null,
         color: null,
         position: null,
@@ -71,7 +74,8 @@ export class MapEntitiesStore {
         }
     }
 
-    addJourneys(moment: Date, journeys: MapJourney[]) {
+    addJourneys(moment: Date, journeys: FrameJourney[], lineVersions: FrameLineVersion[]) {
+        const lineVersionsMap = new Map(lineVersions.map((lv) => [lv.relationalId, lv.lineType]))
         const momentKey = this.getMomentKeyFor(moment)
         let timePartition = this.store.journeys.get(momentKey)
         if (timePartition == null) {
@@ -81,7 +85,10 @@ export class MapEntitiesStore {
         for (const journey of journeys) {
             const key = '' + journey.relationalId + journey.fromPreviousDay
             if (timePartition.has(key)) continue
-            timePartition.set(key, toRenderedJourney(journey))
+            timePartition.set(
+                key,
+                toRenderedJourney(journey, lineVersionsMap.get(journey.lineVersionId)!),
+            )
         }
     }
 

@@ -11,7 +11,6 @@ import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import MomentControls from '@/map/MomentControls.vue'
 import WallTimetableSearch from '@/map/WallTimetableSearch.vue'
 
-
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 
@@ -52,20 +51,13 @@ function onLineVersionSearchUpdate(value: string | undefined) {
     controller.debouncedLineVersionSearch(value)
 }
 
-
 onMounted(async () => {
     if (!mapContainer.value) return
-    map = L.map(
-        mapContainer.value,
-        {
-            minZoom: 8,
-            maxZoom: 18,
-            zoomControl: false,
-        },
-    ).setView(
-        [50.05, 14.5],
-        11,
-    )
+    map = L.map(mapContainer.value, {
+        minZoom: 10,
+        maxZoom: 18,
+        zoomControl: false,
+    }).setView([50.05, 14.5], 11)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution:
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -113,7 +105,7 @@ onUnmounted(() => {
         <WallTimetable
             :wall-timetable="wallTimetable"
             @close="controller.clearSelectedWallTimetable()"
-            @journey-selected="(j, r) => controller.onWallJourneySelected(j ,r)"
+            @journey-selected="(j, r) => controller.onWallJourneySelected(j, r)"
         />
     </v-card>
     <MomentControls

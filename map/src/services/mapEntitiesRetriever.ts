@@ -46,7 +46,7 @@ export class MapEntitiesRetriever {
         if (!frame) return
 
         this.mapEntriesStore.addRoutes(frame.routes)
-        this.mapEntriesStore.addJourneys(moment, frame.journeys)
+        this.mapEntriesStore.addJourneys(moment, frame.journeys, frame.lineVersions)
     }
 
     async fetchWallTimetable(
@@ -78,9 +78,7 @@ export class MapEntitiesRetriever {
         }
     }
 
-    async fetchRoute(
-        routeId: number,
-    ): Promise<RenderedMapRoute | null | undefined> {
+    async fetchRoute(routeId: number): Promise<RenderedMapRoute | null | undefined> {
         const route = await RouteApi.getEncodedRoute(routeId)
         if (route == null) return null
         this.mapEntriesStore.addRoutes([route])

@@ -1,7 +1,9 @@
 package cz.cvut.fit.gaierda1.domain.usecase.view
 
+import cz.cvut.fit.gaierda1.data.orm.model.LineType
 import cz.cvut.fit.gaierda1.domain.misc.atOffsetByZoneId
 import cz.cvut.fit.gaierda1.data.orm.repository.JourneyJpaRepository
+import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.ScheduledStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.frame.JourneyFrameDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.ScheduledStopDto
@@ -16,6 +18,7 @@ import java.time.ZoneId
 class GetJourneysOperatingInFrame(
     private val journeyJpaRepository: JourneyJpaRepository,
     private val scheduledStopJpaRepository: ScheduledStopJpaRepository,
+    private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val levelOfDetailUseCase: LevelOfDetailUseCase,
     private val getEncodedRoutesUseCase: GetEncodedRoutesUseCase,
 ): GetJourneysOperatingInFrameUseCase {
@@ -25,7 +28,7 @@ class GetJourneysOperatingInFrame(
         day: LocalDate,
         journeyTimezone: ZoneId,
         nextDayFirstStopIndex: Int?,
-    ): GetJourneysOperatingInFrameUseCase.MapScheduledStop {
+    ): GetJourneysOperatingInFrameUseCase.FrameScheduledStop {
         var departure: OffsetDateTime? = scheduledStop.departure?.let { LocalDateTime.of(day, it).atOffsetByZoneId(journeyTimezone) }
         var arrival: OffsetDateTime? = if (scheduledStop.departure == scheduledStop.arrival) null
             else scheduledStop.arrival?.let { LocalDateTime.of(day, it).atOffsetByZoneId(journeyTimezone) }
@@ -43,7 +46,7 @@ class GetJourneysOperatingInFrame(
             }
         }
 
-        return GetJourneysOperatingInFrameUseCase.MapScheduledStop(
+        return GetJourneysOperatingInFrameUseCase.FrameScheduledStop(
             arrival = arrival,
             departure = departure,
         )
@@ -54,8 +57,8 @@ class GetJourneysOperatingInFrame(
         day: OffsetDateTime,
         scheduleStops: Map<Long, List<ScheduledStopDto>>,
         fromPreviousDay: Boolean,
-    ): List<GetJourneysOperatingInFrameUseCase.MapJourney> = journeys.map { journey ->
-        GetJourneysOperatingInFrameUseCase.MapJourney(
+    ): List<GetJourneysOperatingInFrameUseCase.FrameJourney> = journeys.map { journey ->
+        GetJourneysOperatingInFrameUseCase.FrameJourney(
             relationalId = journey.relationalId,
             lineVersionId = journey.lineVersionId,
             routeId = journey.routeId,
@@ -92,15 +95,16 @@ class GetJourneysOperatingInFrame(
         excludedRouteIds: Set<Long>,
     ): GetJourneysOperatingInFrameUseCase.JourneysOperatingInFrameResult {
         val minRouteLength = levelOfDetailUseCase.getMinRouteLength(zoomLevel)
+        val visibleLineTypes = levelOfDetailUseCase.getVisibleLineTypes(zoomLevel)
 
         val journeysForCurrentDay = journeyJpaRepository
             .findAllFrameDtoOperatingInFrame(
-                lonMin, latMin, lonMax, latMax, minRouteLength, dateTime
+                lonMin, latMin, lonMax, latMax, minRouteLength, dateTime, visibleLineTypes
             ).filter { it.relationalId !in excludedJourneyIds }
 
         val journeysForPreviousDay = journeyJpaRepository
             .findAllFrameDtoOperatingInFrameWithNextDayOperation(
-                lonMin, latMin, lonMax, latMax, minRouteLength, dateTime
+                lonMin, latMin, lonMax, latMax, minRouteLength, dateTime, visibleLineTypes
             ).filter { it.relationalId !in excludedJourneyIdsFromPreviousDay }
 
         val scheduleStops = scheduledStopJpaRepository.findAllDtoByJourneyIds(
@@ -114,11 +118,23 @@ class GetJourneysOperatingInFrame(
 
         val routeIds = (journeysForCurrentDay.map(JourneyFrameDto::routeId)
                 + journeysForPreviousDay.map(JourneyFrameDto::routeId)
-            ).filter { it !in excludedRouteIds }
+            ).distinct()
+            .filter { it !in excludedRouteIds }
+        val lineVersionIds = (journeysForCurrentDay.map(JourneyFrameDto::lineVersionId)
+                + journeysForPreviousDay.map(JourneyFrameDto::lineVersionId)
+            ).distinct()
+
+        val lineVersions = lineVersionJpaRepository
+            .findAllFrameDtoByLineVersionIds(lineVersionIds)
+            .map { GetJourneysOperatingInFrameUseCase.FrameLineVersion(
+                relationalId = it.relationalId,
+                lineType = LineType.fromJdfCode(it.lineType),
+            ) }
 
         return GetJourneysOperatingInFrameUseCase.JourneysOperatingInFrameResult(
             journeys = recomputedForDay + recomputedForPreviousDay,
             routes = getEncodedRoutesUseCase.getEncodedRoutes(routeIds),
+            lineVersions = lineVersions,
         )
     }
 }

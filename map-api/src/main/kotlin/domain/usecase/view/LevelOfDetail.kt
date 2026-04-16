@@ -1,10 +1,11 @@
 package cz.cvut.fit.gaierda1.domain.usecase.view
 
+import cz.cvut.fit.gaierda1.data.orm.model.LineType
 import org.springframework.stereotype.Component
 
 @Component
 class LevelOfDetail(
-    levelOfDetailProperties: LevelOfDetailProperties,
+    private val levelOfDetailProperties: LevelOfDetailProperties,
 ): LevelOfDetailUseCase {
     private val minRouteLengthList =
         levelOfDetailProperties.minRouteLength.toList()
@@ -18,5 +19,20 @@ class LevelOfDetail(
             previousLod = lod
         }
         return previousLod.second
+    }
+
+    override fun getVisibleLineTypes(zoomLevel: Int): List<String> {
+        val visibleLineTypes = mutableListOf(
+            LineType.DOMESTIC_INTER_REGIONAL,
+            LineType.DOMESTIC_INTRA_REGIONAL,
+            LineType.DOMESTIC_LONG_DISTANCE,
+            LineType.INTERNATIONAL_INCLUDING_CABOTAGE,
+            LineType.INTERNATIONAL_EXCLUDING_CABOTAGE,
+        )
+        if (zoomLevel >= levelOfDetailProperties.cityLinesZoomThreshold) {
+            visibleLineTypes.add(LineType.URBAN)
+            visibleLineTypes.add(LineType.URBAN_SUBURBAN)
+        }
+        return visibleLineTypes.map(LineType::shortCode)
     }
 }

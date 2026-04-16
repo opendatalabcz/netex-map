@@ -1,5 +1,6 @@
 map:
   lod:
+    city-lines-zoom-threshold: 12
     min-route-length:
       8: 0.5
       9: 0.4

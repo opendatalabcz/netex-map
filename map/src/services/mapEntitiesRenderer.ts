@@ -137,10 +137,9 @@ export class MapEntitiesRenderer {
             journey.vehicleMarker.setIcon(this.createVehicleIcon(journey))
             return
         }
-        journey.vehicleMarker = L.marker(
-            journey.position as LatLngTuple,
-            { icon: this.createVehicleIcon(journey) },
-        ).addTo(this.map)
+        journey.vehicleMarker = L.marker(journey.position as LatLngTuple, {
+            icon: this.createVehicleIcon(journey),
+        }).addTo(this.map)
     }
 
     clearRenderedVehicle(journey: RenderedMapJourney) {

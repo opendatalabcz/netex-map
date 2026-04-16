@@ -21,8 +21,8 @@ export type DisplayStop = {
     banGroups: number[]
 }
 export type DisplayJourney = {
-    relationalId: number,
-    routeId: number,
+    relationalId: number
+    routeId: number
     facilities: DisplayFacilities
     schedule: (LocalTime | null)[]
 }

@@ -11,8 +11,8 @@ defineProps<{
     searchResults: SearchLineVersionWithDates[]
 }>()
 const emit = defineEmits<{
-    'extend-search': [],
-    'wall-timetable-selected': [lineVersionId: number],
+    'extend-search': []
+    'wall-timetable-selected': [lineVersionId: number]
 }>()
 
 function onSearchSentinelVisible([entry]: IntersectionObserverEntry[]) {
@@ -20,7 +20,6 @@ function onSearchSentinelVisible([entry]: IntersectionObserverEntry[]) {
         emit('extend-search')
     }
 }
-
 </script>
 
 <template>

@@ -2,6 +2,7 @@ package cz.cvut.fit.gaierda1.data.orm.repository
 
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.LineVersionDto
+import cz.cvut.fit.gaierda1.data.orm.repository.dto.frame.LineVersionFrameDto
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.journeydetails.JourneyDetailsLineVersionDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -97,4 +98,11 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         ) ASC NULLS LAST
     """)
     fun searchDto(query: String, pageable: Pageable): Page<LineVersionDto>
+
+    @Query(nativeQuery = true, value = """
+        SELECT lv.relational_id, lv.line_type
+        FROM line_version lv
+        WHERE lv.relational_id IN :lineVersionIds
+    """)
+    fun findAllFrameDtoByLineVersionIds(lineVersionIds: List<Long>): List<LineVersionFrameDto>
 }

@@ -1,4 +1,4 @@
-import type { JourneysOperatingInFrame } from '@/api/model/journeysOperatingInFrame'
+import type { JourneysOperatingInFrameResult } from '@/api/model/journeysOperatingInFrame'
 import HttpRequestSender from '@/api/httpRequestSender'
 import type { JourneyDetails } from './model/journeyDetails'
 
@@ -17,7 +17,7 @@ const JourneyApi = {
         excludedJourneyIds: number[] = [],
         excludedJourneyIdsFromPreviousDay: number[] = [],
         excludedRouteIds: number[] = [],
-    ): Promise<JourneysOperatingInFrame | null | undefined> {
+    ): Promise<JourneysOperatingInFrameResult | null | undefined> {
         const data = {
             excludedJourneyIds: excludedJourneyIds.length > 0 ? excludedJourneyIds : [],
             excludedJourneyIdsFromPreviousDay:

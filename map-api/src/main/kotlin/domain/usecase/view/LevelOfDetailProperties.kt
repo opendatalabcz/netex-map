@@ -7,4 +7,5 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "map.lod")
 data class LevelOfDetailProperties(
     var minRouteLength: Map<Int, Double> = emptyMap(),
+    var cityLinesZoomThreshold: Int = 0,
 )

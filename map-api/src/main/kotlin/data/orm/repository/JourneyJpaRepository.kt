@@ -32,11 +32,13 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                     date_trunc('hour', local_target_moment) as target_start_moment,
                     date_trunc('hour', local_target_moment) + interval '1 hour' as target_end_moment
                 )
-                JOIN journey_pattern jp on (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
-                JOIN active_period ap ON jp.line_version_id = ap.line_version_id
+                JOIN journey_pattern jp ON (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
+                JOIN line_version lv ON jp.line_version_id = lv.relational_id
+                JOIN active_period ap ON lv.relational_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON jp.route_id = r.relational_id
             WHERE jp.route_id IS NOT NULL
+                AND lv.line_type IN :lineTypes
                 AND journey_start_moment < target_end_moment
                 AND journey_end_moment > target_start_moment
                 AND r.point_sequence && ST_MakeEnvelope(:lonMin, :latMin, :lonMax, :latMax, 4326)
@@ -63,11 +65,13 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                     date_trunc('hour', local_target_moment) as target_start_moment,
                     date_trunc('hour', local_target_moment) + interval '1 hour' as target_end_moment
                 )
-                JOIN journey_pattern jp on (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
-                JOIN active_period ap ON jp.line_version_id = ap.line_version_id
+                JOIN journey_pattern jp ON (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
+                JOIN line_version lv ON jp.line_version_id = lv.relational_id
+                JOIN active_period ap ON lv.relational_id = ap.line_version_id
                 JOIN operating_period op ON j.operating_period_id = op.relational_id
                 JOIN route r ON jp.route_id = r.relational_id
             WHERE jp.route_id IS NOT NULL
+                AND lv.line_type IN :lineTypes
                 AND j.next_day_first_stop_index IS NOT NULL
                 AND journey_start_moment < target_end_moment
                 AND journey_end_moment > target_start_moment
@@ -104,6 +108,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         latMax: Double,
         minRouteLength: Double,
         targetMoment: OffsetDateTime,
+        lineTypes: List<String>,
     ): List<JourneyFrameDto>
 
     @Query(nativeQuery = true, value = OPERATING_IN_FRAME_FOR_PREVIOUS_DAY_QUERY)
@@ -114,6 +119,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
         latMax: Double,
         minRouteLength: Double,
         targetMoment: OffsetDateTime,
+        lineTypes: List<String>,
     ): List<JourneyFrameDto>
 
     @Query(nativeQuery = true, value = """
