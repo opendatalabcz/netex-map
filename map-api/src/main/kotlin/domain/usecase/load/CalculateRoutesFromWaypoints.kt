@@ -143,7 +143,7 @@ class CalculateRoutesFromWaypoints(
                 stopId = RouteStopId(route.relationalId, idx),
                 route = route,
                 physicalStop = physicalStop,
-                routeFraction = waypointDistances[idx] / cumulativeDistance,
+                routeFraction = if (cumulativeDistance == 0.0) 0.0 else waypointDistances[idx] / cumulativeDistance,
             )
         })
         usedCache.addRoute(route)
