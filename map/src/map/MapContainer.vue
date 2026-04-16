@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { MapController } from '@/services/mapController'
@@ -23,6 +23,7 @@ const journeyDetails = ref<JourneyDetailsWithTimes | null>(null)
 const wallTimetable = ref<WallTimetableWithDates | null>(null)
 const lineSearch = ref<string | undefined>(undefined)
 const lineVersionSearchResult = ref<SearchLineVersionWithDates[]>([])
+const showSearch = computed(() => wallTimetable.value == null)
 
 function onJourneyDetailsUpdate(details: JourneyDetailsWithTimes | null) {
     journeyDetails.value = details
@@ -100,6 +101,7 @@ onUnmounted(() => {
         />
     </v-card>
     <WallTimetableSearch
+        v-show="showSearch"
         v-model:search="lineSearch"
         :search-results="lineVersionSearchResult"
         class="overlay"

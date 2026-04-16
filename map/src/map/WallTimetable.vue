@@ -22,6 +22,12 @@ const displayWallTimetable = computed(() => getDisplayWallTimetable(props.wallTi
 const activeDirectionTab = ref<JourneyDirection>(displayWallTimetable.value[0]!.direction)
 const activeOperatingPeriodTab = ref<number>(0)
 const hoveredColumnIndex = ref<number | null>(null)
+const collapsed = ref(false)
+
+function onJourneySelected(journeyId: number, routeId: number) {
+    collapsed.value = true
+    emit('journey-selected', journeyId, routeId)
+}
 
 watch(
     activeDirectionTab,
@@ -45,161 +51,205 @@ function handleColumnLeave() {
 
 <template>
     <div class="wall-timetable">
-        <div class="timetable-header">
-            <div class="timetable-header-info">
-                <div>
-                    <LineVersionLabel
-                        :transport-mode="wallTimetable.lineVersion.transportMode"
-                        :is-detour="wallTimetable.lineVersion.detour"
-                        :short-name="wallTimetable.lineVersion.shortName"
-                        :public-code="wallTimetable.lineVersion.publicCode"
-                    />
-                    <v-btn
-                        class="wall-timetable-close-button"
-                        icon="mdi-close"
-                        size="small"
-                        variant="text"
-                        @click="emit('close')"
-                    />
-                    {{ wallTimetable.lineVersion.operator.legalName }}
-                </div>
-                <div class="timetable-header-dates">
-                    {{ t('lineVersion.validIn') }}
-                    <span class="timetable-header-chips">
-                        <v-chip
-                            :text="`${d(wallTimetable.lineVersion.validFrom, 'short')} - ${d(wallTimetable.lineVersion.validTo, 'short')}`"
-                            label
-                            density="compact"
-                        />
-                    </span>
-                    {{ t('lineVersion.activeIn') }}
-                    <span class="timetable-header-chips">
-                        <v-chip
-                            v-for="ap in wallTimetable.lineVersion.activePeriods"
-                            :key="ap.fromDate.toISOString()"
-                            :text="`${d(ap.fromDate, 'short')} - ${d(ap.toDate, 'short')}`"
-                            label
-                            density="compact"
-                        />
-                        <v-icon
-                            v-if="wallTimetable.lineVersion.activePeriods.length === 0"
-                            icon="mdi-cancel"
-                        />
-                    </span>
-                </div>
-            </div>
-            <v-divider class="mt-1" opacity="1" />
-            <v-tabs v-if="displayWallTimetable.length > 1" v-model="activeDirectionTab" grow>
-                <v-tab
-                    v-for="tab in displayWallTimetable"
-                    :key="tab.direction"
-                    :text="tab.text"
-                    :value="tab.direction"
-                    selected-class="selected-tab"
-                />
-            </v-tabs>
-            <v-divider opacity="0.25" />
-            <v-tabs
-                v-if="activeDisplayDirection.displayOperatingPeriods.length > 1"
-                v-model="activeOperatingPeriodTab"
-                grow
-            >
-                <v-tab
-                    v-for="(op, idx) in activeDisplayDirection.displayOperatingPeriods"
-                    :key="op.relationalId"
-                    :value="op.relationalId"
-                    :text="t('lineVersion.operatingPeriod') + ' ' + (idx + 1)"
-                    selected-class="selected-tab"
-                />
-            </v-tabs>
-            <v-divider opacity="1" />
+        <div
+            v-show="collapsed"
+            class="timetable-handle"
+        >
+            <v-btn
+                icon="mdi-table"
+                variant="text"
+                :rounded="false"
+                @click="collapsed = false"
+            />
         </div>
-        <div class="timetable-body-wrapper">
-            <v-tabs-window v-model="activeDirectionTab">
-                <v-tabs-window-item
-                    v-for="tab in displayWallTimetable"
-                    :key="tab.direction"
-                    :value="tab.direction"
+        <div
+            v-show="!collapsed"
+            class="timetable"
+        >
+            <div class="timetable-header">
+                <div class="timetable-header-info">
+                    <div>
+                        <LineVersionLabel
+                            :transport-mode="wallTimetable.lineVersion.transportMode"
+                            :is-detour="wallTimetable.lineVersion.detour"
+                            :short-name="wallTimetable.lineVersion.shortName"
+                            :public-code="wallTimetable.lineVersion.publicCode"
+                        />
+                        <div class="wall-timetable-buttons">
+                            <v-btn
+                                icon="mdi-arrow-collapse-left"
+                                size="small"
+                                variant="text"
+                                @click="collapsed = true"
+                            />
+                            <v-btn
+                                class="wall-timetable-close-button"
+                                icon="mdi-close"
+                                size="small"
+                                variant="text"
+                                @click="emit('close')"
+                            />
+                        </div>
+                        {{ wallTimetable.lineVersion.operator.legalName }}
+                    </div>
+                    <div class="timetable-header-dates">
+                        {{ t('lineVersion.validIn') }}
+                        <span class="timetable-header-chips">
+                            <v-chip
+                                :text="`${d(wallTimetable.lineVersion.validFrom, 'short')} - ${d(wallTimetable.lineVersion.validTo, 'short')}`"
+                                label
+                                density="compact"
+                            />
+                        </span>
+                        {{ t('lineVersion.activeIn') }}
+                        <span class="timetable-header-chips">
+                            <v-chip
+                                v-for="ap in wallTimetable.lineVersion.activePeriods"
+                                :key="ap.fromDate.toISOString()"
+                                :text="`${d(ap.fromDate, 'short')} - ${d(ap.toDate, 'short')}`"
+                                label
+                                density="compact"
+                            />
+                            <v-icon
+                                v-if="wallTimetable.lineVersion.activePeriods.length === 0"
+                                icon="mdi-cancel"
+                            />
+                        </span>
+                    </div>
+                </div>
+                <v-divider class="mt-1" opacity="1" />
+                <v-tabs v-if="displayWallTimetable.length > 1" v-model="activeDirectionTab" grow>
+                    <v-tab
+                        v-for="tab in displayWallTimetable"
+                        :key="tab.direction"
+                        :text="tab.text"
+                        :value="tab.direction"
+                        selected-class="selected-tab"
+                    />
+                </v-tabs>
+                <v-divider opacity="0.25" />
+                <v-tabs
+                    v-if="activeDisplayDirection.displayOperatingPeriods.length > 1"
+                    v-model="activeOperatingPeriodTab"
+                    grow
                 >
-                    <v-tabs-window v-model="activeOperatingPeriodTab">
-                        <v-tabs-window-item
-                            v-for="op in tab.displayOperatingPeriods"
-                            :key="op.relationalId"
-                            :value="op.relationalId"
-                            class="passing-times"
-                        >
-                            <div class="operation-time">
-                                <span v-if="op.regularDays.length > 0">
-                                    {{ t('lineVersion.operatesRegularlyIn') }}
-                                    {{
-                                        op.regularDays
-                                            .map((day) => t(`daysOfWeek.short.${day}`))
-                                            .join(', ')
-                                    }}
-                                </span>
-                                <span v-if="op.alsoOperatesIn.length > 0">
-                                    <span class="operating-days-chips">
+                    <v-tab
+                        v-for="(op, idx) in activeDisplayDirection.displayOperatingPeriods"
+                        :key="op.relationalId"
+                        :value="op.relationalId"
+                        :text="t('lineVersion.operatingPeriod') + ' ' + (idx + 1)"
+                        selected-class="selected-tab"
+                    />
+                </v-tabs>
+                <v-divider opacity="1" />
+            </div>
+            <div class="timetable-body-wrapper">
+                <v-tabs-window v-model="activeDirectionTab">
+                    <v-tabs-window-item
+                        v-for="tab in displayWallTimetable"
+                        :key="tab.direction"
+                        :value="tab.direction"
+                    >
+                        <v-tabs-window v-model="activeOperatingPeriodTab">
+                            <v-tabs-window-item
+                                v-for="op in tab.displayOperatingPeriods"
+                                :key="op.relationalId"
+                                :value="op.relationalId"
+                                class="passing-times"
+                            >
+                                <div class="operation-time">
+                                    <span v-if="op.regularDays.length > 0">
+                                        {{ t('lineVersion.operatesRegularlyIn') }}
                                         {{
-                                            t(
-                                                op.regularDays.length > 0
-                                                    ? 'lineVersion.alsoOperatesIn'
-                                                    : 'lineVersion.onlyOperatesIn',
-                                            )
+                                            op.regularDays
+                                                .map((day) => t(`daysOfWeek.short.${day}`))
+                                                .join(', ')
                                         }}
-                                        <v-chip
-                                            v-for="day in op.alsoOperatesIn"
-                                            :key="day.toISOString()"
-                                            :text="d(day, 'short')"
-                                            label
-                                            density="compact"
-                                        />
                                     </span>
-                                </span>
-                                <span v-if="op.doesNotOperateIn.length > 0">
-                                    <span class="operating-days-chips">
-                                        {{ t('lineVersion.doesNotOperateIn') }}
-                                        <v-chip
-                                            v-for="day in op.doesNotOperateIn"
-                                            :key="day.toISOString()"
-                                            :text="d(day, 'short')"
-                                            label
-                                            density="compact"
-                                        />
-                                    </span>
-                                </span>
-                            </div>
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <template
-                                            v-if="
-                                                op.journeys.some((j) =>
-                                                    Object.values(j.facilities).some(
-                                                        (f) => f.active,
-                                                    ),
+                                    <span v-if="op.alsoOperatesIn.length > 0">
+                                        <span class="operating-days-chips">
+                                            {{
+                                                t(
+                                                    op.regularDays.length > 0
+                                                        ? 'lineVersion.alsoOperatesIn'
+                                                        : 'lineVersion.onlyOperatesIn',
                                                 )
-                                            "
-                                        >
-                                            <td></td>
-                                            <td class="header-column"></td>
-                                            <td
-                                                v-for="(journey, kdx) in op.journeys"
-                                                :key="kdx"
-                                                :class="{
-                                                    'journey-column': true,
-                                                    'left-border': kdx !== 0,
-                                                    'header-row': true,
-                                                    'hovered-column': hoveredColumnIndex === kdx,
-                                                }"
-                                                @click="emit('journey-selected', journey.relationalId, journey.routeId)"
-                                                @mouseenter="handleColumnHover(kdx)"
-                                                @mouseleave="handleColumnLeave"
+                                            }}
+                                            <v-chip
+                                                v-for="day in op.alsoOperatesIn"
+                                                :key="day.toISOString()"
+                                                :text="d(day, 'short')"
+                                                label
+                                                density="compact"
+                                            />
+                                        </span>
+                                    </span>
+                                    <span v-if="op.doesNotOperateIn.length > 0">
+                                        <span class="operating-days-chips">
+                                            {{ t('lineVersion.doesNotOperateIn') }}
+                                            <v-chip
+                                                v-for="day in op.doesNotOperateIn"
+                                                :key="day.toISOString()"
+                                                :text="d(day, 'short')"
+                                                label
+                                                density="compact"
+                                            />
+                                        </span>
+                                    </span>
+                                </div>
+                                <table>
+                                    <tbody>
+                                        <tr>
+                                            <template
+                                                v-if="
+                                                    op.journeys.some((j) =>
+                                                        Object.values(j.facilities).some(
+                                                            (f) => f.active,
+                                                        ),
+                                                    )
+                                                "
                                             >
-                                                <div class="journey-facilities">
+                                                <td></td>
+                                                <td class="header-column"></td>
+                                                <td
+                                                    v-for="(journey, kdx) in op.journeys"
+                                                    :key="kdx"
+                                                    :class="{
+                                                        'journey-column': true,
+                                                        'left-border': kdx !== 0,
+                                                        'header-row': true,
+                                                        'hovered-column': hoveredColumnIndex === kdx,
+                                                    }"
+                                                    @click="onJourneySelected(journey.relationalId, journey.routeId)"
+                                                    @mouseenter="handleColumnHover(kdx)"
+                                                    @mouseleave="handleColumnLeave"
+                                                >
+                                                    <div class="journey-facilities">
+                                                        <template
+                                                            v-for="(
+                                                                facility, key
+                                                            ) in journey.facilities"
+                                                            :key="key"
+                                                        >
+                                                            <FacilityIcon
+                                                                v-if="facility.active"
+                                                                :facility="facility"
+                                                                compact
+                                                            />
+                                                        </template>
+                                                    </div>
+                                                </td>
+                                            </template>
+                                        </tr>
+                                        <tr v-for="(stopEntry, idx) in tab.displayStops" :key="idx">
+                                            <td class="icon-td">
+                                                <div class="stop-facilities">
+                                                    <TransportBanIcons
+                                                        :transport-ban-groups="stopEntry.banGroups"
+                                                        compact
+                                                    />
                                                     <template
-                                                        v-for="(
-                                                            facility, key
-                                                        ) in journey.facilities"
+                                                        v-for="(facility, key) in stopEntry.facilities"
                                                         :key="key"
                                                     >
                                                         <FacilityIcon
@@ -210,62 +260,48 @@ function handleColumnLeave() {
                                                     </template>
                                                 </div>
                                             </td>
-                                        </template>
-                                    </tr>
-                                    <tr v-for="(stopEntry, idx) in tab.displayStops" :key="idx">
-                                        <td class="icon-td">
-                                            <div class="stop-facilities">
-                                                <TransportBanIcons
-                                                    :transport-ban-groups="stopEntry.banGroups"
-                                                    compact
-                                                />
-                                                <template
-                                                    v-for="(facility, key) in stopEntry.facilities"
-                                                    :key="key"
-                                                >
-                                                    <FacilityIcon
-                                                        v-if="facility.active"
-                                                        :facility="facility"
-                                                        compact
-                                                    />
-                                                </template>
-                                            </div>
-                                        </td>
-                                        <td class="header-column">{{ stopEntry.stopName }}</td>
-                                        <td
-                                            v-for="(journey, kdx) in op.journeys"
-                                            :key="kdx"
-                                            :class="{
-                                                'journey-column': true,
-                                                'left-border': kdx !== 0,
-                                                'hovered-column': hoveredColumnIndex === kdx,
-                                            }"
-                                            @click="emit('journey-selected', journey.relationalId, journey.routeId)"
-                                            @mouseenter="handleColumnHover(kdx)"
-                                            @mouseleave="handleColumnLeave"
-                                        >
-                                            {{
-                                                journey.schedule[idx] != null
-                                                    ? d(
-                                                          journey.schedule[idx]!.toDate(),
-                                                          'timeShort',
-                                                      )
-                                                    : 'x'
-                                            }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </v-tabs-window-item>
-                    </v-tabs-window>
-                </v-tabs-window-item>
-            </v-tabs-window>
+                                            <td class="header-column">{{ stopEntry.stopName }}</td>
+                                            <td
+                                                v-for="(journey, kdx) in op.journeys"
+                                                :key="kdx"
+                                                :class="{
+                                                    'journey-column': true,
+                                                    'left-border': kdx !== 0,
+                                                    'hovered-column': hoveredColumnIndex === kdx,
+                                                }"
+                                                @click="onJourneySelected(journey.relationalId, journey.routeId)"
+                                                @mouseenter="handleColumnHover(kdx)"
+                                                @mouseleave="handleColumnLeave"
+                                            >
+                                                {{
+                                                    journey.schedule[idx] != null
+                                                        ? d(
+                                                              journey.schedule[idx]!.toDate(),
+                                                              'timeShort',
+                                                          )
+                                                        : 'x'
+                                                }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </v-tabs-window-item>
+                        </v-tabs-window>
+                    </v-tabs-window-item>
+                </v-tabs-window>
+            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-.wall-timetable {
+.wall-timetable{
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.timetable {
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -279,7 +315,7 @@ function handleColumnLeave() {
 }
 
 .timetable-header-info {
-    padding-inline-end: 2em;
+    padding-inline-end: 4em;
     display: flex;
     gap: 1em;
 }
@@ -314,7 +350,7 @@ function handleColumnLeave() {
     align-self: center;
 }
 
-.wall-timetable-close-button {
+.wall-timetable-buttons {
     position: absolute;
     top: 0.25em;
     right: 0.25em;

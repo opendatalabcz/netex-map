@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
-import SearchLineVersion from '@/map/SearchLineVersion.vue'
+import LineVersionSearchResult from '@/map/LineVersionSearchResult.vue'
 import { vIntersectionObserver } from '@vueuse/components'
 import { useI18n } from 'vue-i18n'
 
@@ -50,7 +50,7 @@ function onSearchSentinelVisible([entry]: IntersectionObserverEntry[]) {
                         v-if="idx === searchResults.length - 2"
                         v-intersection-observer="onSearchSentinelVisible"
                     />
-                    <SearchLineVersion :line-version="lineVersion" />
+                    <LineVersionSearchResult :line-version="lineVersion" />
                 </v-card>
             </div>
         </v-scroll-y-transition>

@@ -21,7 +21,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="search-line-version">
+    <div class="line-version-search-result">
         <LineVersionLabel
             :transport-mode="lineVersion.transportMode"
             :is-detour="lineVersion.detour"
@@ -55,13 +55,13 @@ defineProps<{
 </template>
 
 <style scoped>
-.search-line-version {
+.line-version-search-result {
     display: flex;
     flex-direction: column;
     gap: 0.125em;
 }
 
-.search-line-version > div {
+.line-version-search-result > div {
     flex-grow: 1;
 }
 
