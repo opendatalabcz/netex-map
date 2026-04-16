@@ -36,6 +36,15 @@ const csDatetimeFormats: Record<string, Intl.DateTimeFormatOptions> = {
         minute: 'numeric',
         second: 'numeric',
     },
+    longWithDay: {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        weekday: 'long',
+    },
     timeShort: {
         hour: 'numeric',
         minute: 'numeric',

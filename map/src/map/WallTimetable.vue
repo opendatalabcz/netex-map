@@ -56,7 +56,7 @@ function handleColumnLeave() {
             class="timetable-handle"
         >
             <v-btn
-                icon="mdi-table"
+                icon="mdi-timetable"
                 variant="text"
                 :rounded="false"
                 @click="collapsed = false"

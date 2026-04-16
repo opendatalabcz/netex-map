@@ -40,7 +40,7 @@ const notEmptyValidationRule = (v: unknown) => !!v || v === 0
         <v-card class="row-flex form-card">
             <v-icon icon="mdi-clock-outline" />
             <span v-show="playing">
-                {{ d(moment, 'long') }}
+                {{ d(moment, 'longWithDay') }}
             </span>
             <v-form v-show="!playing" class="moment-form row-flex">
                 <v-date-input
