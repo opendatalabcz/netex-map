@@ -47,17 +47,6 @@ export class MapEntitiesRenderer {
         route.stops[stopOrder]![1]!.closeTooltip()
     }
 
-    bindStopNames(route: RenderedMapRoute, stopNames: string[]) {
-        if (route.stops == null) return
-        for (let i = 0; i < stopNames.length; i++) {
-            const marker = route.stops[i]![1]!
-            marker.bindTooltip(stopNames[i]!, {
-                direction: 'top',
-                offset: [0, -5],
-            })
-        }
-    }
-
     clearRenderedRoute(route: RenderedMapRoute) {
         if (route.featureGroup == null) return
         route.featureGroup.remove()
@@ -65,7 +54,7 @@ export class MapEntitiesRenderer {
         route.stops = null
     }
 
-    renderRoute(route: RenderedMapRoute, lineVersionId: number) {
+    renderRoute(route: RenderedMapRoute, lineVersionId: number, stopNames: string[]) {
         if (route.featureGroup != null) return
         if (route.color == null) {
             route.color = this.getColor(lineVersionId)
@@ -86,7 +75,7 @@ export class MapEntitiesRenderer {
 
         route.stops = []
         getInterpolationDataFromRouteFractions(
-            route.routeStops,
+            route.routeStopFractions,
             route.pointSequence,
             route.totalDistance,
         ).forEach((pointData) => {
@@ -113,6 +102,14 @@ export class MapEntitiesRenderer {
             stopMarkers.forEach((marker) => route.featureGroup!.addLayer(marker))
             route.stops!.push(stopMarkers)
         })
+
+        for (let i = 0; i < stopNames.length; i++) {
+            const marker = route.stops[i]![1]!
+            marker.bindTooltip(stopNames[i]!, {
+                direction: 'top',
+                offset: [0, -5],
+            })
+        }
 
         route.featureGroup.addTo(this.map)
     }

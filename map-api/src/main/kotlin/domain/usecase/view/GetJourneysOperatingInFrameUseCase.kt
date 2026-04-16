@@ -3,13 +3,6 @@ package cz.cvut.fit.gaierda1.domain.usecase.view
 import java.time.OffsetDateTime
 
 interface GetJourneysOperatingInFrameUseCase {
-    data class MapRoute(
-        val relationalId: Long,
-        val pointSequence: String,
-        val totalDistance: Double,
-        val routeStops: List<Double>,
-    )
-
     data class MapScheduledStop(
         val arrival: OffsetDateTime?,
         val departure: OffsetDateTime?,
@@ -26,7 +19,7 @@ interface GetJourneysOperatingInFrameUseCase {
 
     data class JourneysOperatingInFrameResult(
         val journeys: List<MapJourney>,
-        val routes: List<MapRoute>,
+        val routes: List<GetEncodedRoutesUseCase.EncodedRoute>,
     )
 
     fun getJourneysOperatingInFrame(

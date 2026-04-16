@@ -1,3 +1,4 @@
+import type { EncodedRoute, Route } from '@/api/model/encodedRoute'
 import type { JourneyDirection } from '@/api/model/enums'
 import type {
     JourneyDetails,
@@ -10,8 +11,6 @@ import type {
     MapScheduledStop,
     MapJourneyWithDates,
     MapScheduledStopWithDates,
-    MapRawRoute,
-    MapRoute,
 } from '@/api/model/journeysOperatingInFrame'
 import type {
     SearchLineVersion,
@@ -56,12 +55,12 @@ export function toMapJourneyWithDates(mapJourney: MapJourney): MapJourneyWithDat
     }
 }
 
-export function toMapRoute(route: MapRawRoute): MapRoute {
+export function toRoute(route: EncodedRoute): Route {
     return {
         relationalId: route.relationalId,
         pointSequence: Polyline.decode(route.pointSequence),
         totalDistance: route.totalDistance,
-        routeStops: route.routeStops,
+        routeStopFractions: route.routeStopFractions,
     }
 }
 

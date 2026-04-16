@@ -1,23 +1,11 @@
-type MapRawRoute = {
-    relationalId: number
-    pointSequence: string
-    totalDistance: number
-    routeStops: number[]
-}
+import type { EncodedRoute } from "@/api/model/encodedRoute"
 
-type MapRoute = {
-    relationalId: number
-    pointSequence: [number, number][]
-    totalDistance: number
-    routeStops: number[]
-}
-
-type MapScheduledStop = {
+export type MapScheduledStop = {
     arrival: string | null
     departure: string | null
 }
 
-type MapJourney = {
+export type MapJourney = {
     relationalId: number
     lineVersionId: number
     routeId: number
@@ -26,31 +14,21 @@ type MapJourney = {
     fromPreviousDay: boolean
 }
 
-type JourneysOperatingInFrame = {
+export type JourneysOperatingInFrame = {
     journeys: MapJourney[]
-    routes: MapRawRoute[]
+    routes: EncodedRoute[]
 }
 
-type MapScheduledStopWithDates = {
+export type MapScheduledStopWithDates = {
     arrival: Date | null
     departure: Date | null
 }
 
-type MapJourneyWithDates = {
+export type MapJourneyWithDates = {
     relationalId: number
     lineVersionId: number
     routeId: number
     schedule: MapScheduledStopWithDates[]
     nextDayFirstStopIndex: number | null
     fromPreviousDay: boolean
-}
-
-export type {
-    JourneysOperatingInFrame,
-    MapJourney,
-    MapScheduledStop,
-    MapRawRoute,
-    MapJourneyWithDates,
-    MapScheduledStopWithDates,
-    MapRoute,
 }

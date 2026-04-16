@@ -1,13 +1,14 @@
-import type { MapJourney, MapRawRoute, MapRoute } from '@/api/model/journeysOperatingInFrame'
+import type { EncodedRoute, Route } from '@/api/model/encodedRoute'
+import type { MapJourney } from '@/api/model/journeysOperatingInFrame'
 import type { PositionedMapJourneyWithDates } from '@/services/interpolatePositions'
-import { toMapJourneyWithDates, toMapRoute } from '@/services/toDeserializedTypes'
+import { toMapJourneyWithDates, toRoute } from '@/services/toDeserializedTypes'
 
 type RenderedMapJourney = PositionedMapJourneyWithDates & {
     vehicleMarker: L.Marker | null
     color: string | null
 }
 
-type RenderedMapRoute = MapRoute & {
+type RenderedMapRoute = Route & {
     featureGroup: L.FeatureGroup | null
     stops: L.CircleMarker[][] | null
     color: string | null
@@ -30,9 +31,9 @@ function toRenderedJourney(journey: MapJourney): RenderedMapJourney {
     return res
 }
 
-function toRenderedRoute(route: MapRawRoute): RenderedMapRoute {
+function toRenderedRoute(route: EncodedRoute): RenderedMapRoute {
     const res: RenderedMapRoute = {
-        ...toMapRoute(route),
+        ...toRoute(route),
         featureGroup: null,
         stops: null,
         color: null,
@@ -63,7 +64,7 @@ export class MapEntitiesStore {
         return this.store.routes
     }
 
-    addRoutes(newRoutes: MapRawRoute[]) {
+    addRoutes(newRoutes: EncodedRoute[]) {
         for (const route of newRoutes) {
             if (this.store.routes.has(route.relationalId)) continue
             this.store.routes.set(route.relationalId, toRenderedRoute(route))

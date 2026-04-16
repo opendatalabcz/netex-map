@@ -13,9 +13,8 @@ import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import type { LatLng } from 'leaflet'
 
 type FocusedJourney = {
-    journeyId: number
-    journeyDetails: JourneyDetailsWithTimes | null
-    mapRoute: RenderedMapRoute
+    journeyDetails: JourneyDetailsWithTimes
+    route: RenderedMapRoute
     highlightedStopOrder: number | null
 }
 
@@ -50,6 +49,8 @@ const STOP_FOCUS_HORIZONTAL_OFFSET_SCALE = 0.1
 const ANIMATION_FRAME_REQUIRED_DELAY_IN_MILLIS = 500
 const PRELOAD_LON_TOLERANCE = 0.1
 const PRELOAD_LAT_TOLERANCE = 0.07
+const RENDERED_ROUTE_PADDING = 20
+const RENDERED_ROUTE_OFFSET = 400
 
 export class MapController {
     private store: MapEntitiesStore
@@ -59,6 +60,7 @@ export class MapController {
     private moment: Date
     private momentListeners: ((moment: Date) => void)[] = []
     private momentKey: number
+    private focusedJourneyId: number | null = null
     private focusedJourney: FocusedJourney | null = null
     private focusedJourneyDetailsListeners: ((focused: JourneyDetailsWithTimes | null) => void)[] =
         []
@@ -120,7 +122,7 @@ export class MapController {
                 this.renderedJourneys.set(journey.relationalId, journey)
                 if (firstRender) {
                     journey.vehicleMarker.addEventListener('click', () => {
-                        this.onJourneyClick(journey, route)
+                        this.onVehicleClick(journey.relationalId, route)
                     })
                 }
             }
@@ -163,11 +165,7 @@ export class MapController {
      *   WallTimetable
      */
 
-    async onWallTimetableSelected(lineVersionId: number | null) {
-        if (lineVersionId == null) {
-            this.clearSelectedWallTimetable()
-            return
-        }
+    async onWallTimetableSelected(lineVersionId: number) {
         const timetable = await this.retriever.fetchWallTimetable(lineVersionId)
         if (timetable == null) return
         this.selectedWallTimetable = timetable
@@ -235,54 +233,65 @@ export class MapController {
     /*
      *   JourneyDetails
      */
-
-    private async fetchJourneyDetails(journeyId: number) {
-        const details = await this.retriever.fetchJourneyDetails(journeyId)
-        if (details == null || this.focusedJourney == null) return
-        this.focusedJourney.journeyDetails = details
-        this.focusedJourneyDetailsListeners.forEach((listener) => listener(details))
-        if (this.renderer == null) return
-        this.renderer.bindStopNames(
-            this.focusedJourney.mapRoute,
-            details.stops.map((s) => s.name),
-        )
-    }
-
-    onJourneyClick(journey: RenderedMapJourney, route: RenderedMapRoute) {
-        let renderRoute = true
-        if (this.focusedJourney != null) {
-            if (this.focusedJourney.journeyId === journey.relationalId) return
-            if (this.focusedJourney.mapRoute.relationalId !== route.relationalId) {
-                this.renderer!.clearRenderedRoute(this.focusedJourney.mapRoute)
-            } else {
-                renderRoute = false
-            }
-        }
+    private focusJourney(journeyDetails: JourneyDetailsWithTimes, route: RenderedMapRoute) {
+        const previousRoute = this.focusedJourney?.route
+        const renderRoute = this.focusedJourney?.route.relationalId !== route.relationalId
         this.focusedJourney = {
-            journeyId: journey.relationalId,
-            journeyDetails: null,
-            mapRoute: route,
+            journeyDetails: journeyDetails,
+            route: route,
             highlightedStopOrder: null,
         }
-        this.fetchJourneyDetails(journey.relationalId)
-        if (renderRoute) {
-            this.renderer!.renderRoute(route, journey.lineVersionId)
+        this.focusedJourneyDetailsListeners.forEach((listener) => listener(journeyDetails))
+        if (renderRoute && this.renderer != null) {
+            if (previousRoute != null) this.renderer.clearRenderedRoute(previousRoute)
+            this.renderer.renderRoute(
+                route,
+                journeyDetails.lineVersion.relationalId,
+                journeyDetails.stops.map((s) => s.name),
+            )
+            this.map!.flyToBounds(route.featureGroup!.getBounds(), {
+                duration: MAP_FLY_DURATION,
+                easeLinearity: MAP_FLY_LINEARITY,
+                animate: true,
+                paddingTopLeft: [RENDERED_ROUTE_PADDING, RENDERED_ROUTE_PADDING],
+                paddingBottomRight: [RENDERED_ROUTE_PADDING + RENDERED_ROUTE_OFFSET, RENDERED_ROUTE_PADDING],
+            })
         }
-        this.map!.flyToBounds(route.featureGroup!.getBounds(), {
-            duration: MAP_FLY_DURATION,
-            easeLinearity: MAP_FLY_LINEARITY,
-            animate: true,
-            paddingTopLeft: [20, 20],
-            paddingBottomRight: [420, 20],
-        })
+    }
+
+    async onWallJourneySelected(journeyId: number, routeId: number | null) {
+        if (routeId == null) {
+            // TODO snack message
+            console.warn('No route')
+            return
+        }
+        if (this.focusedJourneyId === journeyId) return
+        this.focusedJourneyId = journeyId
+        const cachedRoute = this.store.routes().get(routeId)
+        const results = await Promise.all([
+            this.retriever.fetchJourneyDetails(journeyId),
+            cachedRoute == null
+                ? this.retriever.fetchRoute(routeId)
+                : Promise.resolve(cachedRoute)
+        ])
+        if (results[0] == null || results[1] == null || this.focusedJourneyId !== journeyId) return
+        this.focusJourney(results[0], results[1])
+    }
+
+    async onVehicleClick(journeyId: number, route: RenderedMapRoute) {
+        if (this.focusedJourneyId === journeyId) return
+        this.focusedJourneyId = journeyId
+        const details = await this.retriever.fetchJourneyDetails(journeyId)
+        if (details == null || this.focusedJourneyId !== journeyId == null) return
+        this.focusJourney(details, route)
     }
 
     clearJourneyDetails() {
         if (this.focusedJourney == null) return
-        if (this.focusedJourney.journeyDetails != null) {
-            this.focusedJourneyDetailsListeners.forEach((listener) => listener(null))
+        this.focusedJourneyDetailsListeners.forEach((listener) => listener(null))
+        if (this.renderer != null) {
+            this.renderer.clearRenderedRoute(this.focusedJourney.route)
         }
-        this.renderer!.clearRenderedRoute(this.focusedJourney.mapRoute)
         this.focusedJourney = null
     }
 
@@ -290,7 +299,7 @@ export class MapController {
         if (this.focusedJourney == null) return
         if (this.focusedJourney.highlightedStopOrder != null) {
             this.renderer!.deHighlightStop(
-                this.focusedJourney.mapRoute,
+                this.focusedJourney.route,
                 this.focusedJourney.highlightedStopOrder,
             )
             if (this.focusedJourney.highlightedStopOrder === stopOrder) {
@@ -299,8 +308,8 @@ export class MapController {
             }
         }
         this.focusedJourney.highlightedStopOrder = stopOrder
-        this.renderer!.highlightStop(this.focusedJourney.mapRoute, stopOrder)
-        const offsetStopPosition = this.focusedJourney.mapRoute
+        this.renderer!.highlightStop(this.focusedJourney.route, stopOrder)
+        const offsetStopPosition = this.focusedJourney.route
             .stops![stopOrder]![0]!.getLatLng()
             .clone()
         const mapBounds = this.map!.getBounds()

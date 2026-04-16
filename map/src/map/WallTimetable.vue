@@ -11,7 +11,8 @@ import { getDisplayWallTimetable } from '@/map/wallTimetable'
 const { t, d } = useI18n()
 
 const emit = defineEmits<{
-    close: []
+    close: [],
+    'journey-selected': [journeyId: number, routeId: number],
 }>()
 const props = defineProps<{
     wallTimetable: WallTimetableWithDates
@@ -20,6 +21,8 @@ const props = defineProps<{
 const displayWallTimetable = computed(() => getDisplayWallTimetable(props.wallTimetable, t))
 const activeDirectionTab = ref<JourneyDirection>(displayWallTimetable.value[0]!.direction)
 const activeOperatingPeriodTab = ref<number>(0)
+const hoveredColumnIndex = ref<number | null>(null)
+
 watch(
     activeDirectionTab,
     () =>
@@ -30,6 +33,14 @@ watch(
 const activeDisplayDirection = computed(
     () => displayWallTimetable.value.find((tab) => tab.direction === activeDirectionTab.value)!,
 )
+
+function handleColumnHover(columnIndex: number) {
+    hoveredColumnIndex.value = columnIndex
+}
+
+function handleColumnLeave() {
+    hoveredColumnIndex.value = null
+}
 </script>
 
 <template>
@@ -178,7 +189,11 @@ const activeDisplayDirection = computed(
                                                     'journey-column': true,
                                                     'left-border': kdx !== 0,
                                                     'header-row': true,
+                                                    'hovered-column': hoveredColumnIndex === kdx,
                                                 }"
+                                                @click="emit('journey-selected', journey.relationalId, journey.routeId)"
+                                                @mouseenter="handleColumnHover(kdx)"
+                                                @mouseleave="handleColumnLeave"
                                             >
                                                 <div class="journey-facilities">
                                                     <template
@@ -223,7 +238,11 @@ const activeDisplayDirection = computed(
                                             :class="{
                                                 'journey-column': true,
                                                 'left-border': kdx !== 0,
+                                                'hovered-column': hoveredColumnIndex === kdx,
                                             }"
+                                            @click="emit('journey-selected', journey.relationalId, journey.routeId)"
+                                            @mouseenter="handleColumnHover(kdx)"
+                                            @mouseleave="handleColumnLeave"
                                         >
                                             {{
                                                 journey.schedule[idx] != null
@@ -354,6 +373,14 @@ tr:nth-child(even) td,
 }
 tr:nth-child(odd) td {
     background-color: white;
+}
+
+.hovered-column {
+    background-color: color-mix(in srgb, black 8%, white) !important;
+    cursor: pointer;
+}
+tr:nth-child(even) .hovered-column {
+    background-color: color-mix(in srgb, black 18%, white) !important;
 }
 
 td {

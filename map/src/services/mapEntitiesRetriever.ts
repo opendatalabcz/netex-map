@@ -1,6 +1,6 @@
 import JourneyApi from '@/api/journeyApi'
 import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
-import type { MapEntitiesStore } from '@/services/mapEntitiesStore'
+import type { MapEntitiesStore, RenderedMapRoute } from '@/services/mapEntitiesStore'
 import LineVersionApi from '@/api/lineVersionApi'
 import {
     toJourneyDetailsWithTimes,
@@ -10,6 +10,7 @@ import {
 import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import type { Page } from '@/api/model/page'
+import RouteApi from '@/api/routeApi'
 
 export class MapEntitiesRetriever {
     mapEntriesStore: MapEntitiesStore
@@ -75,5 +76,14 @@ export class MapEntitiesRetriever {
             page: result.page,
             content: result.content.map(toSearchLineVersionWithDates),
         }
+    }
+
+    async fetchRoute(
+        routeId: number,
+    ): Promise<RenderedMapRoute | null | undefined> {
+        const route = await RouteApi.getEncodedRoute(routeId)
+        if (route == null) return null
+        this.mapEntriesStore.addRoutes([route])
+        return this.mapEntriesStore.routes().get(routeId)
     }
 }

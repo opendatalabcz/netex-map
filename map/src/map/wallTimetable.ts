@@ -21,6 +21,8 @@ export type DisplayStop = {
     banGroups: number[]
 }
 export type DisplayJourney = {
+    relationalId: number,
+    routeId: number,
     facilities: DisplayFacilities
     schedule: (LocalTime | null)[]
 }
@@ -127,14 +129,16 @@ export function getDisplayJourneysForDirection(
 ): DisplayJourney[] {
     const res: DisplayJourney[] = []
     for (const journey of journeys) {
+        const journeyPattern = journeyPatterns.find(
+            (jp) => jp.patternNumber === journey.patternNumber,
+        )!
         const displayJourney: DisplayJourney = {
+            relationalId: journey.relationalId,
+            routeId: journeyPattern.routeId,
             facilities: displayFacilitiesForJourney(journey, t),
             schedule: [],
         }
         res.push(displayJourney)
-        const journeyPattern = journeyPatterns.find(
-            (jp) => jp.patternNumber === journey.patternNumber,
-        )!
         let journeyPatternIdx = 0
         const reverseOrder = direction !== 'CLOCKWISE' && direction !== 'OUTBOUND'
         let tariffIdx = reverseOrder ? tariffStopCount - 1 : 0

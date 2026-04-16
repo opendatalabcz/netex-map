@@ -8,7 +8,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.TariffStop
 import cz.cvut.fit.gaierda1.data.orm.model.TariffStopId
 import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
-import cz.cvut.fit.gaierda1.domain.misc.atOffset
+import cz.cvut.fit.gaierda1.domain.misc.atOffsetByZoneId
 import cz.cvut.fit.gaierda1.domain.port.TimetableParseResult
 import org.rutebanken.netex.model.Line
 import org.springframework.stereotype.Component
@@ -33,8 +33,8 @@ class LineVersionAssembler(
         val lineVersions = mutableMapOf<String, LineVersionAssembleResult>()
         val zoneId = ZoneId.of(registry.frameDefaults.defaultLocale.timeZone)
         for (line in registry.lineRegistry.values) {
-            val validFrom = line.validBetween.first().fromDate.atOffset(zoneId)
-            val validTo = line.validBetween.first().toDate.atOffset(zoneId)
+            val validFrom = line.validBetween.first().fromDate.atOffsetByZoneId(zoneId)
+            val validTo = line.validBetween.first().toDate.atOffsetByZoneId(zoneId)
             val isDetour = line.keyList.keyValue.firstOrNull { it.key == "JdfDetourTimetable" }?.value == "1"
 
             val fromCache = parseCache.findLineVersion(line.publicCode, isDetour, validFrom, validTo)
