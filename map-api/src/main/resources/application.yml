@@ -8,6 +8,9 @@ map:
       11: 0.2
       12: 0.1
       13: 0.0
+import:
+  input-timetable-batch-size: 30
+  active-period-line-versions-batch-size: 100
 routing:
   service:
     url: http://localhost:8113

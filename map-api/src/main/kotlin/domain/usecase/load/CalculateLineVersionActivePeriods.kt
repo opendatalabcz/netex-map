@@ -5,6 +5,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.ActivePeriodId
 import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.ActivePeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
@@ -17,6 +18,8 @@ class CalculateLineVersionActivePeriods(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val activePeriodJpaRepository: ActivePeriodJpaRepository,
     private val transactionTemplate: TransactionTemplate,
+    @Value($$"${import.active-period-line-versions-batch-size}")
+    private val codePageSize: Int,
 ): CalculateLineVersionActivePeriodsUseCase {
     private fun calculateActivePeriodsForGroup(lineVersions: List<LineVersion>): List<ActivePeriod> {
         val validVersions = lineVersions.filter { it.validFrom.isBefore(it.validTo) }
@@ -73,7 +76,6 @@ class CalculateLineVersionActivePeriods(
     }
 
     override fun calculateActivePeriods() {
-        val codePageSize = 100
         var codePageNumber = 0
         var publicCodes: Page<String>? = null
         activePeriodJpaRepository.deleteAll()

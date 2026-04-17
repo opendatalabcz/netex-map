@@ -1,7 +1,7 @@
 name: netex-map
 
 services:
-  map-db:
+  timetable-db:
     image: postgis/postgis:18-3.6-alpine
     restart: always
     container_name: ${DB_CONTAINER_NAME}
@@ -31,6 +31,35 @@ services:
     volumes:
       - routing-cache:${GRAPHHOPPER_CACHE_DIR}
       - ${GRAPHHOPPER_OSM_PBF_HOST_PATH}:/data/czech-republic.osm.pbf:ro
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+  timetable-api:
+    image: timetable-api:${BE_API_VERSION}
+    restart: always
+    container_name: ${BE_CONTAINER_NAME}
+    depends_on:
+      - graphhopper
+      - timetable-db
+    environment:
+      JAVA_TOOL_OPTIONS: ${BE_JAVA_TOOL_OPTIONS}
+      ROUTING_SERVICE_URL: ${BE_ROUTING_SERVICE_URL}
+      SPRING_DATASOURCE_URL: ${BE_SPRING_DATASOURCE_URL}
+      MAP_LOD_CITY_LINES_ZOOM_THRESHOLD: ${BE_LOD_CITY_LINES_ZOOM_THRESHOLD}
+      SPRING_DATASOURCE_USER: ${DB_ADMIN_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_ADMIN_PASSWORD}
+    ports:
+      - ${BE_HOST_PORT}:8080
+    volumes:
+      - ${BE_NETEX_PUBLIC_LINES_HOST_PATH}:${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}:ro
+      - ${BE_NETEX_CITY_LINES_HOST_PATH}:${BE_NETEX_CITY_LINES_CONTAINER_PATH}:ro
+      - ${BE_JRUTIL_GTFS_UNIFIED_EXPORT_HOST_PATH}:${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}:ro
+    command: >
+      --import-zip=${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}
+      --import-zip=${BE_NETEX_CITY_LINES_CONTAINER_PATH}
+      --jrutil-gtfs=${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}
     logging:
       driver: local
       options:

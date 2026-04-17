@@ -13,9 +13,7 @@ class AddPositionToStopsByName(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val stopJpaRepository: StopJpaRepository,
 ) : AddPositionToStopsByNameUseCase {
-    companion object {
-        private val log = LoggerFactory.getLogger(AddPositionToStopsByName::class.java)
-    }
+    private val log = LoggerFactory.getLogger(AddPositionToStopsByName::class.java)
 
     private fun String.collapseCommas(): String = replace(Regex("\\s*,+\\s*"), ",")
     private fun String.removeCommasAndSpaces(): String = replace(Regex("[ ,]"), "")
