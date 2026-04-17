@@ -151,6 +151,7 @@ function interpolateVehiclePosition(
     if (journey.routeId == null) {
         journey.position = undefined
         journey.segmentIndex = undefined
+        journey.azimuth = undefined
         return
     }
 
@@ -163,6 +164,7 @@ function interpolateVehiclePosition(
         }
         journey.position = null
         journey.segmentIndex = null
+        journey.azimuth = null
         return
     }
     const departureStop = journey.schedule[segment]!
@@ -171,6 +173,10 @@ function interpolateVehiclePosition(
         if (segment > 0) {
             return interpolateVehiclePosition(moment, journey, segment - 1, route)
         }
+        journey.position = null
+        journey.segmentIndex = null
+        journey.azimuth = null
+        return
     }
 
     const lerpFraction = Math.max(0, (momentTime - departureTime) / (arrivalTime - departureTime))
