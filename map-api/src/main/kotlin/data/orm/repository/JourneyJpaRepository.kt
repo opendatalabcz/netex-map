@@ -17,7 +17,12 @@ import java.util.Optional
 interface JourneyJpaRepository: JpaRepository<Journey, Long> {
     private companion object {
         const val OPERATING_IN_FRAME_QUERY = """
-            SELECT j.relational_id, j.line_version_id, jp.route_id, j.next_day_first_stop_index, j.timezone
+            SELECT
+                j.relational_id,
+                j.line_version_id,
+                jp.route_id,
+                j.next_day_first_stop_index,
+                j.timezone
             FROM journey j
                 CROSS JOIN LATERAL ( SELECT
                     (:targetMoment)::timestamptz AT TIME ZONE j.timezone as local_target_moment
@@ -29,8 +34,8 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                     ELSE
                         (local_target_moment::date + interval '24 hours' + j.end_time) AT TIME ZONE j.timezone
                     END as journey_end_moment,
-                    date_trunc('hour', local_target_moment) as target_start_moment,
-                    date_trunc('hour', local_target_moment) + interval '1 hour' as target_end_moment
+                    (date_trunc('hour', local_target_moment) AT TIME ZONE j.timezone) as target_start_moment,
+                    (date_trunc('hour', local_target_moment) AT TIME ZONE j.timezone) + interval '1 hour' as target_end_moment
                 )
                 JOIN journey_pattern jp ON (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
                 JOIN line_version lv ON jp.line_version_id = lv.relational_id
@@ -45,11 +50,16 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 AND r.total_distance >= :minRouteLength
                 AND (:targetMoment)::timestamptz BETWEEN ap.from_date AND ap.to_date
                 AND op.valid_days[ 1 +
-                    (local_target_moment::date - (op.from_date AT TIME ZONE j.timezone)::date)
+                    (local_target_moment::date - op.from_date::date)
                 ]
         """
         const val OPERATING_IN_FRAME_FOR_PREVIOUS_DAY_QUERY = """
-            SELECT j.relational_id, j.line_version_id, jp.route_id, j.next_day_first_stop_index, j.timezone
+            SELECT
+                j.relational_id,
+                j.line_version_id,
+                jp.route_id,
+                j.next_day_first_stop_index,
+                j.timezone
             FROM journey j
                 CROSS JOIN LATERAL ( SELECT
                     (:targetMoment)::timestamptz AT TIME ZONE j.timezone as local_target_moment,
@@ -57,13 +67,9 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 )
                 CROSS JOIN LATERAL ( SELECT
                     (local_previous_day_moment::date + j.begin_time) AT TIME ZONE j.timezone as journey_start_moment,
-                    CASE WHEN j.next_day_first_stop_index IS NULL THEN
-                        (local_previous_day_moment::date + j.end_time) AT TIME ZONE j.timezone
-                    ELSE
-                        (local_previous_day_moment::date + interval '24 hours' + j.end_time) AT TIME ZONE j.timezone
-                    END as journey_end_moment,
-                    date_trunc('hour', local_target_moment) as target_start_moment,
-                    date_trunc('hour', local_target_moment) + interval '1 hour' as target_end_moment
+                    (local_previous_day_moment::date + interval '24 hours' + j.end_time) AT TIME ZONE j.timezone as journey_end_moment,
+                    (date_trunc('hour', local_target_moment) AT TIME ZONE j.timezone) as target_start_moment,
+                    (date_trunc('hour', local_target_moment) AT TIME ZONE j.timezone) + interval '1 hour' as target_end_moment
                 )
                 JOIN journey_pattern jp ON (jp.line_version_id = j.line_version_id AND jp.pattern_number = j.pattern_number)
                 JOIN line_version lv ON jp.line_version_id = lv.relational_id
@@ -79,7 +85,7 @@ interface JourneyJpaRepository: JpaRepository<Journey, Long> {
                 AND r.total_distance >= :minRouteLength
                 AND ((:targetMoment)::timestamptz - interval '1 day') BETWEEN ap.from_date AND ap.to_date
                 AND op.valid_days[ 1 +
-                    (local_previous_day_moment::date - (op.from_date AT TIME ZONE j.timezone)::date)
+                    (local_previous_day_moment::date - op.from_date::date)
                 ]
         """
     }
