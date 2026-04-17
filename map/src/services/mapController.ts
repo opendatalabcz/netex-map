@@ -49,7 +49,7 @@ const STOP_FOCUS_HORIZONTAL_OFFSET_SCALE = 0.1
 const ANIMATION_FRAME_REQUIRED_DELAY_IN_MILLIS = 500
 const PRELOAD_LON_TOLERANCE = 0.1
 const PRELOAD_LAT_TOLERANCE = 0.07
-const RENDERED_ROUTE_PADDING = 20
+const RENDERED_ROUTE_PADDING = 50
 const RENDERED_ROUTE_OFFSET = 400
 const CITY_LINES_ZOOM_THRESHOLD = import.meta.env.FE_CITY_LINES_ZOOM_THRESHOLD
 
@@ -306,6 +306,7 @@ export class MapController {
             this.renderer.clearRenderedRoute(this.focusedJourney.route)
         }
         this.focusedJourney = null
+        this.focusedJourneyId = null
     }
 
     highlightJourneyDetailsStop(stopOrder: number) {
