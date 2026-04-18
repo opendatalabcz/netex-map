@@ -1,0 +1,3 @@
+location ${API_URN}/ {
+    proxy_pass http://backend-server$request_uri;
+}

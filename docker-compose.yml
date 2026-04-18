@@ -50,6 +50,7 @@ services:
       MAP_LOD_CITY_LINES_ZOOM_THRESHOLD: ${BE_LOD_CITY_LINES_ZOOM_THRESHOLD}
       SPRING_DATASOURCE_USER: ${DB_ADMIN_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_ADMIN_PASSWORD}
+      SERVER_SERVLET_CONTEXT-PATH: ${FE_API_URN}
     ports:
       - ${BE_HOST_PORT}:8080
     volumes:
@@ -60,6 +61,25 @@ services:
       --import-zip=${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}
       --import-zip=${BE_NETEX_CITY_LINES_CONTAINER_PATH}
       --jrutil-gtfs=${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+  reverse-proxy:
+    image: nginx:mainline-alpine3.23-slim
+    container_name: ${PROXY_CONTAINER_NAME}
+    restart: always
+    ports:
+      - ${PROXY_HOST_PORT}:80
+    volumes:
+      - ${PROXY_HTML_HOST_PATH}:/usr/share/nginx/html
+      - ${PROXY_CONFIG_HOST_PATH}:/etc/nginx/nginx.conf:ro
+      - ${PROXY_CONFIG_TEMPLATES_HOST_PATH}:/etc/nginx/templates/:ro
+    environment:
+      HTML_CONTAINER_PATH: ${PROXY_HTML_CONTAINER_PATH}
+      API_URL: ${BE_CONTAINER_NAME}:8080
+      API_URN: ${FE_API_URN}
     logging:
       driver: local
       options:

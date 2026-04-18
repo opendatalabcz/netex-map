@@ -2,7 +2,7 @@ import ThePopUpMessageController from '@/services/popUpMessageController'
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-const API_URL = import.meta.env.FE_API_URL
+const API_URL = import.meta.env.DEV ? import.meta.env.FE_API_URL : `${window.location.origin}${import.meta.env.FE_API_URN}/`
 
 const ResponseCodes = {
     OK: 200,
