@@ -11,6 +11,8 @@ import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import type { LatLng, LatLngTuple } from 'leaflet'
+import type { PopUpMessageController } from '@/services/popUpMessageController'
+import ThePopUpMessageController from '@/services/popUpMessageController'
 
 type FocusedJourney = {
     journeyDetails: JourneyDetailsWithTimes
@@ -54,6 +56,7 @@ const RENDERED_ROUTE_OFFSET = 400
 const CITY_LINES_ZOOM_THRESHOLD = import.meta.env.FE_CITY_LINES_ZOOM_THRESHOLD
 
 export class AppController {
+    private popUpMessageController: PopUpMessageController
     private store: MapEntitiesStore
     private retriever: MapEntitiesRetriever
     private map: L.Map | null
@@ -80,10 +83,12 @@ export class AppController {
     private framePreloadRegistry: FramePreloadEntry[] = []
 
     constructor(
+        popUpMessageController: PopUpMessageController = ThePopUpMessageController,
         initialMoment: Date = new Date(import.meta.env.FE_INITIAL_MOMENT),
         store: MapEntitiesStore | null = null,
         map: L.Map | null = null,
     ) {
+        this.popUpMessageController = popUpMessageController
         this.store = store ?? new MapEntitiesStore()
         this.retriever = new MapEntitiesRetriever(this.store)
         this.map = map
@@ -276,8 +281,10 @@ export class AppController {
 
     async onWallJourneySelected(journeyId: number, routeId: number | null) {
         if (routeId == null) {
-            // TODO snack message
-            console.warn('No route')
+            this.popUpMessageController.enqueue({
+                messageKey: 'journeyFacilities.noRoute',
+                type: 'INFO',
+            })
             return
         }
         if (this.focusedJourneyId === journeyId) return

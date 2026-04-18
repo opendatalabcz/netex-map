@@ -26,14 +26,18 @@ const hoveredColumnIndex = ref<number | null>(null)
 const collapsed = defineModel<boolean>('collapsed', { required: false, default: false })
 
 function onJourneySelected(journeyId: number, routeId: number | null) {
-    collapsed.value = true
+    if (routeId != null) collapsed.value = true
     emit('journey-selected', journeyId, routeId)
 }
 
 function onDirectionTabClick(wallTimetable: DisplayWallTimetable) {
     activeDisplayDirection.value = wallTimetable
     activeDirectionTab.value = wallTimetable.direction
-    if (wallTimetable.displayOperatingPeriods.find((op) => op.relationalId === activeOperatingPeriodTab.value) == null) {
+    if (
+        wallTimetable.displayOperatingPeriods.find(
+            (op) => op.relationalId === activeOperatingPeriodTab.value,
+        ) == null
+    ) {
         activeOperatingPeriodTab.value = wallTimetable.displayOperatingPeriods[0]!.relationalId
     }
 }
@@ -139,9 +143,7 @@ function handleColumnLeave() {
                         v-for="(op, idx) in activeDisplayDirection.displayOperatingPeriods"
                         :key="op.relationalId"
                         :value="op.relationalId"
-                        :text="
-                            `${t('lineVersion.operatingPeriod')} ${idx + 1}`
-                        "
+                        :text="`${t('lineVersion.operatingPeriod')} ${idx + 1}`"
                         :class="{ 'selected-tab': activeOperatingPeriodTab === op.relationalId }"
                         @click="activeOperatingPeriodTab = op.relationalId"
                     />

@@ -4,16 +4,19 @@ import JourneyDetails from '@/map/JourneyDetails.vue'
 import WallTimetable from '@/map/WallTimetable.vue'
 import MomentControls from '@/map/MomentControls.vue'
 import WallTimetableSearch from '@/map/WallTimetableSearch.vue'
+import SnackBar from '@/map/SnackBar.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { JourneyDetailsWithTimes } from '@/api/model/journeyDetails'
 import type { WallTimetableWithDates } from '@/api/model/wallTimetable'
 import type { SearchLineVersionWithDates } from '@/api/model/searchLineVersions'
 import { AppController } from '@/services/appController'
+import ThePopUpMessageController from '@/services/popUpMessageController'
 
 const moment = ref<Date>(new Date())
 const playing = ref(false)
 const playSpeed = ref(1)
-const controller = new AppController()
+const popUpMessageController = ThePopUpMessageController
+const appController = new AppController(popUpMessageController)
 const journeyDetails = ref<JourneyDetailsWithTimes | null>(null)
 const wallTimetable = ref<WallTimetableWithDates | null>(null)
 const lineSearch = ref<string | undefined>(undefined)
@@ -26,7 +29,7 @@ function onLineVersionSearchUpdate(value: string | undefined) {
         lineVersionSearchResult.value = []
         return
     }
-    controller.debouncedLineVersionSearch(value)
+    appController.debouncedLineVersionSearch(value)
 }
 
 function onShowTimetableThroughJourneyDetails() {
@@ -38,7 +41,7 @@ function onShowTimetableThroughJourneyDetails() {
     ) {
         return
     }
-    controller.onWallTimetableSelected(journeyDetails.value.lineVersion.relationalId)
+    appController.onWallTimetableSelected(journeyDetails.value.lineVersion.relationalId)
 }
 
 function onJourneyDetailsUpdate(details: JourneyDetailsWithTimes | null) {
@@ -61,32 +64,30 @@ function onAnimationSpeedUpdate(speed: number) {
 }
 
 onMounted(() => {
-    controller.addJourneyDetailsListener(onJourneyDetailsUpdate)
-    controller.addWallTimetableListener(onWallTimetableUpdate)
-    controller.addLineVersionSearchListener(onLineVersionSearchResultUpdate)
-    controller.addMomentListener(onMomentUpdate)
-    controller.addAnimationPlayingListener(onAnimationPlayingUpdate)
-    controller.addAnimationSpeedListener(onAnimationSpeedUpdate)
+    appController.addJourneyDetailsListener(onJourneyDetailsUpdate)
+    appController.addWallTimetableListener(onWallTimetableUpdate)
+    appController.addLineVersionSearchListener(onLineVersionSearchResultUpdate)
+    appController.addMomentListener(onMomentUpdate)
+    appController.addAnimationPlayingListener(onAnimationPlayingUpdate)
+    appController.addAnimationSpeedListener(onAnimationSpeedUpdate)
 })
 onUnmounted(() => {
-    controller.removeJourneyDetailsListener(onJourneyDetailsUpdate)
-    controller.removeWallTimetableListener(onWallTimetableUpdate)
-    controller.removeLineVersionSearchListener(onLineVersionSearchResultUpdate)
-    controller.removeMomentListener(onMomentUpdate)
-    controller.removeAnimationPlayingListener(onAnimationPlayingUpdate)
-    controller.removeAnimationSpeedListener(onAnimationSpeedUpdate)
+    appController.removeJourneyDetailsListener(onJourneyDetailsUpdate)
+    appController.removeWallTimetableListener(onWallTimetableUpdate)
+    appController.removeLineVersionSearchListener(onLineVersionSearchResultUpdate)
+    appController.removeMomentListener(onMomentUpdate)
+    appController.removeAnimationPlayingListener(onAnimationPlayingUpdate)
+    appController.removeAnimationSpeedListener(onAnimationSpeedUpdate)
 })
 </script>
 
 <template>
-    <MapContainer
-        @update:model-value="(m) => controller.setMap(m)"
-    />
+    <MapContainer @update:model-value="(m) => appController.setMap(m)" />
     <v-card v-if="journeyDetails" class="journey-details-card overlay">
         <JourneyDetails
             :journey-details="journeyDetails"
-            @close="controller.clearJourneyDetails()"
-            @stop-selected="(i) => controller.highlightJourneyDetailsStop(i)"
+            @close="appController.clearJourneyDetails()"
+            @stop-selected="(i) => appController.highlightJourneyDetailsStop(i)"
             @show-timetable="onShowTimetableThroughJourneyDetails"
         />
     </v-card>
@@ -96,15 +97,15 @@ onUnmounted(() => {
         :search-results="lineVersionSearchResult"
         class="overlay"
         @update:search="onLineVersionSearchUpdate"
-        @extend-search="controller.extendLineVersionSearch()"
-        @wall-timetable-selected="(l) => controller.onWallTimetableSelected(l)"
+        @extend-search="appController.extendLineVersionSearch()"
+        @wall-timetable-selected="(l) => appController.onWallTimetableSelected(l)"
     />
     <v-card v-if="wallTimetable" class="wall-timetable-card overlay">
         <WallTimetable
             v-model:collapsed="wallTimetableCollapsed"
             :wall-timetable="wallTimetable"
-            @close="controller.clearSelectedWallTimetable()"
-            @journey-selected="(j, r) => controller.onWallJourneySelected(j, r)"
+            @close="appController.clearSelectedWallTimetable()"
+            @journey-selected="(j, r) => appController.onWallJourneySelected(j, r)"
         />
     </v-card>
     <MomentControls
@@ -112,10 +113,11 @@ onUnmounted(() => {
         :playing="playing"
         :play-speed="playSpeed"
         class="overlay"
-        @update:model-value="(m) => controller.setMoment(m)"
-        @update:playing="(p) => controller.setAnimationPlaying(p)"
-        @update:play-speed="(s) => controller.setAnimationSpeed(s)"
+        @update:model-value="(m) => appController.setMoment(m)"
+        @update:playing="(p) => appController.setAnimationPlaying(p)"
+        @update:play-speed="(s) => appController.setAnimationSpeed(s)"
     />
+    <SnackBar :controller="popUpMessageController" />
 </template>
 
 <style>

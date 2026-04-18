@@ -1,3 +1,5 @@
+import ThePopUpMessageController from '@/services/popUpMessageController'
+
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 const API_URL = import.meta.env.FE_API_URL
@@ -48,23 +50,24 @@ async function request(
             body: body,
         })
         if (!response.ok) {
-            // TODO
-            console.warn('Response was not OK')
+            ThePopUpMessageController.enqueue({
+                messageKey: 'connection.badRequest',
+                type: 'ERROR',
+            })
             return null
         }
         return response
     } catch (error) {
         if (error instanceof TypeError) {
-            // TODO
-            console.warn('Connection error')
+            ThePopUpMessageController.enqueue({
+                messageKey: 'connection.cantReachServer',
+                type: 'ERROR',
+            })
         } else if (error instanceof DOMException) {
-            if (error.name === 'AbortError') {
-                // TODO
-                console.warn('Request aborted')
-            } else {
-                // TODO
-                console.warn('Unknown request error')
-            }
+            ThePopUpMessageController.enqueue({
+                messageKey: 'connection.unknown',
+                type: 'ERROR',
+            })
         }
         return undefined
     }

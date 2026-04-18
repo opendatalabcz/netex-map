@@ -135,7 +135,13 @@ export function getDisplayJourneysForDirection(
         const displayJourney: DisplayJourney = {
             relationalId: journey.relationalId,
             routeId: journeyPattern.routeId,
-            facilities: displayFacilitiesForJourney(journey, t),
+            facilities: displayFacilitiesForJourney(
+                {
+                    ...journey,
+                    noRoute: journeyPattern.routeId == null,
+                },
+                t,
+            ),
             schedule: [],
         }
         res.push(displayJourney)

@@ -92,6 +92,7 @@ const cs = {
         reservationPossible: 'Možnost zakoupit místenku',
         snacksOnBoard: 'Občerstvení ve voze',
         unaccompaniedMinorAssistance: 'Částečně bezbariérový přístup, nutná dopomoc průvodce',
+        noRoute: 'Pro tuto jízdu není trasa dostupná',
     },
     stopFacilities: {
         transportBan: 'Přeprava mezi shodně označenými zastávkami není povolena',
@@ -107,6 +108,11 @@ const cs = {
         suitableForHeavilyDisabled: 'Zastávka je vhodná pro osoby s těžkým postižením',
         toilet: 'V zastávce se nachází toaleta',
         wheelChairAccessToilet: 'V zastávce se nachází toaleta s bezbariérovým přístupem',
+    },
+    connection: {
+        cantReachServer: 'Nepovedlo se navázat spojení se serverem.',
+        unknown: 'Při komunikaci se serverem došlo k neočekávané chybě.',
+        badRequest: 'Byl poslán neplatný požadavek.',
     },
 }
 

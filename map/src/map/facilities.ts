@@ -26,6 +26,7 @@ export type JourneyFacilities = {
     reservationPossible: boolean
     snacksOnBoard: boolean
     unaccompaniedMinorAssistance: boolean
+    noRoute: boolean
 }
 
 export type DisplayFacility = {
@@ -82,6 +83,11 @@ export function displayFacilitiesForJourney(
             icon: 'mdi-human-wheelchair',
             tooltip: t('journeyFacilities.unaccompaniedMinorAssistance'),
             active: journey.unaccompaniedMinorAssistance,
+        },
+        noRoute: {
+            icon: 'mdi-map-marker-off-outline',
+            tooltip: t('journeyFacilities.noRoute'),
+            active: journey.noRoute,
         },
     }
 }

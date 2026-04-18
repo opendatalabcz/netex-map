@@ -25,7 +25,15 @@ const emit = defineEmits<{
     'show-timetable': []
 }>()
 
-const journeyFacilities = computed(() => displayFacilitiesForJourney(props.journeyDetails, t))
+const journeyFacilities = computed(() =>
+    displayFacilitiesForJourney(
+        {
+            ...props.journeyDetails,
+            noRoute: props.journeyDetails.routeId == null,
+        },
+        t,
+    ),
+)
 
 const stopsWithFacilities = computed<
     {
