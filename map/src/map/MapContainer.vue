@@ -23,6 +23,7 @@ const wallTimetable = ref<WallTimetableWithDates | null>(null)
 const lineSearch = ref<string | undefined>(undefined)
 const lineVersionSearchResult = ref<SearchLineVersionWithDates[]>([])
 const showSearch = computed(() => wallTimetable.value == null)
+const wallTimetableCollapsed = ref(false)
 
 function onJourneyDetailsUpdate(details: JourneyDetailsWithTimes | null) {
     journeyDetails.value = details
@@ -49,6 +50,18 @@ function onLineVersionSearchUpdate(value: string | undefined) {
         return
     }
     controller.debouncedLineVersionSearch(value)
+}
+
+function onShowTimetableThroughJourneyDetails() {
+    if (journeyDetails.value == null) return
+    wallTimetableCollapsed.value = false
+    if (
+        journeyDetails.value.lineVersion.relationalId ===
+        wallTimetable.value?.lineVersion.relationalId
+    ) {
+        return
+    }
+    controller.onWallTimetableSelected(journeyDetails.value.lineVersion.relationalId)
 }
 
 onMounted(async () => {
@@ -90,6 +103,7 @@ onUnmounted(() => {
             :journey-details="journeyDetails"
             @close="controller.clearJourneyDetails()"
             @stop-selected="(i) => controller.highlightJourneyDetailsStop(i)"
+            @show-timetable="onShowTimetableThroughJourneyDetails"
         />
     </v-card>
     <WallTimetableSearch
@@ -103,6 +117,7 @@ onUnmounted(() => {
     />
     <v-card v-if="wallTimetable" class="wall-timetable-card overlay">
         <WallTimetable
+            v-model:collapsed="wallTimetableCollapsed"
             :wall-timetable="wallTimetable"
             @close="controller.clearSelectedWallTimetable()"
             @journey-selected="(j, r) => controller.onWallJourneySelected(j, r)"

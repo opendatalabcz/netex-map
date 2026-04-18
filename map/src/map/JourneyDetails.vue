@@ -21,7 +21,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
     close: []
-    stopSelected: [stopOrder: number]
+    'stop-selected': [stopOrder: number]
+    'show-timetable': []
 }>()
 
 const journeyFacilities = computed(() => displayFacilitiesForJourney(props.journeyDetails, t))
@@ -53,13 +54,15 @@ const stopsWithFacilities = computed<
                 :short-name="journeyDetails.lineVersion.shortName"
                 :public-code="journeyDetails.lineVersion.publicCode"
             />
-            <v-btn
-                class="journey-details-close-button"
-                icon="mdi-close"
-                size="small"
-                variant="text"
-                @click="emit('close')"
-            />
+            <div class="journey-details-buttons">
+                <v-btn
+                    icon="mdi-timetable"
+                    size="small"
+                    variant="text"
+                    @click="emit('show-timetable')"
+                />
+                <v-btn icon="mdi-close" size="small" variant="text" @click="emit('close')" />
+            </div>
             {{ journeyDetails.lineVersion.operator.legalName }}
             <br />
             <div class="journey-facilities">
@@ -76,7 +79,7 @@ const stopsWithFacilities = computed<
                         v-for="(swf, idx) in stopsWithFacilities"
                         :key="idx"
                         v-ripple
-                        @click="emit('stopSelected', idx)"
+                        @click="emit('stop-selected', idx)"
                     >
                         <td class="time-mark first-td">
                             {{ d((swf.stop.departure ?? swf.stop.arrival!).toDate(), 'timeShort') }}
@@ -123,10 +126,19 @@ const stopsWithFacilities = computed<
     font-size: 1.15em;
 }
 
-.journey-details-close-button {
+.line-version-label {
+    padding-right: 4em;
+}
+
+.journey-details-buttons {
     position: absolute;
-    top: 0.25em;
-    right: 0.25em;
+    top: 0;
+    right: 0;
+    padding-bottom: 0.125em;
+    padding-left: 0.125em;
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    border-bottom-left-radius: 1em;
 }
 
 .time-mark {

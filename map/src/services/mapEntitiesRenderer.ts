@@ -56,9 +56,7 @@ export class MapEntitiesRenderer {
 
     renderRoute(route: RenderedMapRoute, lineVersionId: number, stopNames: string[]) {
         if (route.featureGroup != null) return
-        if (route.color == null) {
-            route.color = this.getColor(lineVersionId)
-        }
+        route.color = this.getColor(lineVersionId)
         route.featureGroup = L.featureGroup()
         route.featureGroup.addLayer(
             L.polyline(route.pointSequence, {
@@ -131,7 +129,7 @@ export class MapEntitiesRenderer {
             }
             return
         }
-        if (journey.color == null) journey.color = this.getColor(journey.lineVersionId!)
+        journey.color = this.getColor(journey.lineVersionId)
         if (journey.vehicleMarker) {
             journey.vehicleMarker.setLatLng(journey.position as LatLngTuple)
             journey.vehicleMarker.setIcon(this.createVehicleIcon(journey))

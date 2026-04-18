@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n'
 import FacilityIcon from '@/map/FacilityIcon.vue'
 import TransportBanIcons from '@/map/TransportBanIcons.vue'
 import type { JourneyDirection } from '@/api/model/enums'
-import { getDisplayWallTimetable } from '@/map/wallTimetable'
+import { getDisplayWallTimetable, type DisplayWallTimetable } from '@/map/wallTimetable'
 
 const { t, d } = useI18n()
 
@@ -18,27 +18,29 @@ const props = defineProps<{
     wallTimetable: WallTimetableWithDates
 }>()
 
-const displayWallTimetable = computed(() => getDisplayWallTimetable(props.wallTimetable, t))
-const activeDirectionTab = ref<JourneyDirection>(displayWallTimetable.value[0]!.direction)
+const displayWallTimetables = computed(() => getDisplayWallTimetable(props.wallTimetable, t))
+const activeDirectionTab = ref<JourneyDirection>('OUTBOUND')
+const activeDisplayDirection = ref<DisplayWallTimetable>(displayWallTimetables.value[0]!)
 const activeOperatingPeriodTab = ref<number>(0)
 const hoveredColumnIndex = ref<number | null>(null)
-const collapsed = ref(false)
+const collapsed = defineModel<boolean>('collapsed', { required: false, default: false })
 
 function onJourneySelected(journeyId: number, routeId: number | null) {
     collapsed.value = true
     emit('journey-selected', journeyId, routeId)
 }
 
-watch(
-    activeDirectionTab,
-    () =>
-        (activeOperatingPeriodTab.value =
-            displayWallTimetable.value[0]!.displayOperatingPeriods[0]!.relationalId),
-    { immediate: true },
-)
-const activeDisplayDirection = computed(
-    () => displayWallTimetable.value.find((tab) => tab.direction === activeDirectionTab.value)!,
-)
+function onDirectionTabClick(wallTimetable: DisplayWallTimetable) {
+    activeDisplayDirection.value = wallTimetable
+    activeDirectionTab.value = wallTimetable.direction
+    if (wallTimetable.displayOperatingPeriods.find((op) => op.relationalId === activeOperatingPeriodTab.value) == null) {
+        activeOperatingPeriodTab.value = wallTimetable.displayOperatingPeriods[0]!.relationalId
+    }
+}
+
+watch(displayWallTimetables, (newTimetables) => onDirectionTabClick(newTimetables[0]!), {
+    immediate: true,
+})
 
 function handleColumnHover(columnIndex: number) {
     hoveredColumnIndex.value = columnIndex
@@ -77,7 +79,6 @@ function handleColumnLeave() {
                                 @click="collapsed = true"
                             />
                             <v-btn
-                                class="wall-timetable-close-button"
                                 icon="mdi-close"
                                 size="small"
                                 variant="text"
@@ -112,39 +113,49 @@ function handleColumnLeave() {
                     </div>
                 </div>
                 <v-divider class="mt-1" opacity="1" />
-                <v-tabs v-if="displayWallTimetable.length > 1" v-model="activeDirectionTab" grow>
+                <v-tabs
+                    v-if="displayWallTimetables.length > 1"
+                    :model-value="activeDirectionTab"
+                    grow
+                    hide-slider
+                >
                     <v-tab
-                        v-for="tab in displayWallTimetable"
+                        v-for="tab in displayWallTimetables"
                         :key="tab.direction"
                         :text="tab.text"
                         :value="tab.direction"
-                        selected-class="selected-tab"
+                        :class="{ 'selected-tab': activeDirectionTab === tab.direction }"
+                        @click="onDirectionTabClick(tab)"
                     />
                 </v-tabs>
                 <v-divider opacity="0.25" />
                 <v-tabs
                     v-if="activeDisplayDirection.displayOperatingPeriods.length > 1"
-                    v-model="activeOperatingPeriodTab"
+                    :model-value="activeOperatingPeriodTab"
                     grow
+                    hide-slider
                 >
                     <v-tab
                         v-for="(op, idx) in activeDisplayDirection.displayOperatingPeriods"
                         :key="op.relationalId"
                         :value="op.relationalId"
-                        :text="t('lineVersion.operatingPeriod') + ' ' + (idx + 1)"
-                        selected-class="selected-tab"
+                        :text="
+                            `${t('lineVersion.operatingPeriod')} ${idx + 1}`
+                        "
+                        :class="{ 'selected-tab': activeOperatingPeriodTab === op.relationalId }"
+                        @click="activeOperatingPeriodTab = op.relationalId"
                     />
                 </v-tabs>
                 <v-divider opacity="1" />
             </div>
             <div class="timetable-body-wrapper">
-                <v-tabs-window v-model="activeDirectionTab">
+                <v-tabs-window :model-value="activeDirectionTab">
                     <v-tabs-window-item
-                        v-for="tab in displayWallTimetable"
+                        v-for="tab in displayWallTimetables"
                         :key="tab.direction"
                         :value="tab.direction"
                     >
-                        <v-tabs-window v-model="activeOperatingPeriodTab">
+                        <v-tabs-window :model-value="activeOperatingPeriodTab">
                             <v-tabs-window-item
                                 v-for="op in tab.displayOperatingPeriods"
                                 :key="op.relationalId"
@@ -322,7 +333,7 @@ function handleColumnLeave() {
 }
 
 .timetable-header-info {
-    padding-inline-end: 4em;
+    padding-right: 4em;
     display: flex;
     gap: 1em;
 }
@@ -359,8 +370,13 @@ function handleColumnLeave() {
 
 .wall-timetable-buttons {
     position: absolute;
-    top: 0.25em;
-    right: 0.25em;
+    top: 0;
+    right: 0;
+    padding-bottom: 0.125em;
+    padding-left: 0.125em;
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    border-bottom-left-radius: 1em;
 }
 
 .timetable-body-wrapper,

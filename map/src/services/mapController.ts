@@ -247,14 +247,14 @@ export class MapController {
      */
     private focusJourney(journeyDetails: JourneyDetailsWithTimes, route: RenderedMapRoute) {
         const previousRoute = this.focusedJourney?.route
-        const renderRoute = this.focusedJourney?.route.relationalId !== route.relationalId
+        const doRenderRoute = this.focusedJourney?.route.relationalId !== route.relationalId
         this.focusedJourney = {
             journeyDetails: journeyDetails,
             route: route,
             highlightedStopOrder: null,
         }
         this.focusedJourneyDetailsListeners.forEach((listener) => listener(journeyDetails))
-        if (renderRoute && this.renderer != null) {
+        if (doRenderRoute && this.renderer != null) {
             if (previousRoute != null) this.renderer.clearRenderedRoute(previousRoute)
             this.renderer.renderRoute(
                 route,
