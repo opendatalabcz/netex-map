@@ -139,21 +139,26 @@ export function getDisplayJourneysForDirection(
             schedule: [],
         }
         res.push(displayJourney)
-        let journeyPatternIdx = 0
+        let journeyPatternStopIdx = 0
         const reverseOrder = direction !== 'CLOCKWISE' && direction !== 'OUTBOUND'
-        let tariffIdx = reverseOrder ? tariffStopCount - 1 : 0
-        while (reverseOrder ? tariffIdx >= 0 : tariffIdx < tariffStopCount) {
-            const patternStop = journeyPattern.stops[journeyPatternIdx]
-            if (patternStop != null && patternStop.tariffOrder === tariffIdx) {
-                const scheduledStop = journey.schedule[journeyPatternIdx]!
+        let tariffStopIdx = reverseOrder ? tariffStopCount - 1 : 0
+        while (reverseOrder ? tariffStopIdx >= 0 : tariffStopIdx < tariffStopCount) {
+            const patternStop = journeyPattern.stops[journeyPatternStopIdx]
+            if (patternStop != null && patternStop.tariffOrder === tariffStopIdx) {
+                const scheduledStop = journey.schedule[journeyPatternStopIdx]!
                 displayJourney.schedule.push(scheduledStop.departure ?? scheduledStop.arrival!)
-                journeyPatternIdx += 1
+                journeyPatternStopIdx += 1
             } else {
                 displayJourney.schedule.push(null)
             }
-            tariffIdx += reverseOrder ? -1 : 1
+            tariffStopIdx += reverseOrder ? -1 : 1
         }
     }
+    res.sort((a, b) => {
+        const aFirstScheduledStop = a.schedule.find((ss) => ss != null)!
+        const bFirstScheduledStop = b.schedule.find((ss) => ss != null)!
+        return aFirstScheduledStop.totalMillis - bFirstScheduledStop.totalMillis
+    })
     return res
 }
 
