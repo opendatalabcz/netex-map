@@ -22,7 +22,7 @@ export type DisplayStop = {
 }
 export type DisplayJourney = {
     relationalId: number
-    routeId: number
+    routeId: number | null
     facilities: DisplayFacilities
     schedule: (LocalTime | null)[]
 }

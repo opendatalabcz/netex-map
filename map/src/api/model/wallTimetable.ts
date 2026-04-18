@@ -110,7 +110,7 @@ export type WallJourneyPattern = {
     direction: JourneyDirection
     stops: WallJourneyPatternStop[]
     transportBans: number[][] | null
-    routeId: number
+    routeId: number | null
 }
 
 export type WallOperatingPeriod = {

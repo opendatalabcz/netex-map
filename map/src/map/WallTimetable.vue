@@ -12,7 +12,7 @@ const { t, d } = useI18n()
 
 const emit = defineEmits<{
     close: []
-    'journey-selected': [journeyId: number, routeId: number]
+    'journey-selected': [journeyId: number, routeId: number | null]
 }>()
 const props = defineProps<{
     wallTimetable: WallTimetableWithDates
@@ -24,7 +24,7 @@ const activeOperatingPeriodTab = ref<number>(0)
 const hoveredColumnIndex = ref<number | null>(null)
 const collapsed = ref(false)
 
-function onJourneySelected(journeyId: number, routeId: number) {
+function onJourneySelected(journeyId: number, routeId: number | null) {
     collapsed.value = true
     emit('journey-selected', journeyId, routeId)
 }

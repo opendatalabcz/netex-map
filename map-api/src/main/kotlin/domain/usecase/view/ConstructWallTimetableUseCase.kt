@@ -73,7 +73,7 @@ interface ConstructWallTimetableUseCase {
         val direction: JourneyDirectionType,
         val stops: List<WallJourneyPatternStop>,
         val transportBans: List<List<Int>>?,
-        val routeId: Long,
+        val routeId: Long?,
     )
     data class WallOperatingPeriod(
         val relationalId: Long,
