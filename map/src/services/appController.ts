@@ -53,7 +53,7 @@ const RENDERED_ROUTE_PADDING = 50
 const RENDERED_ROUTE_OFFSET = 400
 const CITY_LINES_ZOOM_THRESHOLD = import.meta.env.FE_CITY_LINES_ZOOM_THRESHOLD
 
-export class MapController {
+export class AppController {
     private store: MapEntitiesStore
     private retriever: MapEntitiesRetriever
     private map: L.Map | null
@@ -310,9 +310,9 @@ export class MapController {
     }
 
     highlightJourneyDetailsStop(stopOrder: number) {
-        if (this.focusedJourney == null) return
+        if (this.focusedJourney == null || this.renderer == null) return
         if (this.focusedJourney.highlightedStopOrder != null) {
-            this.renderer!.deHighlightStop(
+            this.renderer.deHighlightStop(
                 this.focusedJourney.route,
                 this.focusedJourney.highlightedStopOrder,
             )
@@ -322,7 +322,7 @@ export class MapController {
             }
         }
         this.focusedJourney.highlightedStopOrder = stopOrder
-        this.renderer!.highlightStop(this.focusedJourney.route, stopOrder)
+        this.renderer.highlightStop(this.focusedJourney.route, stopOrder)
         const offsetStopPosition = this.focusedJourney.route
             .stops![stopOrder]![0]!.getLatLng()
             .clone()
@@ -373,7 +373,10 @@ export class MapController {
 
     async setMap(map: L.Map | null) {
         this.map = map
-        if (map == null) return
+        if (map == null) {
+            this.renderer = null
+            return
+        }
         this.renderer = new MapEntitiesRenderer(map)
         map.on('move', () => this.debouncedFrameFetch(this.moment, true))
         map.on('zoom', () => this.debouncedFrameFetch(this.moment, true))
