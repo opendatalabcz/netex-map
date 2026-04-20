@@ -52,5 +52,6 @@ NeTEx Map is a web application that visualizes Czech public transportation timet
 5. Run Docker compose
     ```sh
     # At project root directory
+    # Please note that Overpass initialization can take over 1 hour.
     docker compose up -d
     ```

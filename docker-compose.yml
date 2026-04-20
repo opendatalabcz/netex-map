@@ -24,13 +24,32 @@ services:
     restart: no
     container_name: ${GRAPHHOPPER_CONTAINER_NAME}
     command: >
-      --input /data/czech-republic.osm.pbf
-      --graph-cache ${GRAPHHOPPER_CACHE_DIR}
+      --input ${GRAPHHOPPER_OSM_PBF_CONTAINER_PATH}
     ports:
       - ${GRAPHHOPPER_HOST_PORT}:8989
     volumes:
-      - routing-cache:${GRAPHHOPPER_CACHE_DIR}
-      - ${GRAPHHOPPER_OSM_PBF_HOST_PATH}:/data/czech-republic.osm.pbf:ro
+      - routing-cache:/data
+      - ${OSM_PBF_HOST_PATH}:${GRAPHHOPPER_OSM_PBF_CONTAINER_PATH}:ro
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+  overpass-api:
+    user: root
+    image: wiktorn/overpass-api:0.7.62.7
+    restart: always
+    container_name: ${OVERPASS_API_CONTAINER_NAME}
+    entrypoint: /bin/bash -c "chmod -R 755 /db && /app/docker-entrypoint.sh"
+    ports:
+      - ${OVERPASS_API_HOST_PORT}:80
+    volumes:
+      - ${OSM_PBF_HOST_PATH}:${OVERPASS_API_PBF_CONTAINER_PATH}:ro
+      - stops-cache:/db
+    environment:
+      OVERPASS_MODE: init
+      OVERPASS_PLANET_URL: file://${OVERPASS_API_PBF_CONTAINER_PATH}
+      OVERPASS_PLANET_PREPROCESS: 'mv /db/planet.osm.bz2 /db/planet.osm.pbf && osmium cat ${OVERPASS_API_OSMIUM_FLAGS} -o /db/planet.osm.bz2 /db/planet.osm.pbf && rm /db/planet.osm.pbf'
     logging:
       driver: local
       options:
@@ -91,3 +110,7 @@ volumes:
     name: ${DB_VOLUME_NAME}
   routing-cache:
     name: ${GRAPHHOPPER_VOLUME_NAME}
+  stops-cache:
+    name: ${OVERPASS_API_VOLUME_NAME}
+  sc2:
+    name: sc2
