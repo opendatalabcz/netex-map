@@ -5,11 +5,13 @@ import cz.cvut.fit.gaierda1.data.filesystem.TimetableDirectorySource
 import cz.cvut.fit.gaierda1.data.filesystem.TimetableZipFileSource
 import cz.cvut.fit.gaierda1.data.netex.TimetableParser
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort
-import cz.cvut.fit.gaierda1.domain.usecase.load.AddPositionToStopsByNameUseCase
+import cz.cvut.fit.gaierda1.domain.port.OsmStopsServicePort
+import cz.cvut.fit.gaierda1.domain.usecase.load.AddJrUtilPositionToStopsByNameUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateLineVersionActivePeriodsUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateNextDayOperationUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateRoutesFromWaypointsUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.EnrichBySpacialDataUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.load.ImportPhysicalStopsFromOsmUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.ImportTimetablesUseCase
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
@@ -25,14 +27,17 @@ class ImportProcedure(
     private val calculateLineVersionActivePeriodsUseCase: CalculateLineVersionActivePeriodsUseCase,
     private val importTimetablesUseCase: ImportTimetablesUseCase,
     private val jrUtilGtfsParserPort: JrUtilGtfsParserPort,
-    private val addPositionToStopsByNameUseCase: AddPositionToStopsByNameUseCase,
+    private val addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
     private val enrichBySpacialDataUseCase: EnrichBySpacialDataUseCase,
     private val calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
+    private val osmStopsServicePort: OsmStopsServicePort,
+    private val importPhysicalStopsFromOsmUseCase: ImportPhysicalStopsFromOsmUseCase,
 ): CommandLineRunner {
     companion object {
-        private const val COMMON_IMPORT_ARGUMENT_PREFIX = "--import"
-        private const val ZIP_IMPORT_ARGUMENT_PREFIX = "$COMMON_IMPORT_ARGUMENT_PREFIX-zip"
+        private const val COMMON_NETEX_IMPORT_ARGUMENT_PREFIX = "--import-netex"
+        private const val ZIP_NETEX_IMPORT_ARGUMENT_PREFIX = "$COMMON_NETEX_IMPORT_ARGUMENT_PREFIX-zip"
         private const val ENRICH_ARGUMENT_PREFIX = "--jrutil-gtfs"
+        private const val STOP_IMPORT_ARGUMENT = "--import-stops"
     }
 
     private val log = LoggerFactory.getLogger(ImportProcedure::class.java)
@@ -61,14 +66,14 @@ class ImportProcedure(
             enrichBySpacialDataUseCase.enrichStopsWithPositions(
                 jrUtilGtfsSource,
                 jrUtilGtfsParserPort,
-                addPositionToStopsByNameUseCase,
+                addJrUtilPositionToStopsByNameUseCase,
                 calculateRoutesFromWaypointsUseCase,
             )
         }
         log.info("Done position enriching in $enrichTime")
     }
 
-    private fun import(importArgs: List<String>) {
+    private fun netexImport(importArgs: List<String>) {
         log.info("Begin importing timetables")
         val importTime = measureTime {
             for (importArg in importArgs) {
@@ -76,7 +81,7 @@ class ImportProcedure(
                     .substringAfter("=")
                     .ifBlank { null }
                 if (importPath == null) {
-                    log.error("Missing import file/directory path after $COMMON_IMPORT_ARGUMENT_PREFIX argument")
+                    log.error("Missing import file/directory path after $COMMON_NETEX_IMPORT_ARGUMENT_PREFIX argument")
                     continue
                 }
                 val importFile = File(importPath)
@@ -84,12 +89,12 @@ class ImportProcedure(
                     log.error("Import file/directory path does not exist: ${importFile.absolutePath}")
                     continue
                 }
-                val useZip = importArg.substringBefore("=") == ZIP_IMPORT_ARGUMENT_PREFIX
+                val useZip = importArg.substringBefore("=") == ZIP_NETEX_IMPORT_ARGUMENT_PREFIX
                 if (useZip && !importFile.isFile) {
-                    log.error("The path after $ZIP_IMPORT_ARGUMENT_PREFIX argument must denote a regular file")
+                    log.error("The path after $ZIP_NETEX_IMPORT_ARGUMENT_PREFIX argument must denote a regular file")
                     continue
                 } else if (!useZip && !importFile.isDirectory) {
-                    log.error("The path after $COMMON_IMPORT_ARGUMENT_PREFIX argument must denote a directory")
+                    log.error("The path after $COMMON_NETEX_IMPORT_ARGUMENT_PREFIX argument must denote a directory")
                     continue
                 }
                 log.info("Importing from ${if (useZip) "file" else "directory"}: ${importFile.absolutePath}")
@@ -108,9 +113,19 @@ class ImportProcedure(
 
     }
 
+    private fun stopImport() {
+        log.info("Begin importing physical stops")
+        val importTime = measureTime {
+            importPhysicalStopsFromOsmUseCase.importPhysicalStopsFromOsm(osmStopsServicePort)
+        }
+        log.info("Done importing physical stops in $importTime")
+    }
+
     override fun run(vararg args: String) {
-        val importArgs = args.filter { it.startsWith(COMMON_IMPORT_ARGUMENT_PREFIX) }
-        if (importArgs.isNotEmpty()) import(importArgs)
+        val importArgs = args.filter { it.startsWith(COMMON_NETEX_IMPORT_ARGUMENT_PREFIX) }
+        if (importArgs.isNotEmpty()) netexImport(importArgs)
+        val stopImportArg = args.firstOrNull { it == STOP_IMPORT_ARGUMENT }
+        if (stopImportArg != null) stopImport()
         val enrichmentArg = args.firstOrNull { it.startsWith(ENRICH_ARGUMENT_PREFIX) }
         if (enrichmentArg != null) enrich(enrichmentArg)
     }

@@ -9,13 +9,13 @@ import org.springframework.stereotype.Component
 import kotlin.math.abs
 
 @Component
-class AddPositionToStopsByName(
+class AddJrUtilPositionToStopsByName(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val stopJpaRepository: StopJpaRepository,
-) : AddPositionToStopsByNameUseCase {
-    private val log = LoggerFactory.getLogger(AddPositionToStopsByName::class.java)
+) : AddJrUtilPositionToStopsByNameUseCase {
+    private val log = LoggerFactory.getLogger(AddJrUtilPositionToStopsByName::class.java)
 
-    private fun String.collapseCommas(): String = replace(Regex("\\s*,+\\s*"), ",")
+    private fun String.collapseCommas(): String = replace(Regex("""\s*,+\s*"""), ",")
     private fun String.removeCommasAndSpaces(): String = replace(Regex("[ ,]"), "")
     private fun List<StopPositionEnrichmentDto>.orderedByNamePartCountDesc(): List<StopPositionEnrichmentDto> =
         sortedByDescending { it.name.split(",").size }

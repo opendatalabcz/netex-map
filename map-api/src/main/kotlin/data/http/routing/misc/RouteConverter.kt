@@ -1,4 +1,4 @@
-package cz.cvut.fit.gaierda1.data.http.misc
+package cz.cvut.fit.gaierda1.data.http.routing.misc
 
 import com.graphhopper.http.WebHelper
 import com.graphhopper.util.PointList

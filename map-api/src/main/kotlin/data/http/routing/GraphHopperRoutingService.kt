@@ -1,10 +1,10 @@
-package cz.cvut.fit.gaierda1.data.http
+package cz.cvut.fit.gaierda1.data.http.routing
 
-import cz.cvut.fit.gaierda1.data.http.misc.RouteConverter
-import cz.cvut.fit.gaierda1.data.http.model.GHBadRequestResponseBody
+import cz.cvut.fit.gaierda1.data.http.routing.misc.RouteConverter
+import cz.cvut.fit.gaierda1.data.http.routing.model.GHBadRequestResponseBody
 import cz.cvut.fit.gaierda1.domain.port.RoutingServicePort
-import data.http.model.GHPostRequestBody
-import data.http.model.GHResponseBody
+import cz.cvut.fit.gaierda1.data.http.routing.model.GHPostRequestBody
+import cz.cvut.fit.gaierda1.data.http.routing.model.GHResponseBody
 import org.locationtech.jts.geom.Coordinate
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -44,9 +44,9 @@ class GraphHopperRoutingService(
         }
         val responseRoute = response.paths.firstOrNull() ?: return null
         return RoutingServicePort.RoutingResponse(
-            route = RouteConverter.convertEncodedPolylineToCoordinateList(responseRoute.points),
+            route = RouteConverter.Companion.convertEncodedPolylineToCoordinateList(responseRoute.points),
             distance = responseRoute.distance,
-            waypoints = RouteConverter.convertEncodedPolylineToCoordinateList(responseRoute.snappedWaypoints),
+            waypoints = RouteConverter.Companion.convertEncodedPolylineToCoordinateList(responseRoute.snappedWaypoints),
         )
     }
 }

@@ -34,12 +34,12 @@ class EnrichBySpacialData(
     override fun enrichStopsWithPositions(
         jrUtilGtfsSourcePort: JrUtilGtfsSourcePort,
         jrUtilGtfsParserPort: JrUtilGtfsParserPort,
-        addPositionToStopsByNameUseCase: AddPositionToStopsByNameUseCase,
+        addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
         calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     ) {
         val jrUtilGtfsStreamsIterator = jrUtilGtfsSourcePort.provideInput().iterator()
         val jrUtilGtfsParseResult = jrUtilGtfsParserPort.parseGtfs(jrUtilGtfsStreamsIterator)
-        val positionAssignments = addPositionToStopsByNameUseCase.addPositionToStopsByName(jrUtilGtfsParseResult)
+        val positionAssignments = addJrUtilPositionToStopsByNameUseCase.addPositionToStopsByName(jrUtilGtfsParseResult)
         val patternsCount: Int
         val journeyPatternWithNullRouteKeys = journeyPatternJpaRepository
             .findAllRoutingDtoWithNullRoute()

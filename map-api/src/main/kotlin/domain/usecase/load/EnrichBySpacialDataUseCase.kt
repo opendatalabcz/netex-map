@@ -7,7 +7,7 @@ interface EnrichBySpacialDataUseCase {
     fun enrichStopsWithPositions(
         jrUtilGtfsSourcePort: JrUtilGtfsSourcePort,
         jrUtilGtfsParserPort: JrUtilGtfsParserPort,
-        addPositionToStopsByNameUseCase: AddPositionToStopsByNameUseCase,
+        addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
         calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     )
 }

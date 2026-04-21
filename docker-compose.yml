@@ -77,8 +77,9 @@ services:
       - ${BE_NETEX_CITY_LINES_HOST_PATH}:${BE_NETEX_CITY_LINES_CONTAINER_PATH}:ro
       - ${BE_JRUTIL_GTFS_UNIFIED_EXPORT_HOST_PATH}:${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}:ro
     command: >
-      --import-zip=${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}
-      --import-zip=${BE_NETEX_CITY_LINES_CONTAINER_PATH}
+      --import-netex-zip=${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}
+      --import-netex-zip=${BE_NETEX_CITY_LINES_CONTAINER_PATH}
+      --import-stops
       --jrutil-gtfs=${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}
     logging:
       driver: local
