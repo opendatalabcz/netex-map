@@ -13,10 +13,13 @@ CREATE SEQUENCE operator_seq START WITH 1 INCREMENT BY 20;
 CREATE TABLE physical_stop (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('physical_stop_seq'),
     external_id TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
+    name TEXT,
     position GEOGRAPHY(Point, 4326) NOT NULL,
     tags JSONB NOT NULL
 );
+
+CREATE INDEX idx_physical_stop_name ON physical_stop(name);
+CREATE INDEX idx_physical_stop_position ON physical_stop USING GIST(position);
 
 CREATE TABLE route (
     relational_id BIGINT PRIMARY KEY DEFAULT nextval('route_seq'),

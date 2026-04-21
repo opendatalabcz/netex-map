@@ -10,6 +10,6 @@ import java.util.Optional
 interface PhysicalStopJpaRepository: JpaRepository<PhysicalStop, Long> {
     fun findByExternalId(externalId: String): Optional<PhysicalStop>
 
-    @Query("SELECT ps.relationalId FROM PhysicalStop ps WHERE ps.externalId = :externalId")
-    fun findIdByExternalId(externalId: String): Optional<Long>
+    @Query("SELECT ps FROM PhysicalStop ps WHERE ps.externalId IN :externalIds")
+    fun findAllByExternalIds(externalIds: List<String>): List<PhysicalStop>
 }

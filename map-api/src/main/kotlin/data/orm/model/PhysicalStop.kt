@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.annotations.JdbcTypeCode
@@ -12,7 +13,12 @@ import org.hibernate.type.SqlTypes
 import org.locationtech.jts.geom.Point
 
 @Entity
-@Table(name = "physical_stop")
+@Table(
+    name = "physical_stop",
+    indexes = [
+        Index(columnList = "name"),
+    ],
+)
 class PhysicalStop(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "physical_stop_seq_gen")
@@ -22,8 +28,8 @@ class PhysicalStop(
     @Column(nullable = false, unique = true)
     val externalId: String,
 
-    @Column(nullable = false)
-    val name: String,
+    @Column(nullable = true)
+    val name: String?,
 
     @Column(columnDefinition = "geography(Point,4326)", nullable = false)
     val position: Point,

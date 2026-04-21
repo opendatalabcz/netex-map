@@ -22,6 +22,8 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.graphhopper:graphhopper-web-api:11.0")
+    implementation("org.openstreetmap.osmosis:osmosis-core:0.49.2")
+    implementation("org.openstreetmap.osmosis:osmosis-pbf:0.49.2")
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")

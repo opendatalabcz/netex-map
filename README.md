@@ -29,10 +29,6 @@ NeTEx Map is a web application that visualizes Czech public transportation timet
 - Routing service based on [OpenStreetMap](https://www.openstreetmap.org/about) data
 - Provides estimated routes
 
-### Overpass API
-- Optimized query engine for [OpenStreetMap](https://www.openstreetmap.org/about) data
-- Provides physical stop positions
-
 ### nginx
 - Reverse proxy
 

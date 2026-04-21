@@ -2,47 +2,53 @@ package cz.cvut.fit.gaierda1.domain.usecase.load
 
 import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
-import cz.cvut.fit.gaierda1.domain.port.OsmStopsServicePort
-import cz.cvut.fit.gaierda1.domain.port.ServiceUnavailableException
+import cz.cvut.fit.gaierda1.domain.port.OsmParserPort
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
+import java.io.File
 
+@Component
 class ImportPhysicalStopsFromOsm(
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
     private val transactionTemplate: TransactionTemplate,
-    @Value($$"${stops.service.health-check-tries}") private val healthCheckTries: Int,
-    @Value($$"${stops.service.health-check-wait-ms}") private val healthCheckWaitMs: Long,
+    @Value($$"${import.physical-stops-batch-size}")
+    private val physicalStopBatchSize: Int,
 ): ImportPhysicalStopsFromOsmUseCase {
-    private val log = LoggerFactory.getLogger(ImportPhysicalStopsFromOsmUseCase::class.java)
+    private val log = LoggerFactory.getLogger(ImportPhysicalStopsFromOsm::class.java)
 
-    private fun getStopsWithTries(osmStopsServicePort: OsmStopsServicePort): List<PhysicalStop> {
-        var healthFails = 0
-        var physicalStops = emptyList<PhysicalStop>()
-        do {
-            try {
-                physicalStops = osmStopsServicePort.getPhysicalStops()
-                break
-            } catch (e: ServiceUnavailableException) {
-                ++healthFails
-                log.info("OSM service is not available, retrying in $healthCheckWaitMs ms. Reason: ${e.message}")
-                Thread.sleep(healthCheckWaitMs)
+    override fun importPhysicalStopsFromOsm(
+        osmFile: File,
+        osmParserPort: OsmParserPort,
+    ) {
+        val physicalStops = osmParserPort.parseOsmFile(osmFile)
+        var newStopCount = 0
+        var updatedStopCount = 0
+        for (physicalStopsBatch in physicalStops.chunked(physicalStopBatchSize)) {
+            transactionTemplate.executeWithoutResult {
+                val externalIds = physicalStopsBatch.map { it.externalId }
+                val existingStopsMap = physicalStopJpaRepository
+                    .findAllByExternalIds(externalIds)
+                    .associateBy(PhysicalStop::externalId)
+                val newPhysicalStops = mutableListOf<PhysicalStop>()
+                val updatedPhysicalStops = mutableListOf<PhysicalStop>()
+                for (physicalStop in physicalStopsBatch) {
+                    val existingStop = existingStopsMap[physicalStop.externalId]
+                    if (existingStop != null) {
+                        physicalStop.relationalId = existingStop.relationalId
+                        updatedPhysicalStops.add(physicalStop)
+                    } else {
+                        physicalStop.relationalId = null
+                        newPhysicalStops.add(physicalStop)
+                    }
+                }
+                newStopCount += newPhysicalStops.size
+                updatedStopCount += updatedPhysicalStops.size
+                physicalStopJpaRepository.saveAll(updatedPhysicalStops)
+                physicalStopJpaRepository.saveAll(newPhysicalStops)
             }
-        } while (healthFails < healthCheckTries)
-        if (physicalStops.isEmpty()) {
-            error("OSM service is not available")
         }
-        return physicalStops
-    }
-
-    override fun importPhysicalStopsFromOsm(osmStopsServicePort: OsmStopsServicePort) {
-        val physicalStops = getStopsWithTries(osmStopsServicePort)
-        transactionTemplate.executeWithoutResult {
-            for (physicalStop in physicalStops) {
-                val stopId = physicalStopJpaRepository.findIdByExternalId(physicalStop.externalId)
-                physicalStop.relationalId = stopId.orElse(null)
-            }
-            physicalStopJpaRepository.saveAll(physicalStops)
-        }
+        log.info("Imported $newStopCount new and updated $updatedStopCount existing physical stops.")
     }
 }

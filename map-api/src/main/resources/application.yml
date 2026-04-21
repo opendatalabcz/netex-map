@@ -11,15 +11,10 @@ map:
 import:
   input-timetable-batch-size: 30
   active-period-line-versions-batch-size: 100
+  physical-stops-batch-size: 100
 routing:
   service:
     url: http://localhost:8113
-stops:
-  service:
-    url: http://localhost:8114/api
-    health-check: /interpreter?data=[out:json];node(2879637);out;
-    health-check-tries: 90
-    health-check-wait-ms: 30000
 spring:
   datasource:
     url: jdbc:postgresql://localhost:8112/timetable?reWriteBatchedInserts=true

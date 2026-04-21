@@ -5,7 +5,7 @@ import cz.cvut.fit.gaierda1.data.filesystem.TimetableDirectorySource
 import cz.cvut.fit.gaierda1.data.filesystem.TimetableZipFileSource
 import cz.cvut.fit.gaierda1.data.netex.TimetableParser
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort
-import cz.cvut.fit.gaierda1.domain.port.OsmStopsServicePort
+import cz.cvut.fit.gaierda1.domain.port.OsmParserPort
 import cz.cvut.fit.gaierda1.domain.usecase.load.AddJrUtilPositionToStopsByNameUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateLineVersionActivePeriodsUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateNextDayOperationUseCase
@@ -30,14 +30,14 @@ class ImportProcedure(
     private val addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
     private val enrichBySpacialDataUseCase: EnrichBySpacialDataUseCase,
     private val calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
-    private val osmStopsServicePort: OsmStopsServicePort,
+    private val osmParserPort: OsmParserPort,
     private val importPhysicalStopsFromOsmUseCase: ImportPhysicalStopsFromOsmUseCase,
 ): CommandLineRunner {
     companion object {
-        private const val COMMON_NETEX_IMPORT_ARGUMENT_PREFIX = "--import-netex"
+        private const val COMMON_NETEX_IMPORT_ARGUMENT_PREFIX = "--netex"
         private const val ZIP_NETEX_IMPORT_ARGUMENT_PREFIX = "$COMMON_NETEX_IMPORT_ARGUMENT_PREFIX-zip"
         private const val ENRICH_ARGUMENT_PREFIX = "--jrutil-gtfs"
-        private const val STOP_IMPORT_ARGUMENT = "--import-stops"
+        private const val STOP_IMPORT_ARGUMENT = "--osm-pbf"
     }
 
     private val log = LoggerFactory.getLogger(ImportProcedure::class.java)
@@ -113,10 +113,27 @@ class ImportProcedure(
 
     }
 
-    private fun stopImport() {
+    private fun stopImport(importArg: String) {
+        val osmPbfPath = importArg
+            .substringAfter("=")
+            .ifBlank { null }
+        if (osmPbfPath == null) {
+            log.error("Missing file path after $STOP_IMPORT_ARGUMENT argument")
+            return
+        }
+        val osmPbfFile = File(osmPbfPath)
+        if (!osmPbfFile.exists()) {
+            log.error("Import file does not exist: ${osmPbfFile.absolutePath}")
+            return
+        }
+        if (!osmPbfFile.isFile) {
+            log.error("The path after $STOP_IMPORT_ARGUMENT argument must denote a regular file")
+            return
+        }
         log.info("Begin importing physical stops")
+        log.info("Importing from file: ${osmPbfFile.absolutePath}")
         val importTime = measureTime {
-            importPhysicalStopsFromOsmUseCase.importPhysicalStopsFromOsm(osmStopsServicePort)
+            importPhysicalStopsFromOsmUseCase.importPhysicalStopsFromOsm(osmPbfFile, osmParserPort)
         }
         log.info("Done importing physical stops in $importTime")
     }
@@ -124,8 +141,8 @@ class ImportProcedure(
     override fun run(vararg args: String) {
         val importArgs = args.filter { it.startsWith(COMMON_NETEX_IMPORT_ARGUMENT_PREFIX) }
         if (importArgs.isNotEmpty()) netexImport(importArgs)
-        val stopImportArg = args.firstOrNull { it == STOP_IMPORT_ARGUMENT }
-        if (stopImportArg != null) stopImport()
+        val stopImportArg = args.firstOrNull { it.startsWith(STOP_IMPORT_ARGUMENT) }
+        if (stopImportArg != null) stopImport(stopImportArg)
         val enrichmentArg = args.firstOrNull { it.startsWith(ENRICH_ARGUMENT_PREFIX) }
         if (enrichmentArg != null) enrich(enrichmentArg)
     }
