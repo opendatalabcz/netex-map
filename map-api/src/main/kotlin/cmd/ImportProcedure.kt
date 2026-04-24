@@ -14,6 +14,7 @@ import cz.cvut.fit.gaierda1.domain.usecase.load.EnrichBySpacialDataUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.ImportPhysicalStopsFromOsmUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.ImportTimetablesUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.NormalizeStopNameUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.load.RoughlyPairPhysicalStopsWithStopsUseCase
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -34,6 +35,7 @@ class ImportProcedure(
     private val osmParserPort: OsmParserPort,
     private val normalizeStopNameUseCase: NormalizeStopNameUseCase,
     private val importPhysicalStopsFromOsmUseCase: ImportPhysicalStopsFromOsmUseCase,
+    private val pairsPhysicalStopsWithStopsUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
 ): CommandLineRunner {
     companion object {
         private const val COMMON_NETEX_IMPORT_ARGUMENT_PREFIX = "--netex"
@@ -69,6 +71,7 @@ class ImportProcedure(
                 jrUtilGtfsSource,
                 jrUtilGtfsParserPort,
                 normalizeStopNameUseCase,
+                pairsPhysicalStopsWithStopsUseCase,
                 addJrUtilPositionToStopsByNameUseCase,
                 calculateRoutesFromWaypointsUseCase,
             )

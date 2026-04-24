@@ -105,4 +105,14 @@ interface LineVersionJpaRepository: JpaRepository<LineVersion, Long> {
         WHERE lv.relational_id IN :lineVersionIds
     """)
     fun findAllFrameDtoByLineVersionIds(lineVersionIds: List<Long>): List<LineVersionFrameDto>
+
+    @Query(value = """
+        SELECT EXISTS (
+            SELECT 1 FROM LineVersion lv 
+            WHERE lv.publicCode = :publicCode 
+            AND (lv.lineType = cz.cvut.fit.gaierda1.data.orm.model.LineType.INTERNATIONAL_EXCLUDING_CABOTAGE 
+                 OR lv.lineType = cz.cvut.fit.gaierda1.data.orm.model.LineType.INTERNATIONAL_INCLUDING_CABOTAGE)
+        )
+    """)
+    fun areLinesByPublicCodeInternational(publicCode: String): Boolean
 }

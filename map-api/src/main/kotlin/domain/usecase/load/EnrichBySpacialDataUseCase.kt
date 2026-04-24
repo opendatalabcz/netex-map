@@ -8,6 +8,7 @@ interface EnrichBySpacialDataUseCase {
         jrUtilGtfsSourcePort: JrUtilGtfsSourcePort,
         jrUtilGtfsParserPort: JrUtilGtfsParserPort,
         normalizeStopNameUseCase: NormalizeStopNameUseCase,
+        pairsPhysicalStopsWithStopsByNameUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
         addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
         calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     )

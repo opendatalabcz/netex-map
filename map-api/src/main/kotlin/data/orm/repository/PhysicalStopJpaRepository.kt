@@ -12,4 +12,7 @@ interface PhysicalStopJpaRepository: JpaRepository<PhysicalStop, Long> {
 
     @Query("SELECT ps FROM PhysicalStop ps WHERE ps.externalId IN :externalIds")
     fun findAllByExternalIds(externalIds: List<String>): List<PhysicalStop>
+
+    @Query("SELECT DISTINCT ps.name FROM PhysicalStop ps WHERE ps.name IS NOT NULL")
+    fun findAllDistinctNames(): List<String>
 }

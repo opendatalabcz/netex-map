@@ -37,9 +37,11 @@ class EnrichBySpacialData(
         jrUtilGtfsSourcePort: JrUtilGtfsSourcePort,
         jrUtilGtfsParserPort: JrUtilGtfsParserPort,
         normalizeStopNameUseCase: NormalizeStopNameUseCase,
+        pairsPhysicalStopsWithStopsByNameUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
         addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
         calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     ) {
+        // TODO: Utilize pairsPhysicalStopsWithStopsByNameUseCase
         val jrUtilGtfsStreamsIterator = jrUtilGtfsSourcePort.provideInput().iterator()
         val jrUtilGtfsParseResult = jrUtilGtfsParserPort.parseGtfs(jrUtilGtfsStreamsIterator)
         for (parsedStop in jrUtilGtfsParseResult.allStops) {
