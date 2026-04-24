@@ -34,7 +34,7 @@ interface StopJpaRepository: JpaRepository<Stop, Long> {
     @Query(nativeQuery = true, value = """
         SELECT s.relational_id, s.name
         FROM stop s
-        WHERE s.line_public_code = :linePublicCode AND s.border_crossing = false
+        WHERE s.line_public_code = :linePublicCode
     """)
     fun findAllPositionEnrichmentDtoByLinePublicCode(linePublicCode: String): List<StopPositionEnrichmentDto>
 }

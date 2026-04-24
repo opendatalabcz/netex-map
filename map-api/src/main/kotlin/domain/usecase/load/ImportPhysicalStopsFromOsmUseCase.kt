@@ -7,5 +7,6 @@ interface ImportPhysicalStopsFromOsmUseCase {
     fun importPhysicalStopsFromOsm(
         osmFile: File,
         osmParserPort: OsmParserPort,
+        normalizeStopNameUseCase: NormalizeStopNameUseCase,
     )
 }

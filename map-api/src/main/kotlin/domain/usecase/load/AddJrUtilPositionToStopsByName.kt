@@ -1,9 +1,12 @@
 package cz.cvut.fit.gaierda1.domain.usecase.load
 
+import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.StopPositionEnrichmentDto
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.*
+import cz.cvut.fit.gaierda1.domain.usecase.load.AddJrUtilPositionToStopsByNameUseCase.AddPositionToStopsByNameResult
+import org.locationtech.jts.geom.Coordinate
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import kotlin.math.abs
@@ -13,6 +16,9 @@ class AddJrUtilPositionToStopsByName(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val stopJpaRepository: StopJpaRepository,
 ) : AddJrUtilPositionToStopsByNameUseCase {
+    companion object {
+        private const val NULL_NAME = "__NULL_NAME__"
+    }
     private val log = LoggerFactory.getLogger(AddJrUtilPositionToStopsByName::class.java)
 
     private fun String.collapseCommas(): String = replace(Regex("""\s*,+\s*"""), ",")
@@ -22,19 +28,24 @@ class AddJrUtilPositionToStopsByName(
 
     private data class MatchedStop(
         val stop: StopPositionEnrichmentDto,
-        var matchResult: JrUtilGtfsStopParseResult?,
+        var matchResult: JrUtilStopsByName?,
+    )
+
+    private data class JrUtilStopsByName(
+        val name: String,
+        val stops: MutableList<PhysicalStop>,
     )
 
     private fun bestTryMatchByName(
         stopMatches: List<MatchedStop>,
-        jrUtilStops: List<JrUtilGtfsStopParseResult>
+        jrUtilStops: List<JrUtilStopsByName>
     ) {
         for (stopMatch in stopMatches) {
             if (stopMatch.matchResult != null) continue
             val dbStopNameNoCS = stopMatch.stop.name.removeCommasAndSpaces()
-            val partialMatches = mutableListOf<JrUtilGtfsStopParseResult>()
-            val noCSMatches = mutableListOf<JrUtilGtfsStopParseResult>()
-            val containsNoCSMatches = mutableListOf<JrUtilGtfsStopParseResult>()
+            val partialMatches = mutableListOf<JrUtilStopsByName>()
+            val noCSMatches = mutableListOf<JrUtilStopsByName>()
+            val containsNoCSMatches = mutableListOf<JrUtilStopsByName>()
             for (jrStop in jrUtilStops) {
                 // Skip used
                 if (stopMatches.any { it.matchResult?.name == jrStop.name }) continue
@@ -60,9 +71,10 @@ class AddJrUtilPositionToStopsByName(
         dbStops: List<StopPositionEnrichmentDto>,
     ): List<MatchedStop> {
         val stopMatches = dbStops.orderedByNamePartCountDesc().map { dbStop ->
-            MatchedStop(dbStop, line.stops.find { it.name == dbStop.name })
+            val exactMatch = line.stops.find { it.name == dbStop.name }
+            MatchedStop(dbStop, exactMatch?.let { JrUtilStopsByName(it.name ?: NULL_NAME, mutableListOf(it)) })
         }
-        bestTryMatchByName(stopMatches, line.stops)
+        bestTryMatchByName(stopMatches, line.stops.map { JrUtilStopsByName(it.name ?: NULL_NAME, mutableListOf(it)) })
         return stopMatches
     }
 
@@ -74,14 +86,14 @@ class AddJrUtilPositionToStopsByName(
     private fun globalMatchByNameWithPrefixes(
         dbStop: StopPositionEnrichmentDto,
         stopNamePrefixes: List<StopNamePrefix>,
-        allJrUtilStopsByName: Map<String, JrUtilGtfsStopParseResult>
-    ): JrUtilGtfsStopParseResult? {
+        allJrUtilStopsByName: Map<String, JrUtilStopsByName>
+    ): JrUtilStopsByName? {
         val exactMatch = allJrUtilStopsByName[dbStop.name]
         if (exactMatch != null) {
             return exactMatch
         }
         data class GlobalMatch(
-            val jrUsageStop: JrUtilGtfsStopParseResult,
+            val jrUsageStop: JrUtilStopsByName,
             val exactMatch: Boolean,
             val noCSExactMatch: Boolean,
         )
@@ -117,8 +129,8 @@ class AddJrUtilPositionToStopsByName(
     private fun globalMatchStopWithNeighbouringContext(
         stopIdx: Int,
         stopMatches: List<MatchedStop>,
-        allJrUtilStopsByName: Map<String, JrUtilGtfsStopParseResult>
-    ): JrUtilGtfsStopParseResult? {
+        allJrUtilStopsByName: Map<String, JrUtilStopsByName>
+    ): JrUtilStopsByName? {
         val stopNamePrefixesMap = mutableMapOf("" to 0)
         for ((idx, otherStopMatch) in stopMatches.withIndex()) {
             if (idx == stopIdx || otherStopMatch.matchResult == null) continue
@@ -138,7 +150,7 @@ class AddJrUtilPositionToStopsByName(
     }
 
     private fun globalMatchStopsForLine(
-        allJrUtilStopsByName: Map<String, JrUtilGtfsStopParseResult>,
+        allJrUtilStopsByName: Map<String, JrUtilStopsByName>,
         dbStops: List<StopPositionEnrichmentDto>,
     ): List<MatchedStop> {
         val stopMatches = dbStops.orderedByNamePartCountDesc().map { MatchedStop(it, allJrUtilStopsByName[it.name]) }
@@ -146,16 +158,53 @@ class AddJrUtilPositionToStopsByName(
         return stopMatches
     }
 
-    override fun addPositionToStopsByName(jrUtilGtfsParseResult: JrUtilGtfsParseResult): Map<Long, JrUtilGtfsStopParseResult> {
-        val assignmentResult = mutableMapOf<Long, JrUtilGtfsStopParseResult>()
-        val linesByPublicCode = jrUtilGtfsParseResult.lines.associateBy { it.publicCode }
-        val normalizedJrUtilStopsByName = jrUtilGtfsParseResult.allStops.associate { stop ->
-            val newKey = stop.name.collapseCommas()
-            newKey to stop.copy(name = newKey)
+    private fun deduplicateStops(stops: List<Pair<Long, JrUtilStopsByName>>): List<Pair<Long, PhysicalStop>> {
+        val deduplicatedStops = mutableListOf<Pair<Long, PhysicalStop>>()
+        val toDecideStops = mutableListOf<Pair<Long, JrUtilStopsByName>>()
+        for (entry in stops) {
+            if (entry.second.stops.size == 1) {
+                deduplicatedStops.add(entry.first to entry.second.stops.first())
+            } else {
+                toDecideStops.add(entry)
+            }
         }
-        val publicCodesOfUnenrichedLines = lineVersionJpaRepository.findAllPublicCodes()
+        val deduplicatedStopCoordinates = deduplicatedStops.map { it.second.position }.filter { it.x != 0.0 && it.y != 0.0 }
+        val decidedStops = mutableListOf<Pair<Long, PhysicalStop>>()
+        for (entry in toDecideStops) {
+            var closestIndex = 0
+            var closestDistance = Double.MAX_VALUE
+            for ((idx, testedStop) in entry.second.stops.withIndex()) {
+                if (testedStop.position.x == 0.0 || testedStop.position.y == 0.0) continue
+                for (deduplicatedStopCoordinate in deduplicatedStopCoordinates) {
+                    val distance = testedStop.position.distance(deduplicatedStopCoordinate)
+                    if (distance < closestDistance) {
+                        closestIndex = idx
+                        closestDistance = distance
+                    }
+                }
+            }
+            decidedStops.add(entry.first to entry.second.stops[closestIndex])
+        }
+        deduplicatedStops.addAll(decidedStops)
+        return deduplicatedStops
+    }
+
+    override fun addPositionToStopsByName(jrUtilGtfsParseResult: JrUtilGtfsParseResult): List<AddPositionToStopsByNameResult> {
+        val assignmentResult = mutableListOf<AddPositionToStopsByNameResult>()
+        val linesByPublicCode = jrUtilGtfsParseResult.lines.associateBy { it.publicCode }
+        val normalizedJrUtilStopsByName = mutableMapOf<String, JrUtilStopsByName>()
+        for (stop in jrUtilGtfsParseResult.allStops) {
+            val key = stop.name?.collapseCommas() ?: NULL_NAME
+            val mapEntry = normalizedJrUtilStopsByName[key]
+            if (mapEntry == null) {
+                normalizedJrUtilStopsByName[key] = JrUtilStopsByName(key, mutableListOf(stop))
+            } else {
+                mapEntry.stops.add(stop)
+            }
+        }
+        val publicCodes = lineVersionJpaRepository.findAllPublicCodes()
         var notMatchedLines = 0
-        for (publicCode in publicCodesOfUnenrichedLines) {
+        for (publicCode in publicCodes) {
             val dbStops = stopJpaRepository
                 .findAllPositionEnrichmentDtoByLinePublicCode(publicCode)
                 .map { it.copy(name = it.name.collapseCommas().replace(Regex("\\s*\\[[^]]*]\\s*"), "")) }
@@ -164,16 +213,21 @@ class AddJrUtilPositionToStopsByName(
                 if (line != null) localMatchStopsForLine(line, dbStops)
                 else globalMatchStopsForLine(normalizedJrUtilStopsByName, dbStops)
             var notMatched = 0
+            val tmpResult = mutableListOf<Pair<Long, JrUtilStopsByName>>()
             for ((idx, stopMatch) in stopMatches.withIndex()) {
                 val matchedJrUtilStop = stopMatch.matchResult
                     ?: globalMatchStopWithNeighbouringContext(idx, stopMatches, normalizedJrUtilStopsByName)
                 if (matchedJrUtilStop != null) {
-                    assignmentResult[stopMatch.stop.relationalId] = matchedJrUtilStop
+                    tmpResult.add(stopMatch.stop.relationalId to matchedJrUtilStop)
                 } else {
                     notMatched++
                     log.warn("Line $publicCode, stop \"${stopMatch.stop.name}\" didn't match any JrUtil stop: ${line?.stops?.joinToString { "\"${it.name}\"" }}")
                 }
             }
+            assignmentResult.add(AddPositionToStopsByNameResult(
+                linePublicCode = publicCode,
+                assignmentsByStopId = deduplicateStops(tmpResult).associate { it },
+            ))
             if (notMatched > 0) {
                 notMatchedLines++
                 log.warn("Line $publicCode has $notMatched/${dbStops.size} unmatched stops")

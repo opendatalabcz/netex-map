@@ -26,10 +26,10 @@ interface JourneyPatternJpaRepository: JpaRepository<JourneyPattern, JourneyPatt
     fun findAllWallDtoByLineVersionId(lineVersionId: Long): List<JourneyPatternWallDto>
 
     @Query(nativeQuery = true, value = """
-        SELECT jp.line_version_id, jp.pattern_number
+        SELECT jp.line_version_id, jp.pattern_number, lv.public_code
         FROM journey_pattern jp
+            JOIN line_version lv ON lv.relational_id = jp.line_version_id
         WHERE jp.route_id IS NULL
-        ORDER BY jp.line_version_id, jp.pattern_number
     """)
     fun findAllRoutingDtoWithNullRoute(): List<JourneyPatternRoutingDto>
 }

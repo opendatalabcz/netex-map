@@ -4,12 +4,14 @@ import cz.cvut.fit.gaierda1.data.jrutil.model.GtfsJourney
 import cz.cvut.fit.gaierda1.data.jrutil.model.GtfsLine
 import cz.cvut.fit.gaierda1.data.jrutil.model.GtfsScheduledStop
 import cz.cvut.fit.gaierda1.data.jrutil.model.GtfsStop
+import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.*
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsSourcePort.*
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.InputStream
@@ -17,6 +19,7 @@ import java.io.InputStreamReader
 
 @Component
 class JrUtilGtfsParser: JrUtilGtfsParserPort {
+    private val geometryFactory = GeometryFactory()
     private val csvReader = CSVFormat.Builder.create()
         .setDelimiter(',')
         .setRecordSeparator('\n')
@@ -83,30 +86,30 @@ class JrUtilGtfsParser: JrUtilGtfsParserPort {
             error("Missing one or more required GTFS files")
         }
 
-        val resultStopsByPublicCode = mutableMapOf<String, MutableList<GtfsStop>>()
-        val stopsByKey = stops.associateBy(GtfsStop::stopKey)
+        val resultStops = stops.map { PhysicalStop(
+            relationalId = null,
+            externalId = it.stopKey,
+            name = it.name,
+            position = geometryFactory.createPoint(Coordinate(it.longitude, it.latitude)),
+            tags = emptyMap(),
+        ) }
+        val resultStopsByKey = resultStops.associateBy(PhysicalStop::externalId)
+
+        val resultStopsByPublicCode = mutableMapOf<String, MutableList<PhysicalStop>>()
         for (journey in journeys) {
             val scheduledStops = scheduledStopByJourneyKey[journey.journeyKey]!!
             val publicCode = linesByKey[journey.lineKey]!!.publicCode
             val resultStops = resultStopsByPublicCode.getOrPut(publicCode) { mutableListOf() }
             for (scheduledStop in scheduledStops) {
-                resultStops.add(stopsByKey[scheduledStop.stopKey]!!)
+                resultStops.add(resultStopsByKey[scheduledStop.stopKey]!!)
             }
         }
-        val resultLines = resultStopsByPublicCode.map { (publicCode, stops) ->
+        val resultLines = resultStopsByPublicCode.map { (publicCode, lineStops) ->
             JrUtilGtfsLineParseResult(
                 publicCode = publicCode,
-                stops = stops
-                    .distinctBy(GtfsStop::stopKey)
-                    .map {
-                        JrUtilGtfsStopParseResult(
-                            name = it.name,
-                            coordinate = Coordinate(it.longitude, it.latitude),
-                        )
-                    },
+                stops = lineStops.distinctBy(PhysicalStop::externalId),
             )
         }
-        val resultStops = stops.map { JrUtilGtfsStopParseResult(it.name, Coordinate(it.longitude, it.latitude)) }
         return JrUtilGtfsParseResult(resultLines, resultStops)
     }
 }

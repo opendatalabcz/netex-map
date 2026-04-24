@@ -26,10 +26,10 @@ class PhysicalStop(
     var relationalId: Long?,
 
     @Column(nullable = false, unique = true)
-    val externalId: String,
+    var externalId: String,
 
     @Column(nullable = true)
-    val name: String?,
+    var name: String?,
 
     @Column(columnDefinition = "geography(Point,4326)", nullable = false)
     val position: Point,

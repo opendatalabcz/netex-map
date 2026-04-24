@@ -1,11 +1,11 @@
 package cz.cvut.fit.gaierda1.domain.usecase.load
 
+import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.data.orm.model.Route
-import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.JrUtilGtfsStopParseResult
 
 interface CalculateRoutesFromWaypointsUseCase {
     fun calculateRouteFromWaypoints(
-        waypoints: List<JrUtilGtfsStopParseResult>,
+        waypoints: List<PhysicalStop>,
         cache: RouteCalculationCache? = null,
     ): Route?
 }

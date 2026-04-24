@@ -89,7 +89,7 @@ class OsmPbfParser: OsmParserPort {
         }
         return stopNodes.map { PhysicalStop(
             relationalId = null,
-            externalId = "OSM:${it.value.id}",
+            externalId = it.value.id.toString(),
             name = it.value.tags.getName(),
             position = geometryFactory.createPoint(Coordinate(it.value.longitude, it.value.latitude)),
             tags = it.value.tags.toMap(),

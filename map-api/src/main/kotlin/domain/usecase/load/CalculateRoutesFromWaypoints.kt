@@ -6,7 +6,6 @@ import cz.cvut.fit.gaierda1.data.orm.model.RouteStop
 import cz.cvut.fit.gaierda1.data.orm.model.RouteStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
-import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.JrUtilGtfsStopParseResult
 import cz.cvut.fit.gaierda1.domain.port.RoutingServicePort
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
@@ -29,31 +28,31 @@ class CalculateRoutesFromWaypoints(
 
     private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
 
-    private fun stopNamesMatches(
-        waypoints: List<JrUtilGtfsStopParseResult>,
+    private fun stopExternalIdsMatches(
+        waypoints: List<PhysicalStop>,
         routeStops: List<RouteStop>,
     ): Boolean {
         if (waypoints.size != routeStops.size) return false
         return waypoints.zip(routeStops).all { (waypoint, routeStop) ->
-            waypoint.name == routeStop.physicalStop.name
+            waypoint.externalId == routeStop.physicalStop.externalId
         }
     }
 
     private fun findExistingRoute(
         routeExternalId: String,
-        waypoints: List<JrUtilGtfsStopParseResult>,
+        waypoints: List<PhysicalStop>,
         cache: RouteCalculationCache,
     ): Route? {
         val routesFromCache = cache.findRoutes(routeExternalId)
         if (routesFromCache.isNotEmpty()) {
             for (route in routesFromCache) {
-                if (stopNamesMatches(waypoints, route.routeStops)) return route
+                if (stopExternalIdsMatches(waypoints, route.routeStops)) return route
             }
         }
         val fromDbRoutes = routeJpaRepository.findAllByExternalId(routeExternalId)
         if (fromDbRoutes.isNotEmpty()) {
             for (route in fromDbRoutes) {
-                if (stopNamesMatches(waypoints, route.routeStops)) {
+                if (stopExternalIdsMatches(waypoints, route.routeStops)) {
                     cache.addRoute(route)
                     return route
                 }
@@ -70,21 +69,21 @@ class CalculateRoutesFromWaypoints(
     }
 
     override fun calculateRouteFromWaypoints(
-        waypoints: List<JrUtilGtfsStopParseResult>,
+        waypoints: List<PhysicalStop>,
         cache: RouteCalculationCache?,
     ): Route? {
         if (waypoints.size < 2) return null
         val usedCache = cache ?: RouteCalculationCache()
         val routeExternalId = Base64.encode(
             MessageDigest.getInstance("SHA-256")
-                .digest(waypoints.joinToString("|") { it.name }.toByteArray())
+                .digest(waypoints.joinToString("|") { it.externalId }.toByteArray())
         )
 
         val existingRoute = findExistingRoute(routeExternalId, waypoints, usedCache)
         if (existingRoute != null) return existingRoute
 
         val routeFromService = routingServicePort
-            .getRouteForPoints(waypoints.map { it.coordinate })
+            .getRouteForPoints(waypoints.map { it.position.coordinate })
             ?: return null
 
         var waypointIndex = 1
@@ -126,17 +125,11 @@ class CalculateRoutesFromWaypoints(
             totalDistance = cumulativeDistance,
         )
         routeStops.addAll(waypoints.mapIndexed { idx, stop ->
-            var physicalStop = usedCache.findPhysicalStop(stop.name)
+            var physicalStop = usedCache.findPhysicalStop(stop.externalId)
             if (physicalStop == null) {
                 physicalStop = physicalStopJpaRepository
-                    .findByExternalId(stop.name)
-                    .orElseGet { PhysicalStop(
-                        relationalId = null,
-                        externalId = stop.name,
-                        name = stop.name,
-                        position = geometryFactory.createPoint(stop.coordinate),
-                        tags = emptyMap(),
-                    ) }
+                    .findByExternalId(stop.externalId)
+                    .orElse(stop)
                 usedCache.addPhysicalStop(physicalStop)
             }
             RouteStop(

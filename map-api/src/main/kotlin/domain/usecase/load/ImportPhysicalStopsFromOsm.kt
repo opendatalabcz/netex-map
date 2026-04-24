@@ -21,8 +21,13 @@ class ImportPhysicalStopsFromOsm(
     override fun importPhysicalStopsFromOsm(
         osmFile: File,
         osmParserPort: OsmParserPort,
+        normalizeStopNameUseCase: NormalizeStopNameUseCase,
     ) {
         val physicalStops = osmParserPort.parseOsmFile(osmFile)
+        for (physicalStop in physicalStops) {
+            physicalStop.externalId = "OSM:${physicalStop.externalId}"
+            physicalStop.name = physicalStop.name?.let(normalizeStopNameUseCase::normalize)
+        }
         var newStopCount = 0
         var updatedStopCount = 0
         for (physicalStopsBatch in physicalStops.chunked(physicalStopBatchSize)) {

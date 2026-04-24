@@ -13,6 +13,7 @@ import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateRoutesFromWaypointsUseC
 import cz.cvut.fit.gaierda1.domain.usecase.load.EnrichBySpacialDataUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.ImportPhysicalStopsFromOsmUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.ImportTimetablesUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.load.NormalizeStopNameUseCase
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -31,6 +32,7 @@ class ImportProcedure(
     private val enrichBySpacialDataUseCase: EnrichBySpacialDataUseCase,
     private val calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     private val osmParserPort: OsmParserPort,
+    private val normalizeStopNameUseCase: NormalizeStopNameUseCase,
     private val importPhysicalStopsFromOsmUseCase: ImportPhysicalStopsFromOsmUseCase,
 ): CommandLineRunner {
     companion object {
@@ -66,6 +68,7 @@ class ImportProcedure(
             enrichBySpacialDataUseCase.enrichStopsWithPositions(
                 jrUtilGtfsSource,
                 jrUtilGtfsParserPort,
+                normalizeStopNameUseCase,
                 addJrUtilPositionToStopsByNameUseCase,
                 calculateRoutesFromWaypointsUseCase,
             )
@@ -133,7 +136,11 @@ class ImportProcedure(
         log.info("Begin importing physical stops")
         log.info("Importing from file: ${osmPbfFile.absolutePath}")
         val importTime = measureTime {
-            importPhysicalStopsFromOsmUseCase.importPhysicalStopsFromOsm(osmPbfFile, osmParserPort)
+            importPhysicalStopsFromOsmUseCase.importPhysicalStopsFromOsm(
+                osmPbfFile,
+                osmParserPort,
+                normalizeStopNameUseCase,
+            )
         }
         log.info("Done importing physical stops in $importTime")
     }
