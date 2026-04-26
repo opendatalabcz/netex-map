@@ -42,7 +42,6 @@ interface JourneyPatternStopJpaRepository: JpaRepository<JourneyPatternStop, Jou
 
     @Query(nativeQuery = true, value = """
         SELECT
-            jps.line_version_id,
             jps.pattern_number,
             jps.stop_order,
             jps.tariff_order

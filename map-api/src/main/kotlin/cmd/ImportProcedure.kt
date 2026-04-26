@@ -6,7 +6,7 @@ import cz.cvut.fit.gaierda1.data.filesystem.TimetableZipFileSource
 import cz.cvut.fit.gaierda1.data.netex.TimetableParser
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort
 import cz.cvut.fit.gaierda1.domain.port.OsmParserPort
-import cz.cvut.fit.gaierda1.domain.usecase.load.AddJrUtilPositionToStopsByNameUseCase
+import cz.cvut.fit.gaierda1.domain.usecase.load.PairJrUtilStopsWithStopsUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateLineVersionActivePeriodsUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateNextDayOperationUseCase
 import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateRoutesFromWaypointsUseCase
@@ -29,13 +29,13 @@ class ImportProcedure(
     private val calculateLineVersionActivePeriodsUseCase: CalculateLineVersionActivePeriodsUseCase,
     private val importTimetablesUseCase: ImportTimetablesUseCase,
     private val jrUtilGtfsParserPort: JrUtilGtfsParserPort,
-    private val addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
+    private val pairJrUtilStopsWithStopsUseCase: PairJrUtilStopsWithStopsUseCase,
     private val enrichBySpacialDataUseCase: EnrichBySpacialDataUseCase,
     private val calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     private val osmParserPort: OsmParserPort,
     private val normalizeStopNameUseCase: NormalizeStopNameUseCase,
     private val importPhysicalStopsFromOsmUseCase: ImportPhysicalStopsFromOsmUseCase,
-    private val pairsPhysicalStopsWithStopsUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
+    private val roughlyPairPhysicalStopsWithStopsUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
 ): CommandLineRunner {
     companion object {
         private const val COMMON_NETEX_IMPORT_ARGUMENT_PREFIX = "--netex"
@@ -71,8 +71,8 @@ class ImportProcedure(
                 jrUtilGtfsSource,
                 jrUtilGtfsParserPort,
                 normalizeStopNameUseCase,
-                pairsPhysicalStopsWithStopsUseCase,
-                addJrUtilPositionToStopsByNameUseCase,
+                roughlyPairPhysicalStopsWithStopsUseCase,
+                pairJrUtilStopsWithStopsUseCase,
                 calculateRoutesFromWaypointsUseCase,
             )
         }

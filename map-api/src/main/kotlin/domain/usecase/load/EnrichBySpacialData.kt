@@ -12,7 +12,7 @@ import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.TariffStopRoutingDto
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsSourcePort
 import cz.cvut.fit.gaierda1.domain.port.ServiceUnavailableException
-import cz.cvut.fit.gaierda1.domain.usecase.load.AddJrUtilPositionToStopsByNameUseCase.AddPositionToStopsByNameResult
+import cz.cvut.fit.gaierda1.domain.usecase.load.PairJrUtilStopsWithStopsUseCase.PairJrUtilStopsWithStopsResult
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import org.slf4j.LoggerFactory
@@ -37,19 +37,19 @@ class EnrichBySpacialData(
         jrUtilGtfsSourcePort: JrUtilGtfsSourcePort,
         jrUtilGtfsParserPort: JrUtilGtfsParserPort,
         normalizeStopNameUseCase: NormalizeStopNameUseCase,
-        pairsPhysicalStopsWithStopsByNameUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
-        addJrUtilPositionToStopsByNameUseCase: AddJrUtilPositionToStopsByNameUseCase,
+        roughlyPairPhysicalStopsWithStopsUseCase: RoughlyPairPhysicalStopsWithStopsUseCase,
+        pairJrUtilStopsWithStopsUseCase: PairJrUtilStopsWithStopsUseCase,
         calculateRoutesFromWaypointsUseCase: CalculateRoutesFromWaypointsUseCase,
     ) {
-        // TODO: Utilize pairsPhysicalStopsWithStopsByNameUseCase
+        // TODO: Utilize roughlyPairPhysicalStopsWithStopsUseCase
         val jrUtilGtfsStreamsIterator = jrUtilGtfsSourcePort.provideInput().iterator()
         val jrUtilGtfsParseResult = jrUtilGtfsParserPort.parseGtfs(jrUtilGtfsStreamsIterator)
         for (parsedStop in jrUtilGtfsParseResult.allStops) {
             parsedStop.externalId = "JRUTIL:${parsedStop.externalId}"
         }
-        val positionAssignments = addJrUtilPositionToStopsByNameUseCase
-            .addPositionToStopsByName(jrUtilGtfsParseResult)
-            .associateBy(AddPositionToStopsByNameResult::linePublicCode)
+        val stopPairings = pairJrUtilStopsWithStopsUseCase
+            .pairJrUtilStopsWithStops(jrUtilGtfsParseResult, normalizeStopNameUseCase)
+            .associateBy(PairJrUtilStopsWithStopsResult::linePublicCode)
         val patternsCount: Int
         val journeyPatternWithNullRoute = journeyPatternJpaRepository
             .findAllRoutingDtoWithNullRoute()
@@ -65,8 +65,8 @@ class EnrichBySpacialData(
         var patternsExtendingOutOfSupportedArea = 0
         try {
             for ((publicCode, patternNumbers) in journeyPatternWithNullRoute) {
-                val positionAssignmentsForPublicCode = positionAssignments[publicCode]?.assignmentsByStopId
-                if (positionAssignmentsForPublicCode == null) {
+                val stopPairingsForPublicCode = stopPairings[publicCode]?.assignmentsByStopId
+                if (stopPairingsForPublicCode == null) {
                     patternsWithoutSpacialData += patternNumbers.size
                     continue
                 }
@@ -81,7 +81,7 @@ class EnrichBySpacialData(
                             .groupBy(JourneyPatternStopRoutingDto::patternNumber)
                             .mapValues { (_, stops) ->
                                 stops.sortedBy(JourneyPatternStopRoutingDto::stopOrder)
-                                    .map { positionAssignmentsForPublicCode[tariffStopsForLine[it.tariffOrder].stopId] }
+                                    .map { stopPairingsForPublicCode[tariffStopsForLine[it.tariffOrder].stopId] }
                             }
                         val routingCache = RouteCalculationCache()
                         val patternRoutePairs = stopAssignments.mapNotNull { (patternNumber, jrStops) ->

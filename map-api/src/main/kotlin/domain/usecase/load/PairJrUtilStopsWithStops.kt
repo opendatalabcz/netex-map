@@ -5,23 +5,21 @@ import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.dto.route.StopPositionEnrichmentDto
 import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.*
-import cz.cvut.fit.gaierda1.domain.usecase.load.AddJrUtilPositionToStopsByNameUseCase.AddPositionToStopsByNameResult
-import org.locationtech.jts.geom.Coordinate
+import cz.cvut.fit.gaierda1.domain.usecase.load.PairJrUtilStopsWithStopsUseCase.PairJrUtilStopsWithStopsResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import kotlin.math.abs
 
 @Component
-class AddJrUtilPositionToStopsByName(
+class PairJrUtilStopsWithStops(
     private val lineVersionJpaRepository: LineVersionJpaRepository,
     private val stopJpaRepository: StopJpaRepository,
-) : AddJrUtilPositionToStopsByNameUseCase {
+) : PairJrUtilStopsWithStopsUseCase {
     companion object {
         private const val NULL_NAME = "__NULL_NAME__"
     }
-    private val log = LoggerFactory.getLogger(AddJrUtilPositionToStopsByName::class.java)
+    private val log = LoggerFactory.getLogger(PairJrUtilStopsWithStops::class.java)
 
-    private fun String.collapseCommas(): String = replace(Regex("""\s*,+\s*"""), ",")
     private fun String.removeCommasAndSpaces(): String = replace(Regex("[ ,]"), "")
     private fun List<StopPositionEnrichmentDto>.orderedByNamePartCountDesc(): List<StopPositionEnrichmentDto> =
         sortedByDescending { it.name.split(",").size }
@@ -189,12 +187,15 @@ class AddJrUtilPositionToStopsByName(
         return deduplicatedStops
     }
 
-    override fun addPositionToStopsByName(jrUtilGtfsParseResult: JrUtilGtfsParseResult): List<AddPositionToStopsByNameResult> {
-        val assignmentResult = mutableListOf<AddPositionToStopsByNameResult>()
+    override fun pairJrUtilStopsWithStops(
+        jrUtilGtfsParseResult: JrUtilGtfsParseResult,
+        normalizeStopNameUseCase: NormalizeStopNameUseCase,
+    ): List<PairJrUtilStopsWithStopsResult> {
+        val assignmentResult = mutableListOf<PairJrUtilStopsWithStopsResult>()
         val linesByPublicCode = jrUtilGtfsParseResult.lines.associateBy { it.publicCode }
         val normalizedJrUtilStopsByName = mutableMapOf<String, JrUtilStopsByName>()
         for (stop in jrUtilGtfsParseResult.allStops) {
-            val key = stop.name?.collapseCommas() ?: NULL_NAME
+            val key = stop.name?.let(normalizeStopNameUseCase::normalize) ?: NULL_NAME
             val mapEntry = normalizedJrUtilStopsByName[key]
             if (mapEntry == null) {
                 normalizedJrUtilStopsByName[key] = JrUtilStopsByName(key, mutableListOf(stop))
@@ -207,7 +208,7 @@ class AddJrUtilPositionToStopsByName(
         for (publicCode in publicCodes) {
             val dbStops = stopJpaRepository
                 .findAllPositionEnrichmentDtoByLinePublicCode(publicCode)
-                .map { it.copy(name = it.name.collapseCommas().replace(Regex("\\s*\\[[^]]*]\\s*"), "")) }
+                .map { it.copy(name = normalizeStopNameUseCase.normalize(it.name)) }
             val line = linesByPublicCode[publicCode]
             val stopMatches =
                 if (line != null) localMatchStopsForLine(line, dbStops)
@@ -224,7 +225,7 @@ class AddJrUtilPositionToStopsByName(
                     log.warn("Line $publicCode, stop \"${stopMatch.stop.name}\" didn't match any JrUtil stop: ${line?.stops?.joinToString { "\"${it.name}\"" }}")
                 }
             }
-            assignmentResult.add(AddPositionToStopsByNameResult(
+            assignmentResult.add(PairJrUtilStopsWithStopsResult(
                 linePublicCode = publicCode,
                 assignmentsByStopId = deduplicateStops(tmpResult).associate { it },
             ))

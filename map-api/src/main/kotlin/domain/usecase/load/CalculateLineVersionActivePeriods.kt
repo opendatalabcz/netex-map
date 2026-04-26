@@ -6,8 +6,6 @@ import cz.cvut.fit.gaierda1.data.orm.model.LineVersion
 import cz.cvut.fit.gaierda1.data.orm.repository.ActivePeriodJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.LineVersionJpaRepository
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.OffsetDateTime
@@ -19,7 +17,7 @@ class CalculateLineVersionActivePeriods(
     private val activePeriodJpaRepository: ActivePeriodJpaRepository,
     private val transactionTemplate: TransactionTemplate,
     @Value($$"${import.active-period-line-versions-batch-size}")
-    private val codePageSize: Int,
+    private val publicCodeBatchSize: Int,
 ): CalculateLineVersionActivePeriodsUseCase {
     private fun calculateActivePeriodsForGroup(lineVersions: List<LineVersion>): List<ActivePeriod> {
         val validVersions = lineVersions.filter { it.validFrom.isBefore(it.validTo) }
@@ -77,16 +75,17 @@ class CalculateLineVersionActivePeriods(
 
     override fun calculateActivePeriods() {
         var codePageNumber = 0
-        var publicCodes: Page<String>? = null
+        val publicCodes = lineVersionJpaRepository.findAllPublicCodes()
         activePeriodJpaRepository.deleteAll()
-        do { transactionTemplate.executeWithoutResult {
-            publicCodes = lineVersionJpaRepository.findAllPublicCodes(PageRequest.of(codePageNumber, codePageSize))
-            val lineVersions = lineVersionJpaRepository.findAllByPublicCodes(publicCodes.content)
-            for ((_, lineVersionGroup) in lineVersions.groupBy { it.publicCode }) {
-                val activePeriods = calculateActivePeriodsForGroup(lineVersionGroup)
-                activePeriodJpaRepository.saveAll(activePeriods)
+        for (publicCodesChunk in publicCodes.chunked(publicCodeBatchSize)) {
+            transactionTemplate.executeWithoutResult {
+                val lineVersions = lineVersionJpaRepository.findAllByPublicCodes(publicCodesChunk)
+                for ((_, lineVersionGroup) in lineVersions.groupBy { it.publicCode }) {
+                    val activePeriods = calculateActivePeriodsForGroup(lineVersionGroup)
+                    activePeriodJpaRepository.saveAll(activePeriods)
+                }
+                ++codePageNumber
             }
-            ++codePageNumber
-        } } while (publicCodes?.hasNext() ?: false)
+        }
     }
 }

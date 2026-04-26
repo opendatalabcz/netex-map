@@ -5,6 +5,7 @@ import cz.cvut.fit.gaierda1.data.orm.model.PhysicalStop
 import cz.cvut.fit.gaierda1.domain.port.OsmParserPort
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
 import org.openstreetmap.osmosis.core.container.v0_6.BoundContainer
 import org.openstreetmap.osmosis.core.container.v0_6.EntityContainer
 import org.openstreetmap.osmosis.core.container.v0_6.EntityProcessor
@@ -25,7 +26,7 @@ class OsmPbfParser: OsmParserPort {
         private const val OFFICIAL_NAME_TAG = "official_name"
         private const val NAME_TAG = "name"
     }
-    private val geometryFactory = GeometryFactory()
+    private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
 
     private class SimpleFilteringSink(
         private val stopNodes: MutableMap<Long, Node>,

@@ -12,6 +12,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.InputStream
@@ -19,7 +20,7 @@ import java.io.InputStreamReader
 
 @Component
 class JrUtilGtfsParser: JrUtilGtfsParserPort {
-    private val geometryFactory = GeometryFactory()
+    private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
     private val csvReader = CSVFormat.Builder.create()
         .setDelimiter(',')
         .setRecordSeparator('\n')

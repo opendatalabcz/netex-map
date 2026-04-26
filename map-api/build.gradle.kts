@@ -13,6 +13,7 @@ repositories {
     mavenCentral()
 }
 
+val mockitoAgent = configurations.create("mockitoAgent")
 dependencies {
     implementation("org.entur:netex-java-model:2.0.15")
     implementation("jakarta.xml.bind:jakarta.xml.bind-api:4.0.4")
@@ -39,10 +40,14 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("com.h2database:h2")
+    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
+    mockitoAgent("org.mockito:mockito-core") { isTransitive = false }
 }
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs.add("-javaagent:${mockitoAgent.asPath}")
 }
 kotlin {
     jvmToolchain(21)

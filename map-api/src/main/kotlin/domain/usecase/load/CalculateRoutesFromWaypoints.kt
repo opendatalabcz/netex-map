@@ -7,14 +7,11 @@ import cz.cvut.fit.gaierda1.data.orm.model.RouteStopId
 import cz.cvut.fit.gaierda1.data.orm.repository.PhysicalStopJpaRepository
 import cz.cvut.fit.gaierda1.data.orm.repository.RouteJpaRepository
 import cz.cvut.fit.gaierda1.domain.port.RoutingServicePort
-import org.locationtech.jts.geom.Coordinate
+import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateRoutesFromWaypointsUseCase.Companion.distanceBetweenPoints
+import cz.cvut.fit.gaierda1.domain.usecase.load.CalculateRoutesFromWaypointsUseCase.Companion.externalIdFromWaypoints
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.stereotype.Component
-import java.security.MessageDigest
-import kotlin.io.encoding.Base64
-import kotlin.math.cos
-import kotlin.math.sqrt
 
 @Component
 class CalculateRoutesFromWaypoints(
@@ -22,10 +19,6 @@ class CalculateRoutesFromWaypoints(
     private val physicalStopJpaRepository: PhysicalStopJpaRepository,
     private val routeJpaRepository: RouteJpaRepository,
 ): CalculateRoutesFromWaypointsUseCase {
-    companion object {
-        private const val EARTH_RADIUS = 6_371_000.0
-    }
-
     private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
 
     private fun stopExternalIdsMatches(
@@ -54,6 +47,7 @@ class CalculateRoutesFromWaypoints(
             for (route in fromDbRoutes) {
                 if (stopExternalIdsMatches(waypoints, route.routeStops)) {
                     cache.addRoute(route)
+                    route.routeStops.forEach { cache.addPhysicalStop(it.physicalStop) }
                     return route
                 }
             }
@@ -61,11 +55,35 @@ class CalculateRoutesFromWaypoints(
         return null
     }
 
-    private fun distanceBetweenPoints(a: Coordinate, b: Coordinate): Double {
-        val cosLat = cos(a.y * Math.PI / 180)
-        val dLonRad = (b.x - a.x) * Math.PI / 180 * cosLat
-        val dLatRad = (b.y - a.y) * Math.PI / 180
-        return EARTH_RADIUS * sqrt(dLatRad * dLatRad + dLonRad * dLonRad)
+    private fun resolvePhysicalStops(
+        waypoints: List<PhysicalStop>,
+        cache: RouteCalculationCache,
+    ): List<PhysicalStop> {
+        val result = Array<PhysicalStop?>(waypoints.size) { null }
+        val indexedWaypoints = waypoints.withIndex()
+        val unresolvedWaypointExternalIds = mutableListOf<String>()
+        for ((idx, waypoint) in indexedWaypoints) {
+            result[idx] = cache.findPhysicalStop(waypoint.externalId)
+            if (result[idx] == null) {
+                if (waypoint.relationalId != null) {
+                    result[idx] = waypoint
+                    cache.addPhysicalStop(waypoint)
+                    continue
+                }
+                unresolvedWaypointExternalIds.add(waypoint.externalId)
+            }
+        }
+        if (unresolvedWaypointExternalIds.isNotEmpty()) {
+            val stopsFromDb = physicalStopJpaRepository
+                .findAllByExternalIds(unresolvedWaypointExternalIds)
+                .associateBy(PhysicalStop::externalId)
+            for ((idx, waypoint) in indexedWaypoints) {
+                if (result[idx] != null) continue
+                result[idx] = stopsFromDb[waypoint.externalId] ?: waypoint
+                cache.addPhysicalStop(result[idx]!!)
+            }
+        }
+        return result.filterNotNull()
     }
 
     override fun calculateRouteFromWaypoints(
@@ -74,10 +92,7 @@ class CalculateRoutesFromWaypoints(
     ): Route? {
         if (waypoints.size < 2) return null
         val usedCache = cache ?: RouteCalculationCache()
-        val routeExternalId = Base64.encode(
-            MessageDigest.getInstance("SHA-256")
-                .digest(waypoints.joinToString("|") { it.externalId }.toByteArray())
-        )
+        val routeExternalId = externalIdFromWaypoints(waypoints)
 
         val existingRoute = findExistingRoute(routeExternalId, waypoints, usedCache)
         if (existingRoute != null) return existingRoute
@@ -124,18 +139,12 @@ class CalculateRoutesFromWaypoints(
             routeStops = routeStops,
             totalDistance = cumulativeDistance,
         )
-        routeStops.addAll(waypoints.mapIndexed { idx, stop ->
-            var physicalStop = usedCache.findPhysicalStop(stop.externalId)
-            if (physicalStop == null) {
-                physicalStop = physicalStopJpaRepository
-                    .findByExternalId(stop.externalId)
-                    .orElse(stop)
-                usedCache.addPhysicalStop(physicalStop)
-            }
+        val resolvedPhysicalStops = resolvePhysicalStops(waypoints, usedCache)
+        routeStops.addAll(waypoints.mapIndexed { idx, _ ->
             RouteStop(
                 stopId = RouteStopId(route.relationalId, idx),
                 route = route,
-                physicalStop = physicalStop,
+                physicalStop = resolvedPhysicalStops[idx],
                 routeFraction = if (cumulativeDistance == 0.0) 0.0 else waypointDistances[idx] / cumulativeDistance,
             )
         })

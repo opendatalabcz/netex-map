@@ -42,7 +42,7 @@ class CalculateJourneyRoutesMock(
     private val entityManager: EntityManager,
 ): CalculateJourneyRoutesUseCase {
     companion object {
-        private val geometryFactory: GeometryFactory = GeometryFactory(PrecisionModel(), 4326)
+        private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
         private val CZ_BBOX = geometryFactory.createPoint(Coordinate(12.6296776, 50.7374067)) to geometryFactory.createPoint(Coordinate(18.1876545, 49.0192903))
         private const val KILOMETER_TO_DEGREE = 0.008_983
         private const val STEP_LENGTH = KILOMETER_TO_DEGREE / 8

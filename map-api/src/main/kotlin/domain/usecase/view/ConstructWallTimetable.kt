@@ -207,6 +207,7 @@ class ConstructWallTimetable(
 
     @Transactional(readOnly = true)
     override fun constructWallTimetable(lineVersionId: Long): WallTimetable? {
+        val reconstructedLineVersion = reconstructLineVersion(lineVersionId) ?: return null
         val reconstructedJourneys = reconstructJourneys(lineVersionId)
         val reconstructedJourneyPatterns = reconstructJourneyPatterns(lineVersionId)
 
@@ -224,7 +225,7 @@ class ConstructWallTimetable(
         }
 
         return WallTimetable(
-            lineVersion = reconstructLineVersion(lineVersionId) ?: return null,
+            lineVersion = reconstructedLineVersion,
             operatingPeriods = reconstructOperatingPeriods(reconstructedJourneys.keys.toList()),
             journeyPatterns = reconstructedJourneyPatterns,
             journeys = fullyReconstructedJourneys,

@@ -4,8 +4,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class NormalizeStopName: NormalizeStopNameUseCase {
-    private fun String.collapseCommas(): String = replace(Regex("""\s*,+\s*"""), ",")
-    private fun String.removeSquareBrackets(): String = replace(Regex("""\s*\[[^]]*]\s*"""), "")
+    private fun String.collapseCommas(): String = replace(Regex("""\s*,(?:\s*,)*\s*"""), ",")
+    private fun String.removeSquareBrackets(): String = replace(Regex("""\s*\[[^]]*]"""), "")
     private fun String.addSpaceAfterDots(): String = replace(Regex("""\.(?:\s+|([^,]))"""), ". $1")
     private fun String.removeTrailingComma(): String = if (endsWith(",")) substring(0, length - 1) else this
 
