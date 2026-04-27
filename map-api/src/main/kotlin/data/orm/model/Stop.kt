@@ -52,7 +52,7 @@ class Stop(
     @Column(nullable = false)
     val wheelChairAccessToilet: Boolean,
 
-    @Column(nullable = true)
-    val otherTransportModes: String?,
+    @Column(nullable = true, columnDefinition = "TEXT")
+    val otherTransportModes: List<TransportMode>,
 ) {
 }

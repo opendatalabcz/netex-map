@@ -1,6 +1,7 @@
 package cz.cvut.fit.gaierda1.data.netex
 
 import cz.cvut.fit.gaierda1.data.orm.model.Stop
+import cz.cvut.fit.gaierda1.data.orm.model.TransportMode
 import cz.cvut.fit.gaierda1.data.orm.repository.StopJpaRepository
 import cz.cvut.fit.gaierda1.domain.port.TimetableParseResult
 import org.rutebanken.netex.model.AccessFacilityEnumeration
@@ -58,7 +59,7 @@ class StopAssembler(
                     } ?: false,
                 wheelChairAccessToilet = siteFacilitySet?.sanitaryFacilityList?.contains(
                     SanitaryFacilityEnumeration.WHEELCHAIR_ACCESS_TOILET) ?: false,
-                otherTransportModes =  stopPlace.otherTransportModes.joinToString().ifEmpty { null },
+                otherTransportModes =  stopPlace.otherTransportModes.map(TransportMode::fromNetexVehicleMode),
             )
             parseCache.addStop(assembledStop)
             stops[stopPlace.id] = assembledStop

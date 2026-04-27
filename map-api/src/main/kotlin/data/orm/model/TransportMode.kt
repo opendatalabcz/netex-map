@@ -1,6 +1,7 @@
 package cz.cvut.fit.gaierda1.data.orm.model
 
 import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration
+import org.rutebanken.netex.model.VehicleModeEnumeration
 
 enum class TransportMode(val shortCode: String) {
     BUS("B"),
@@ -29,6 +30,16 @@ enum class TransportMode(val shortCode: String) {
             AllVehicleModesOfTransportEnumeration.TRAM -> TRAM
             AllVehicleModesOfTransportEnumeration.METRO -> METRO
             else -> throw IllegalArgumentException("Unsupported transport mode: $mode")
+        }
+
+        fun fromNetexVehicleMode(mode: VehicleModeEnumeration): TransportMode = when (mode) {
+            VehicleModeEnumeration.BUS -> BUS
+            VehicleModeEnumeration.TROLLEY_BUS -> TROLLEY_BUS
+            VehicleModeEnumeration.RAIL -> RAIL
+            VehicleModeEnumeration.FUNICULAR -> FUNICULAR
+            VehicleModeEnumeration.TRAM -> TRAM
+            VehicleModeEnumeration.METRO -> METRO
+            else -> throw IllegalArgumentException("Unsupported vehicle mode: $mode")
         }
     }
 }
