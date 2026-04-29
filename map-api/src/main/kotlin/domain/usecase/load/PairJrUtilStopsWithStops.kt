@@ -8,7 +8,6 @@ import cz.cvut.fit.gaierda1.domain.port.JrUtilGtfsParserPort.*
 import cz.cvut.fit.gaierda1.domain.usecase.load.PairJrUtilStopsWithStopsUseCase.PairJrUtilStopsWithStopsResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import kotlin.math.abs
 
 @Component
 class PairJrUtilStopsWithStops(
@@ -76,50 +75,34 @@ class PairJrUtilStopsWithStops(
         return stopMatches
     }
 
-    private data class StopNamePrefix(
-        val prefix: String,
-        val distance: Int,
-    )
-
     private fun globalMatchByNameWithPrefixes(
         dbStop: StopPositionEnrichmentDto,
-        stopNamePrefixes: List<StopNamePrefix>,
+        stopNamePrefixes: List<String>,
         allJrUtilStopsByName: Map<String, JrUtilStopsByName>
     ): JrUtilStopsByName? {
-        val exactMatch = allJrUtilStopsByName[dbStop.name]
-        if (exactMatch != null) {
-            return exactMatch
-        }
         data class GlobalMatch(
             val jrUsageStop: JrUtilStopsByName,
             val exactMatch: Boolean,
             val noCSExactMatch: Boolean,
         )
-        val matches = mutableMapOf<Int, MutableList<GlobalMatch>>()
+        val matches = mutableListOf<GlobalMatch>()
         for (jrStop in allJrUtilStopsByName.values) {
             for (namePrefix in stopNamePrefixes) {
-                val usedDbStopName = namePrefix.prefix + dbStop.name
-                val matchesByContains = !jrStop.name.contains(usedDbStopName)
+                val usedDbStopName = namePrefix + dbStop.name
+                val exactMatch = jrStop.name == usedDbStopName
                 val exactlyMatchesByNoCS = jrStop.name.removeCommasAndSpaces() == usedDbStopName.removeCommasAndSpaces()
-                if (!matchesByContains && !exactlyMatchesByNoCS) continue
-                matches.getOrPut(namePrefix.distance) { mutableListOf() }.add(GlobalMatch(
+                if (!exactMatch && !exactlyMatchesByNoCS) continue
+                matches.add(GlobalMatch(
                     jrUsageStop = jrStop,
-                    exactMatch = jrStop.name == usedDbStopName,
+                    exactMatch = exactMatch,
                     noCSExactMatch = exactlyMatchesByNoCS,
                 ))
             }
         }
-        for (matchesByDistance in matches.entries.sortedBy { it.key }) {
-            val matches = matchesByDistance.value
-            if (matches.size == 1) {
-                return matches.first().jrUsageStop
-            } else {
-                var exactMatch = matches.find { it.exactMatch }
-                if (exactMatch == null) exactMatch = matches.find { it.noCSExactMatch }
-                if (exactMatch != null) {
-                    return exactMatch.jrUsageStop
-                }
-            }
+        var exactPrefixMatch = matches.find { it.exactMatch }
+        if (exactPrefixMatch == null) exactPrefixMatch = matches.find { it.noCSExactMatch }
+        if (exactPrefixMatch != null) {
+            return exactPrefixMatch.jrUsageStop
         }
         return null
     }
@@ -129,22 +112,20 @@ class PairJrUtilStopsWithStops(
         stopMatches: List<MatchedStop>,
         allJrUtilStopsByName: Map<String, JrUtilStopsByName>
     ): JrUtilStopsByName? {
-        val stopNamePrefixesMap = mutableMapOf("" to 0)
+        val exactMatch = allJrUtilStopsByName[stopMatches[stopIdx].stop.name]
+        if (exactMatch != null) {
+            return exactMatch
+        }
+        val stopNamePrefixes = mutableSetOf("")
         for ((idx, otherStopMatch) in stopMatches.withIndex()) {
             if (idx == stopIdx || otherStopMatch.matchResult == null) continue
             val otherStopNameParts = otherStopMatch.matchResult!!.name.split(",")
+            if (otherStopNameParts.size == 1) continue
             for (size in 1 until otherStopNameParts.size) {
-                val prefix = otherStopNameParts.take(size).joinToString(",", postfix = ",")
-                val registerPrefixDistance = stopNamePrefixesMap[prefix]
-                val currentPrefixDistance = abs(stopIdx - idx)
-                if (registerPrefixDistance != null && registerPrefixDistance < currentPrefixDistance) continue
-                stopNamePrefixesMap[prefix] = currentPrefixDistance
+                stopNamePrefixes.add(otherStopNameParts.take(size).joinToString(",", postfix = ","))
             }
         }
-        val stopNamePrefixes = stopNamePrefixesMap
-            .map { StopNamePrefix(it.key, it.value) }
-            .sortedBy { it.distance }
-        return globalMatchByNameWithPrefixes(stopMatches[stopIdx].stop, stopNamePrefixes, allJrUtilStopsByName)
+        return globalMatchByNameWithPrefixes(stopMatches[stopIdx].stop, stopNamePrefixes.toList(), allJrUtilStopsByName)
     }
 
     private fun globalMatchStopsForLine(
