@@ -25,6 +25,7 @@ class RoughlyPairPhysicalStopsWithStops(
         val notMatchedLines = mutableListOf<String>()
         var stopCount = 0
         var notMatchedStopCount = 0
+        var ambiguousStopCount = 0
         for (publicCode in publicCodes) {
             val dbStops = stopJpaRepository
                 .findAllPositionEnrichmentDtoByLinePublicCode(publicCode)
@@ -41,18 +42,21 @@ class RoughlyPairPhysicalStopsWithStops(
 //                    if (physicalStop.isPresent) {
 //                        resultPairs.add(StopPair(physicalStop.get(), stop))
 //                    }
-                    if (stop.name != nameMatches.first()) {
-                        println("${stop.name} matched: ${nameMatches.first()}")
-                    }
+//                    if (stop.name != nameMatches.first()) {
+//                        println("${stop.name} matched: ${nameMatches.first()}")
+//                    }
+                    continue
+                } else if (nameMatches.size > 1) {
+                    ++ambiguousStopCount
                     continue
                 }
                 ++notMatchedStopCount
                 ++notMatched
-                if (nameMatches.isNotEmpty() && stop.name != "Praha,ÚAN Florenc") {
-                    println("${stop.name} || Candidates: ${nameMatches.joinToString(" | ")}")
-                } else {
-                    println(stop.name)
-                }
+//                if (nameMatches.isNotEmpty() && stop.name != "Praha,ÚAN Florenc") {
+//                    println("${stop.name} || Candidates: ${nameMatches.joinToString(" | ")}")
+//                } else {
+//                    println(stop.name)
+//                }
             }
             if (notMatched > 0) {
                 notMatchedLines.add(publicCode)
@@ -61,7 +65,8 @@ class RoughlyPairPhysicalStopsWithStops(
         }
         if (notMatchedLines.isNotEmpty()) {
             val notMatchedInternationalLines = publicCodes.filter { lineVersionJpaRepository.areLinesByPublicCodeInternational(it) }
-            log.warn("There are $notMatchedStopCount stops out of $stopCount that weren't found")
+            log.warn("There are $notMatchedStopCount stops out of $stopCount that weren't found.\n" +
+                    "There are $ambiguousStopCount stops out of $stopCount that weren't uniquely matched.")
             log.warn("There are ${notMatchedLines.size} lines out of ${publicCodes.size} that weren't fully matched.\n" +
                     "Out of those, ${notMatchedInternationalLines.size} are international lines.")
         }

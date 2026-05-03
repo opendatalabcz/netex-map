@@ -26,6 +26,7 @@ class NameTree(names: List<String>) {
         }
         println("Chunks: ${tree.chunks}")
         println("Chunk sizes: ${tree.chunkSizes}")
+        println("Chunk sizes cumulative: ${tree.chunkSizes.sum()}")
     }
 
     private fun returnNamesRecFromNode(
