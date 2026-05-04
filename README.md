@@ -35,7 +35,7 @@ NeTEx Map is a web application that visualizes Czech public transportation timet
 ## Project Setup
 
 1. First obtain input data
-    1. Obtain timetables in NeTEx format (`NeTEx_DrahyMestske.zip` and `NeTEx_VerejnaLinkovaDoprava.zip`) at [https://portal.cisjr.cz/pub/netex/](https://portal.cisjr.cz/pub/netex/)
+    1. Obtain timetables in NeTEx format (`NeTEx_VerejnaLinkovaDoprava.zip` and optionally `NeTEx_DrahyMestske.zip`) at [https://portal.cisjr.cz/pub/netex/](https://portal.cisjr.cz/pub/netex/)
     2. Obtain OpenStreetMap regional export in format `.osm.pbf`, e.g. at [https://osm.fit.vut.cz/extracts/czech_republic/](https://osm.fit.vut.cz/extracts/czech_republic/)
     3. Obtain coarse stop positions at [https://data.jr.ggu.cz/results/latest/](https://data.jr.ggu.cz/results/latest/) (file `JDF_merged_GTFS.zip`)
 2. Create Docker image from Kotlin server
@@ -52,6 +52,5 @@ NeTEx Map is a web application that visualizes Czech public transportation timet
 5. Run Docker compose
     ```sh
     # At project root directory
-    # Please note that Overpass initialization can take over 1 hour.
     docker compose up -d
     ```
