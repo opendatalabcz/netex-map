@@ -9,7 +9,7 @@ const emit = defineEmits<{
     'update:model-value': [map: L.Map | null]
 }>()
 
-onMounted(async () => {
+onMounted(() => {
     if (!mapContainer.value) return
     map = L.map(mapContainer.value, {
         minZoom: 10,
