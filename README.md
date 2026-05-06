@@ -52,5 +52,5 @@ NeTEx Map is a web application that visualizes Czech public transportation timet
 5. Run Docker compose
     ```sh
     # At project root directory
-    docker compose up -d
+    DB_ADMIN_PASSWORD=<PASSWORD> docker compose up -d
     ```
