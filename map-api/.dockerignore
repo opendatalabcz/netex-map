@@ -1,0 +1,11 @@
+build
+.dockerignore
+Dockerfile
+Dockerfile.*
+*.log
+.env
+*.md
+.vscode
+.idea
+.kotlin
+.gradle

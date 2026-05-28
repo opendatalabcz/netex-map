@@ -37,6 +37,9 @@ services:
         max-size: 25m
         max-file: 4
   timetable-api:
+    build:
+      context: ./map-api
+      dockerfile: Dockerfile
     image: timetable-api:${BE_API_VERSION}
     restart: always
     container_name: ${BE_CONTAINER_NAME}
@@ -69,13 +72,21 @@ services:
         max-size: 25m
         max-file: 4
   reverse-proxy:
-    image: nginx:mainline-alpine3.23-slim
+    build:
+      context: .
+      dockerfile: map/Dockerfile
+      args:
+        FE_INITIAL_MOMENT: ${FE_INITIAL_MOMENT}
+        FE_CITY_LINES_ZOOM_THRESHOLD: ${FE_CITY_LINES_ZOOM_THRESHOLD}
+        FE_API_URN: ${FE_API_URN}
+        PROXY_HTML_CONTAINER_PATH: ${PROXY_HTML_CONTAINER_PATH}
+    image: web-map:${FE_VERSION}
+    pull_policy: build
     container_name: ${PROXY_CONTAINER_NAME}
     restart: always
     ports:
       - ${PROXY_HOST_PORT}:80
     volumes:
-      - ${PROXY_HTML_HOST_PATH}:/usr/share/nginx/html
       - ${PROXY_CONFIG_HOST_PATH}:/etc/nginx/nginx.conf:ro
       - ${PROXY_CONFIG_TEMPLATES_HOST_PATH}:/etc/nginx/templates/:ro
     environment:

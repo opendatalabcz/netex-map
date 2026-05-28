@@ -1,0 +1,12 @@
+build
+.dockerignore
+Dockerfile
+Dockerfile.*
+*.log
+.env
+*.md
+.vscode
+.idea
+dist
+node_modules
+.eslintcache
