@@ -62,7 +62,7 @@ class ImportTimetablesTest {
         suitableForHeavilyDisabled = false,
         toilet = false,
         wheelChairAccessToilet = false,
-        otherTransportModes = null,
+        otherTransportModes = listOf(),
     )
 
     private fun operatorTemplate(relationalId: Long?, publicCode: String) = Operator(
