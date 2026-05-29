@@ -9,3 +9,4 @@ Dockerfile.*
 .idea
 .kotlin
 .gradle
+data-download

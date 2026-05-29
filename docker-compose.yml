@@ -20,22 +20,7 @@ services:
       options:
         max-size: 25m
         max-file: 4
-  graphhopper:
-    image: israelhikingmap/graphhopper:11.0
-    restart: no
-    container_name: ${GRAPHHOPPER_CONTAINER_NAME}
-    command: >
-      --input ${GRAPHHOPPER_OSM_PBF_CONTAINER_PATH}
-    ports:
-      - ${GRAPHHOPPER_HOST_PORT}:8989
-    volumes:
-      - routing-cache:/data
-      - ${OSM_PBF_HOST_PATH}:${GRAPHHOPPER_OSM_PBF_CONTAINER_PATH}:ro
-    logging:
-      driver: local
-      options:
-        max-size: 25m
-        max-file: 4
+
   timetable-api:
     build:
       context: ./map-api
@@ -44,33 +29,95 @@ services:
     restart: always
     container_name: ${BE_CONTAINER_NAME}
     depends_on:
-      - graphhopper
       - timetable-db
     environment:
-      JAVA_TOOL_OPTIONS: ${BE_JAVA_TOOL_OPTIONS}
-      ROUTING_SERVICE_URL: ${BE_ROUTING_SERVICE_URL}
-      SPRING_DATASOURCE_URL: ${BE_SPRING_DATASOURCE_URL}
       MAP_LOD_CITY_LINES_ZOOM_THRESHOLD: ${BE_LOD_CITY_LINES_ZOOM_THRESHOLD}
+      SPRING_DATASOURCE_URL: ${BE_SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USER: ${DB_ADMIN_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_ADMIN_PASSWORD}
       SERVER_SERVLET_CONTEXT-PATH: ${FE_API_URN}
     ports:
       - ${BE_HOST_PORT}:8080
-    volumes:
-      - ${BE_NETEX_PUBLIC_LINES_HOST_PATH}:${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}:ro
-      - ${BE_NETEX_CITY_LINES_HOST_PATH}:${BE_NETEX_CITY_LINES_CONTAINER_PATH}:ro
-      - ${BE_JRUTIL_GTFS_UNIFIED_EXPORT_HOST_PATH}:${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}:ro
-      - ${OSM_PBF_HOST_PATH}:${BE_OSM_PBF_CONTAINER_PATH}:ro
-    command: >
-      --netex-zip=${BE_NETEX_PUBLIC_LINES_CONTAINER_PATH}
-      --netex-zip=${BE_NETEX_CITY_LINES_CONTAINER_PATH}
-      --osm-pbf=${BE_OSM_PBF_CONTAINER_PATH}
-      --jrutil-gtfs=${BE_JRUTIL_GTFS_UNIFIED_EXPORT_CONTAINER_PATH}
     logging:
       driver: local
       options:
         max-size: 25m
         max-file: 4
+
+  osm-download:
+    image: alpine:latest
+    restart: on-failure:3
+    container_name: ${DATA_IMPORT_CONTAINER_NAME}-osm
+    environment:
+      OSM_MODE: true
+      FORCE_DOWNLOAD: ${DATA_IMPORT_FORCE_DOWNLOAD}
+      FORCE_SERVER_LOAD: ${DATA_IMPORT_FORCE_SERVER_LOAD}
+      DATA_DIR: ${DATA_IMPORT_VOLUME_DIR}
+      OSM_PBF_URL: ${DATA_IMPORT_OSM_PBF_URL}
+      OSM_PBF_FILE_NAME: ${DATA_IMPORT_OSM_PBF_FILE_NAME}
+    volumes:
+      - data-sources:${DATA_IMPORT_VOLUME_DIR}
+      - ${DATA_IMPORT_SCRIPT_HOST_PATH}:/app/entry.sh:ro
+    entrypoint: ["/bin/sh", "/app/entry.sh"]
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+
+  timetable-import:
+    image: timetable-api:${BE_API_VERSION}
+    restart: on-failure:3
+    container_name: ${DATA_IMPORT_CONTAINER_NAME}
+    depends_on:
+      osm-download:
+        condition: service_completed_successfully
+      timetable-api:
+        condition: service_started
+    environment:
+      JAVA_TOOL_OPTIONS: ${DATA_IMPORT_JAVA_TOOL_OPTIONS}
+      SPRING_DATASOURCE_URL: ${BE_SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USER: ${DB_ADMIN_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_ADMIN_PASSWORD}
+      FORCE_DOWNLOAD: ${DATA_IMPORT_FORCE_DOWNLOAD}
+      FORCE_SERVER_LOAD: ${DATA_IMPORT_FORCE_SERVER_LOAD}
+      DATA_DIR: ${DATA_IMPORT_VOLUME_DIR}
+      NETEX_PUBLIC_LINES_URL: ${DATA_IMPORT_NETEX_PUBLIC_LINES_URL}
+      NETEX_CITY_LINES_URL: ${DATA_IMPORT_NETEX_CITY_LINES_URL}
+      JRUTIL_GTFS_URL: ${DATA_IMPORT_JRUTIL_GTFS_URL}
+      OSM_PBF_URL: ${DATA_IMPORT_OSM_PBF_URL}
+      OSM_PBF_FILE_NAME: ${DATA_IMPORT_OSM_PBF_FILE_NAME}
+      ROUTING_SERVICE_URL: ${BE_ROUTING_SERVICE_URL}
+    volumes:
+      - data-sources:${DATA_IMPORT_VOLUME_DIR}
+      - ${DATA_IMPORT_SCRIPT_HOST_PATH}:/app/entry.sh:ro
+    entrypoint: ["/bin/sh", "/app/entry.sh"]
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+
+  graphhopper:
+    image: israelhikingmap/graphhopper:11.0
+    restart: no
+    container_name: ${GRAPHHOPPER_CONTAINER_NAME}
+    depends_on:
+      osm-download:
+        condition: service_completed_successfully
+    command: >
+      --input ${DATA_IMPORT_OSM_PBF_CONTAINER_PATH}
+    ports:
+      - ${GRAPHHOPPER_HOST_PORT}:8989
+    volumes:
+      - routing-cache:/data
+      - data-sources:${DATA_IMPORT_VOLUME_DIR}:ro
+    logging:
+      driver: local
+      options:
+        max-size: 25m
+        max-file: 4
+
   reverse-proxy:
     build:
       context: .
@@ -100,6 +147,8 @@ services:
         max-file: 4
 
 volumes:
+  data-sources:
+    name: ${DATA_SOURCES_VOLUME_NAME}
   timetable-db:
     name: ${DB_VOLUME_NAME}
   routing-cache:
