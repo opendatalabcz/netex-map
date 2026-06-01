@@ -53,7 +53,10 @@ const csDatetimeFormats: Record<string, Intl.DateTimeFormatOptions> = {
 
 const cs = {
     document: {
-        title: 'Vizualizace hromadné dopravy',
+        title: 'Vizualizace veřejné dopravy',
+        aboutPage: 'O aplikaci',
+        mapPage: 'Mapa',
+        openDataLabLogo: 'Logo Open Data Lab',
     },
     searchLine: 'Zadejte kód linky',
     transportModes: {

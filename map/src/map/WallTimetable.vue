@@ -57,7 +57,7 @@ function handleColumnLeave() {
 
 <template>
     <div class="wall-timetable">
-        <div v-show="collapsed" class="timetable-handle">
+        <div v-show="collapsed">
             <v-btn
                 icon="mdi-timetable"
                 variant="text"

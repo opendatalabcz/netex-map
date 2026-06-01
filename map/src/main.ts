@@ -6,6 +6,10 @@ import { useI18n } from 'vue-i18n'
 
 const VueApp = createApp(App).use(I18n).use(Vuetify).mount('#app')
 
-VueApp.$watch(() => useI18n().t, newVal => {
-    document.title = newVal('document.title')
-}, { immediate: true })
+VueApp.$watch(
+    () => useI18n().t,
+    (newVal) => {
+        document.title = newVal('document.title')
+    },
+    { immediate: true },
+)
