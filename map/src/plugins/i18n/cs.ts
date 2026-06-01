@@ -52,6 +52,9 @@ const csDatetimeFormats: Record<string, Intl.DateTimeFormatOptions> = {
 }
 
 const cs = {
+    document: {
+        title: 'Vizualizace hromadné dopravy',
+    },
     searchLine: 'Zadejte kód linky',
     transportModes: {
         bus: 'Autobus',
