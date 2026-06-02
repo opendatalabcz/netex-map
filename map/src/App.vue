@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MapScreen from '@/map/MapScreen.vue'
+import AboutScreen from '@/about/AboutScreen.vue'
 import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 
@@ -16,16 +17,22 @@ const tab = ref(ABOUT_PAGE)
         color="on-primary"
         slider-color="primary"
         inset
-        class="app-tabs"
-        elevation="0"
+        class="app-tabs elevation-1"
         bg-color="background"
     >
-        <img src="/logo.svg" :alt="t('document.openDataLabLogo')" class="logo" />
+        <img
+            v-show="tab === MAP_PAGE"
+            src="/odl-logo.svg"
+            :alt="t('footer.openDataLabLogo')"
+            class="cards-logo"
+        />
         <v-tab :value="ABOUT_PAGE">{{ t('document.aboutPage') }}</v-tab>
         <v-tab :value="MAP_PAGE">{{ t('document.mapPage') }}</v-tab>
     </v-tabs>
     <v-tabs-window v-model="tab">
-        <v-tabs-window-item :value="ABOUT_PAGE"></v-tabs-window-item>
+        <v-tabs-window-item :value="ABOUT_PAGE">
+            <AboutScreen />
+        </v-tabs-window-item>
         <v-tabs-window-item :value="MAP_PAGE">
             <MapScreen :is-visible="tab === MAP_PAGE" />
         </v-tabs-window-item>
@@ -41,14 +48,18 @@ body {
     height: 100vh;
     position: fixed;
 }
-.logo {
+.about-screen {
+    padding: 1em;
+    max-width: 60em;
+    margin: auto;
+}
+.cards-logo {
     height: 100%;
     padding: 0.5rem;
 }
 .app-tabs {
-    position: absolute;
+    position: fixed;
     z-index: 1000;
-    box-shadow: none !important;
     top: 0.25em;
     right: 0.25em;
 }
