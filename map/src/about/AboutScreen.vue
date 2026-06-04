@@ -15,6 +15,7 @@ const JRUTIL_DATA_URL = import.meta.env.FE_JRUTIL_DATA_URL
 const CZECH_OSM_DATA_URL = import.meta.env.FE_CZECH_OSM_DATA_URL
 const OSM_URL = import.meta.env.FE_OSM_URL
 const GRAPHHOPER_URL = import.meta.env.FE_GRAPHHOPER_URL
+const AUTHOR_URL = import.meta.env.FE_AUTHOR_URL
 </script>
 
 <template>
@@ -182,24 +183,30 @@ const GRAPHHOPER_URL = import.meta.env.FE_GRAPHHOPER_URL
         <hr />
         <footer>
             <span>
-                {{ t('footer.copyright') }}
+                {{ t('footer.year') }}
+                <a :href="AUTHOR_URL" target="_blank">
+                    {{ t('footer.author') }}
+                </a>.
                 <i18n-t keypath="footer.fitCvutAttribution" scope="global">
                     <a :href="FIT_CVUT_URL" target="_blank">{{ t('footer.fitCvut') }}</a>
                 </i18n-t>
+            </span>
+            <span>
+                {{ t('footer.disclaimer') }}
             </span>
             <span class="logo-row">
                 <a :href="ODL_URL" target="_blank">
                     <img
                         src="/odl-logo.svg"
                         :alt="t('footer.openDataLabLogo')"
-                        class="medium-logo"
+                        class="logo"
                     />
                 </a>
                 <a :href="FIT_CVUT_URL" target="_blank">
                     <img src="/logo-fit-cs-modra.jpg" :alt="t('footer.fitCvutLogo')" class="logo" />
                 </a>
                 <a :href="PROFINIT_URL" target="_blank">
-                    <img src="/logo-profinit.png" :alt="t('footer.profinitLogo')" class="logo" />
+                    <img src="/logo-profinit.svg" :alt="t('footer.profinitLogo')" class="logo" />
                 </a>
                 <a :href="GITHUB_REPO_URL" target="_blank">
                     <img src="/logo-GitHub.svg" :alt="t('footer.gitHubLogo')" class="small-logo" />
@@ -244,9 +251,6 @@ h2, h3 {
     gap: 0.5em 2em;
 }
 .logo {
-    height: 4rem;
-}
-.medium-logo {
     height: 3rem;
 }
 .small-logo {

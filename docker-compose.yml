@@ -138,6 +138,7 @@ services:
         FE_OSM_URL: ${FE_OSM_URL}
         FE_CZECH_OSM_DATA_URL: ${FE_CZECH_OSM_DATA_URL}
         FE_GRAPHHOPER_URL: ${FE_GRAPHHOPER_URL}
+        FE_AUTHOR_URL: ${FE_AUTHOR_URL}
     image: web-map:${FE_VERSION}
     pull_policy: build
     container_name: ${PROXY_CONTAINER_NAME}
