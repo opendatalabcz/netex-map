@@ -1,4 +1,4 @@
-FROM dhi.io/gradle:9-jdk21-alpine3.23-dev AS build
+FROM gradle:9-jdk21 AS build
 WORKDIR /app
 
 COPY gradle gradle
