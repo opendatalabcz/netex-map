@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${DB_ADMIN_USERNAME}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
     ports:
-      - ${DB_HOST_PORT}:5432
+      - 127.0.0.1:${DB_HOST_PORT}:5432
     volumes:
       - timetable-db:/var/lib/postgresql
       - ${DB_INIT_SCRIPTS_HOST_PATH}:/docker-entrypoint-initdb.d/
@@ -37,7 +37,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_ADMIN_PASSWORD}
       SERVER_SERVLET_CONTEXT-PATH: ${FE_API_URN}
     ports:
-      - ${BE_HOST_PORT}:8080
+      - 127.0.0.1:${BE_HOST_PORT}:8080
     logging:
       driver: local
       options:
@@ -100,7 +100,7 @@ services:
 
   graphhopper:
     image: israelhikingmap/graphhopper:11.0
-    restart: no
+    restart: unless-stopped
     container_name: ${GRAPHHOPPER_CONTAINER_NAME}
     depends_on:
       osm-download:
@@ -150,8 +150,9 @@ services:
       - ${PROXY_CONFIG_TEMPLATES_HOST_PATH}:/etc/nginx/templates/:ro
     environment:
       HTML_CONTAINER_PATH: ${PROXY_HTML_CONTAINER_PATH}
-      API_URL: ${BE_CONTAINER_NAME}:8080
+      API_URL: ${PROXY_TIMETABLE_API_URL}
       API_URN: ${FE_API_URN}
+      RESOLVER_IP: ${PROXY_RESOLVER_IP}
     logging:
       driver: local
       options:

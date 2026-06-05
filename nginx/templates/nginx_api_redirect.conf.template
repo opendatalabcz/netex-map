@@ -1,3 +1,5 @@
+set $api ${API_URL};
+
 location ${API_URN}/ {
-    proxy_pass http://backend-server$request_uri;
+    proxy_pass $api$request_uri;
 }
