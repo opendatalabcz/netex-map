@@ -14,7 +14,16 @@ services:
     volumes:
       - timetable-db:/var/lib/postgresql
       - ${DB_INIT_SCRIPTS_HOST_PATH}:/docker-entrypoint-initdb.d/
-    shm_size: '2.1gb'
+      - ${POSTGRESQL_CONFIG_HOST_PATH}:/etc/postgresql/postgresql.conf
+    shm_size: ${DB_SHARED_MEMORY_SIZE}
+    command: >
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS}
+      -c shared_buffers=${POSTGRES_SHARED_BUFFERS}
+      -c effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE}
+      -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM}
+      -c effective_io_concurrency=${POSTGRES_EFFECTIVE_IO_CONCURRENCY}
+      -c work_mem=${POSTGRES_WORK_MEM}
+      -c config_file=/etc/postgresql/postgresql.conf
     logging:
       driver: local
       options:
